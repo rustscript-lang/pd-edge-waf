@@ -1,0 +1,6 @@
+pd-edge-waf
+Copyright 2026 pd-edge-waf contributors
+
+This product includes generated derivative rule modules based on the OWASP Core Rule Set 4.28.0.
+OWASP CRS is Copyright (c) 2006-2020 Trustwave and contributors and Copyright (c) 2021-2026 CRS project contributors.
+The upstream project is available at https://github.com/coreruleset/coreruleset and is distributed under the Apache License 2.0.

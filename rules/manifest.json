@@ -1,0 +1,225 @@
+{
+  "upstream": "coreruleset/coreruleset",
+  "version": "4.28.0",
+  "source_directory": "rules",
+  "category_count": 27,
+  "directive_count": 732,
+  "sec_rule_count": 695,
+  "sec_action_count": 7,
+  "sec_marker_count": 30,
+  "data_file_count": 21,
+  "data_files": [
+    "ai-critical-artifacts.data",
+    "asp-dotnet-errors.data",
+    "iis-errors.data",
+    "java-classes.data",
+    "lfi-os-files.data",
+    "php-errors.data",
+    "php-function-names-933150.data",
+    "php-variables.data",
+    "restricted-files.data",
+    "restricted-upload.data",
+    "ruby-errors.data",
+    "scanners-user-agents.data",
+    "sql-errors.data",
+    "ssrf-no-scheme.data",
+    "ssrf.data",
+    "unix-shell-aliases.data",
+    "unix-shell-builtins.data",
+    "unix-shell.data",
+    "web-shells-asp.data",
+    "web-shells-php.data",
+    "windows-powershell-commands.data"
+  ],
+  "files": [
+    {
+      "source": "REQUEST-901-INITIALIZATION.conf",
+      "module": "rules/request_901_initialization.rss",
+      "sec_rule": 33,
+      "sec_action": 1,
+      "sec_marker": 1
+    },
+    {
+      "source": "REQUEST-905-COMMON-EXCEPTIONS.conf",
+      "module": "rules/request_905_common_exceptions.rss",
+      "sec_rule": 5,
+      "sec_action": 0,
+      "sec_marker": 0
+    },
+    {
+      "source": "REQUEST-911-METHOD-ENFORCEMENT.conf",
+      "module": "rules/request_911_method_enforcement.rss",
+      "sec_rule": 9,
+      "sec_action": 0,
+      "sec_marker": 1
+    },
+    {
+      "source": "REQUEST-913-SCANNER-DETECTION.conf",
+      "module": "rules/request_913_scanner_detection.rss",
+      "sec_rule": 9,
+      "sec_action": 0,
+      "sec_marker": 1
+    },
+    {
+      "source": "REQUEST-920-PROTOCOL-ENFORCEMENT.conf",
+      "module": "rules/request_920_protocol_enforcement.rss",
+      "sec_rule": 105,
+      "sec_action": 0,
+      "sec_marker": 2
+    },
+    {
+      "source": "REQUEST-921-PROTOCOL-ATTACK.conf",
+      "module": "rules/request_921_protocol_attack.rss",
+      "sec_rule": 26,
+      "sec_action": 0,
+      "sec_marker": 1
+    },
+    {
+      "source": "REQUEST-922-MULTIPART-ATTACK.conf",
+      "module": "rules/request_922_multipart_attack.rss",
+      "sec_rule": 7,
+      "sec_action": 0,
+      "sec_marker": 0
+    },
+    {
+      "source": "REQUEST-930-APPLICATION-ATTACK-LFI.conf",
+      "module": "rules/request_930_application_attack_lfi.rss",
+      "sec_rule": 14,
+      "sec_action": 0,
+      "sec_marker": 1
+    },
+    {
+      "source": "REQUEST-931-APPLICATION-ATTACK-RFI.conf",
+      "module": "rules/request_931_application_attack_rfi.rss",
+      "sec_rule": 14,
+      "sec_action": 0,
+      "sec_marker": 1
+    },
+    {
+      "source": "REQUEST-932-APPLICATION-ATTACK-RCE.conf",
+      "module": "rules/request_932_application_attack_rce.rss",
+      "sec_rule": 69,
+      "sec_action": 0,
+      "sec_marker": 1
+    },
+    {
+      "source": "REQUEST-933-APPLICATION-ATTACK-PHP.conf",
+      "module": "rules/request_933_application_attack_php.rss",
+      "sec_rule": 30,
+      "sec_action": 0,
+      "sec_marker": 1
+    },
+    {
+      "source": "REQUEST-934-APPLICATION-ATTACK-GENERIC.conf",
+      "module": "rules/request_934_application_attack_generic.rss",
+      "sec_rule": 22,
+      "sec_action": 0,
+      "sec_marker": 1
+    },
+    {
+      "source": "REQUEST-941-APPLICATION-ATTACK-XSS.conf",
+      "module": "rules/request_941_application_attack_xss.rss",
+      "sec_rule": 43,
+      "sec_action": 0,
+      "sec_marker": 1
+    },
+    {
+      "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+      "module": "rules/request_942_application_attack_sqli.rss",
+      "sec_rule": 73,
+      "sec_action": 0,
+      "sec_marker": 1
+    },
+    {
+      "source": "REQUEST-943-APPLICATION-ATTACK-SESSION-FIXATION.conf",
+      "module": "rules/request_943_application_attack_session_fixation.rss",
+      "sec_rule": 14,
+      "sec_action": 0,
+      "sec_marker": 1
+    },
+    {
+      "source": "REQUEST-944-APPLICATION-ATTACK-JAVA.conf",
+      "module": "rules/request_944_application_attack_java.rss",
+      "sec_rule": 24,
+      "sec_action": 0,
+      "sec_marker": 1
+    },
+    {
+      "source": "REQUEST-949-BLOCKING-EVALUATION.conf",
+      "module": "rules/request_949_blocking_evaluation.rss",
+      "sec_rule": 27,
+      "sec_action": 2,
+      "sec_marker": 2
+    },
+    {
+      "source": "REQUEST-999-COMMON-EXCEPTIONS-AFTER.conf",
+      "module": "rules/request_999_common_exceptions_after.rss",
+      "sec_rule": 0,
+      "sec_action": 0,
+      "sec_marker": 0
+    },
+    {
+      "source": "RESPONSE-950-DATA-LEAKAGES.conf",
+      "module": "rules/response_950_data_leakages.rss",
+      "sec_rule": 14,
+      "sec_action": 0,
+      "sec_marker": 1
+    },
+    {
+      "source": "RESPONSE-951-DATA-LEAKAGES-SQL.conf",
+      "module": "rules/response_951_data_leakages_sql.rss",
+      "sec_rule": 26,
+      "sec_action": 0,
+      "sec_marker": 2
+    },
+    {
+      "source": "RESPONSE-952-DATA-LEAKAGES-JAVA.conf",
+      "module": "rules/response_952_data_leakages_java.rss",
+      "sec_rule": 10,
+      "sec_action": 0,
+      "sec_marker": 1
+    },
+    {
+      "source": "RESPONSE-953-DATA-LEAKAGES-PHP.conf",
+      "module": "rules/response_953_data_leakages_php.rss",
+      "sec_rule": 13,
+      "sec_action": 0,
+      "sec_marker": 1
+    },
+    {
+      "source": "RESPONSE-954-DATA-LEAKAGES-IIS.conf",
+      "module": "rules/response_954_data_leakages_iis.rss",
+      "sec_rule": 15,
+      "sec_action": 0,
+      "sec_marker": 1
+    },
+    {
+      "source": "RESPONSE-955-WEB-SHELLS.conf",
+      "module": "rules/response_955_web_shells.rss",
+      "sec_rule": 36,
+      "sec_action": 0,
+      "sec_marker": 1
+    },
+    {
+      "source": "RESPONSE-956-DATA-LEAKAGES-RUBY.conf",
+      "module": "rules/response_956_data_leakages_ruby.rss",
+      "sec_rule": 11,
+      "sec_action": 0,
+      "sec_marker": 1
+    },
+    {
+      "source": "RESPONSE-959-BLOCKING-EVALUATION.conf",
+      "module": "rules/response_959_blocking_evaluation.rss",
+      "sec_rule": 27,
+      "sec_action": 2,
+      "sec_marker": 2
+    },
+    {
+      "source": "RESPONSE-980-CORRELATION.conf",
+      "module": "rules/response_980_correlation.rss",
+      "sec_rule": 19,
+      "sec_action": 2,
+      "sec_marker": 3
+    }
+  ]
+}

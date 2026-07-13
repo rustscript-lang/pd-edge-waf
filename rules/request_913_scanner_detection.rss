@@ -1,0 +1,17 @@
+// Generated from OWASP CRS 4.28.0: REQUEST-913-SCANNER-DETECTION.conf
+// Do not edit by hand; run tools/convert_crs.py.
+use waf;
+
+pub fn load_request_913_scanner_detection() -> int {
+    waf::rule("REQUEST-913-SCANNER-DETECTION.conf", 17, 913011, 1, 0, "TX:DETECTION_PARANOIA_LEVEL", "@lt", "1", "id:913011,phase:1,pass,nolog,tag:'OWASP_CRS',ver:'OWASP_CRS/4.28.0',skipAfter:END-REQUEST-913-SCANNER-DETECTION", "");
+    waf::rule("REQUEST-913-SCANNER-DETECTION.conf", 18, 913012, 2, 0, "TX:DETECTION_PARANOIA_LEVEL", "@lt", "1", "id:913012,phase:2,pass,nolog,tag:'OWASP_CRS',ver:'OWASP_CRS/4.28.0',skipAfter:END-REQUEST-913-SCANNER-DETECTION", "");
+    waf::rule("REQUEST-913-SCANNER-DETECTION.conf", 38, 913100, 1, 0, "REQUEST_HEADERS:User-Agent", "@pmFromFile", "scanners-user-agents.data", "id:913100, phase:1, block, capture, t:none, msg:'Found User-Agent associated with security scanner', logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}', tag:'application-multi', tag:'language-multi', tag:'platform-multi', tag:'attack-reputation-scanner', tag:'paranoia-level/1', tag:'OWASP_CRS', tag:'OWASP_CRS/SCANNER-DETECTION', tag:'capec/1000/118/224/541/310', ver:'OWASP_CRS/4.28.0', severity:'CRITICAL', setvar:'tx.inbound_anomaly_score_pl1=+%{tx.critical_anomaly_score}'", "Found User-Agent associated with security scanner");
+    waf::rule("REQUEST-913-SCANNER-DETECTION.conf", 59, 913013, 1, 0, "TX:DETECTION_PARANOIA_LEVEL", "@lt", "2", "id:913013,phase:1,pass,nolog,tag:'OWASP_CRS',ver:'OWASP_CRS/4.28.0',skipAfter:END-REQUEST-913-SCANNER-DETECTION", "");
+    waf::rule("REQUEST-913-SCANNER-DETECTION.conf", 60, 913014, 2, 0, "TX:DETECTION_PARANOIA_LEVEL", "@lt", "2", "id:913014,phase:2,pass,nolog,tag:'OWASP_CRS',ver:'OWASP_CRS/4.28.0',skipAfter:END-REQUEST-913-SCANNER-DETECTION", "");
+    waf::rule("REQUEST-913-SCANNER-DETECTION.conf", 67, 913015, 1, 0, "TX:DETECTION_PARANOIA_LEVEL", "@lt", "3", "id:913015,phase:1,pass,nolog,tag:'OWASP_CRS',ver:'OWASP_CRS/4.28.0',skipAfter:END-REQUEST-913-SCANNER-DETECTION", "");
+    waf::rule("REQUEST-913-SCANNER-DETECTION.conf", 68, 913016, 2, 0, "TX:DETECTION_PARANOIA_LEVEL", "@lt", "3", "id:913016,phase:2,pass,nolog,tag:'OWASP_CRS',ver:'OWASP_CRS/4.28.0',skipAfter:END-REQUEST-913-SCANNER-DETECTION", "");
+    waf::rule("REQUEST-913-SCANNER-DETECTION.conf", 75, 913017, 1, 0, "TX:DETECTION_PARANOIA_LEVEL", "@lt", "4", "id:913017,phase:1,pass,nolog,tag:'OWASP_CRS',ver:'OWASP_CRS/4.28.0',skipAfter:END-REQUEST-913-SCANNER-DETECTION", "");
+    waf::rule("REQUEST-913-SCANNER-DETECTION.conf", 76, 913018, 2, 0, "TX:DETECTION_PARANOIA_LEVEL", "@lt", "4", "id:913018,phase:2,pass,nolog,tag:'OWASP_CRS',ver:'OWASP_CRS/4.28.0',skipAfter:END-REQUEST-913-SCANNER-DETECTION", "");
+    waf::marker("REQUEST-913-SCANNER-DETECTION.conf", 86, "END-REQUEST-913-SCANNER-DETECTION");
+    10
+}

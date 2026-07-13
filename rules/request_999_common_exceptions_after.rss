@@ -1,0 +1,7 @@
+// Generated from OWASP CRS 4.28.0: REQUEST-999-COMMON-EXCEPTIONS-AFTER.conf
+// Do not edit by hand; run tools/convert_crs.py.
+use waf;
+
+pub fn load_request_999_common_exceptions_after() -> int {
+    0
+}

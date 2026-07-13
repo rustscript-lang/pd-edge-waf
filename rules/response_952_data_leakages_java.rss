@@ -1,0 +1,18 @@
+// Generated from OWASP CRS 4.28.0: RESPONSE-952-DATA-LEAKAGES-JAVA.conf
+// Do not edit by hand; run tools/convert_crs.py.
+use waf;
+
+pub fn load_response_952_data_leakages_java() -> int {
+    waf::rule("RESPONSE-952-DATA-LEAKAGES-JAVA.conf", 16, 952010, 4, 0, "RESPONSE_HEADERS:Content-Encoding", "@pm", "gzip compress deflate br zstd", "id:952010, phase:4, pass, nolog, tag:'OWASP_CRS', tag:'OWASP_CRS/DATA-LEAKAGES-JAVA', ver:'OWASP_CRS/4.28.0', skipAfter:END-RESPONSE-952-DATA-LEAKAGES-JAVA", "");
+    waf::rule("RESPONSE-952-DATA-LEAKAGES-JAVA.conf", 26, 952011, 3, 0, "TX:DETECTION_PARANOIA_LEVEL", "@lt", "1", "id:952011,phase:3,pass,nolog,tag:'OWASP_CRS',ver:'OWASP_CRS/4.28.0',skipAfter:END-RESPONSE-952-DATA-LEAKAGES-JAVA", "");
+    waf::rule("RESPONSE-952-DATA-LEAKAGES-JAVA.conf", 27, 952012, 4, 0, "TX:DETECTION_PARANOIA_LEVEL", "@lt", "1", "id:952012,phase:4,pass,nolog,tag:'OWASP_CRS',ver:'OWASP_CRS/4.28.0',skipAfter:END-RESPONSE-952-DATA-LEAKAGES-JAVA", "");
+    waf::rule("RESPONSE-952-DATA-LEAKAGES-JAVA.conf", 42, 952110, 4, 0, "RESPONSE_BODY", "@rx", "(?i)\\b(?:java[\\.a-z]+E(?:xception|rror)|(?:org|com)\\.[\\.a-z]+Exception|Exception in thread \\\"[^\\\"]*\\\"|at[\\s\\x0b]+(?:ja(?:vax?|karta)|org|com))\\b", "id:952110, phase:4, block, capture, t:none, msg:'Java Errors', logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}', tag:'application-multi', tag:'language-java', tag:'platform-multi', tag:'attack-disclosure', tag:'paranoia-level/1', tag:'OWASP_CRS', tag:'OWASP_CRS/DATA-LEAKAGES-JAVA', tag:'capec/1000/118/116', ver:'OWASP_CRS/4.28.0', severity:'ERROR', setvar:'tx.outbound_anomaly_score_pl1=+%{tx.error_anomaly_score}'", "Java Errors");
+    waf::rule("RESPONSE-952-DATA-LEAKAGES-JAVA.conf", 64, 952013, 3, 0, "TX:DETECTION_PARANOIA_LEVEL", "@lt", "2", "id:952013,phase:3,pass,nolog,tag:'OWASP_CRS',ver:'OWASP_CRS/4.28.0',skipAfter:END-RESPONSE-952-DATA-LEAKAGES-JAVA", "");
+    waf::rule("RESPONSE-952-DATA-LEAKAGES-JAVA.conf", 65, 952014, 4, 0, "TX:DETECTION_PARANOIA_LEVEL", "@lt", "2", "id:952014,phase:4,pass,nolog,tag:'OWASP_CRS',ver:'OWASP_CRS/4.28.0',skipAfter:END-RESPONSE-952-DATA-LEAKAGES-JAVA", "");
+    waf::rule("RESPONSE-952-DATA-LEAKAGES-JAVA.conf", 72, 952015, 3, 0, "TX:DETECTION_PARANOIA_LEVEL", "@lt", "3", "id:952015,phase:3,pass,nolog,tag:'OWASP_CRS',ver:'OWASP_CRS/4.28.0',skipAfter:END-RESPONSE-952-DATA-LEAKAGES-JAVA", "");
+    waf::rule("RESPONSE-952-DATA-LEAKAGES-JAVA.conf", 73, 952016, 4, 0, "TX:DETECTION_PARANOIA_LEVEL", "@lt", "3", "id:952016,phase:4,pass,nolog,tag:'OWASP_CRS',ver:'OWASP_CRS/4.28.0',skipAfter:END-RESPONSE-952-DATA-LEAKAGES-JAVA", "");
+    waf::rule("RESPONSE-952-DATA-LEAKAGES-JAVA.conf", 80, 952017, 3, 0, "TX:DETECTION_PARANOIA_LEVEL", "@lt", "4", "id:952017,phase:3,pass,nolog,tag:'OWASP_CRS',ver:'OWASP_CRS/4.28.0',skipAfter:END-RESPONSE-952-DATA-LEAKAGES-JAVA", "");
+    waf::rule("RESPONSE-952-DATA-LEAKAGES-JAVA.conf", 81, 952018, 4, 0, "TX:DETECTION_PARANOIA_LEVEL", "@lt", "4", "id:952018,phase:4,pass,nolog,tag:'OWASP_CRS',ver:'OWASP_CRS/4.28.0',skipAfter:END-RESPONSE-952-DATA-LEAKAGES-JAVA", "");
+    waf::marker("RESPONSE-952-DATA-LEAKAGES-JAVA.conf", 91, "END-RESPONSE-952-DATA-LEAKAGES-JAVA");
+    11
+}

@@ -10,7 +10,13 @@ import shutil
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-DIRECTIVES = ("SecRule", "SecAction", "SecMarker")
+DIRECTIVES = (
+    "SecRule",
+    "SecAction",
+    "SecMarker",
+    "SecRuleUpdateTargetById",
+    "SecComponentSignature",
+)
 
 
 @dataclass
@@ -27,6 +33,7 @@ class Directive:
     actions: str = ""
     message: str = ""
     marker: str = ""
+    value: str = ""
 
 
 def logical_directives(text: str) -> list[tuple[int, str]]:
@@ -179,6 +186,38 @@ def parse_conf(path: Path) -> list[Directive]:
                 )
             )
             expecting_chain = False
+        elif kind == "SecRuleUpdateTargetById":
+            if len(tokens) != 3:
+                raise ValueError(
+                    f"{path}:{line_no}: SecRuleUpdateTargetById needs ID and target"
+                )
+            parsed.append(
+                Directive(
+                    kind=kind,
+                    source=path.name,
+                    source_line=line_no,
+                    rule_id=int(tokens[1]),
+                    phase=0,
+                    chain_index=0,
+                    value=tokens[2],
+                )
+            )
+            expecting_chain = False
+        elif kind == "SecComponentSignature":
+            if len(tokens) != 2:
+                raise ValueError(f"{path}:{line_no}: SecComponentSignature needs a value")
+            parsed.append(
+                Directive(
+                    kind=kind,
+                    source=path.name,
+                    source_line=line_no,
+                    rule_id=-1,
+                    phase=0,
+                    chain_index=0,
+                    value=tokens[1],
+                )
+            )
+            expecting_chain = False
     return parsed
 
 
@@ -219,10 +258,18 @@ def render_module(filename: str, module: str, directives: list[Directive], versi
             args = [directive.source, directive.source_line, directive.rule_id, directive.phase, directive.actions]
             rendered = ", ".join(rss_string(v) if isinstance(v, str) else str(v) for v in args)
             lines.append(f"    waf::action({rendered});")
-        else:
+        elif directive.kind == "SecMarker":
             args = [directive.source, directive.source_line, directive.marker]
             rendered = ", ".join(rss_string(v) if isinstance(v, str) else str(v) for v in args)
             lines.append(f"    waf::marker({rendered});")
+        elif directive.kind == "SecRuleUpdateTargetById":
+            args = [directive.source, directive.source_line, directive.rule_id, directive.value]
+            rendered = ", ".join(rss_string(v) if isinstance(v, str) else str(v) for v in args)
+            lines.append(f"    waf::update_target({rendered});")
+        else:
+            args = [directive.source, directive.source_line, directive.value]
+            rendered = ", ".join(rss_string(v) if isinstance(v, str) else str(v) for v in args)
+            lines.append(f"    waf::component_signature({rendered});")
     lines.extend([f"    {len(directives)}", "}", ""])
     return "\n".join(lines)
 
@@ -278,10 +325,54 @@ def main() -> None:
                 "sec_rule": sum(d.kind == "SecRule" for d in directives),
                 "sec_action": sum(d.kind == "SecAction" for d in directives),
                 "sec_marker": sum(d.kind == "SecMarker" for d in directives),
+                "sec_rule_update_target_by_id": sum(
+                    d.kind == "SecRuleUpdateTargetById" for d in directives
+                ),
+                "sec_component_signature": sum(
+                    d.kind == "SecComponentSignature" for d in directives
+                ),
             }
         )
 
     expected = len(all_directives)
+    declared_ids = {
+        directive.rule_id
+        for directive in all_directives
+        if directive.kind in ("SecRule", "SecAction") and directive.rule_id >= 0
+    }
+    target_update_ids = {
+        directive.rule_id
+        for directive in all_directives
+        if directive.kind == "SecRuleUpdateTargetById"
+    }
+    missing_update_ids = sorted(target_update_ids - declared_ids)
+    if missing_update_ids:
+        raise ValueError(f"target updates reference missing rule IDs: {missing_update_ids}")
+
+    marker_names = {
+        directive.marker for directive in all_directives if directive.kind == "SecMarker"
+    }
+    skip_after_names = [
+        action_value(directive.actions, "skipAfter")
+        for directive in all_directives
+        if action_value(directive.actions, "skipAfter")
+    ]
+    missing_markers = sorted(set(skip_after_names) - marker_names)
+    if missing_markers:
+        raise ValueError(f"skipAfter references missing markers: {missing_markers}")
+
+    pm_from_file_names = sorted(
+        {
+            directive.pattern
+            for directive in all_directives
+            if directive.kind == "SecRule"
+            and directive.operator.lstrip("!") == "@pmFromFile"
+        }
+    )
+    missing_data_files = sorted(set(pm_from_file_names) - set(data_files))
+    if missing_data_files:
+        raise ValueError(f"operators reference missing data files: {missing_data_files}")
+
     entry_path = output_dir / "ruleset.rss"
     entry_path.write_text(render_entry(modules, expected, args.version), encoding="utf-8")
     manifest = {
@@ -293,6 +384,45 @@ def main() -> None:
         "sec_rule_count": sum(d.kind == "SecRule" for d in all_directives),
         "sec_action_count": sum(d.kind == "SecAction" for d in all_directives),
         "sec_marker_count": sum(d.kind == "SecMarker" for d in all_directives),
+        "sec_rule_update_target_by_id_count": sum(
+            d.kind == "SecRuleUpdateTargetById" for d in all_directives
+        ),
+        "sec_component_signature_count": sum(
+            d.kind == "SecComponentSignature" for d in all_directives
+        ),
+        "unique_rule_id_count": len(declared_ids),
+        "chain_group_count": sum(
+            d.kind == "SecRule"
+            and d.chain_index == 0
+            and re.search(r"(?:^|,)\s*chain(?:,|$)", d.actions) is not None
+            for d in all_directives
+        ),
+        "chain_child_count": sum(
+            d.kind == "SecRule" and d.chain_index > 0 for d in all_directives
+        ),
+        "skip_after_count": len(skip_after_names),
+        "tag_count": sum(
+            len(re.findall(r"(?:^|,)\s*tag:", d.actions)) for d in all_directives
+        ),
+        "transformation_count": sum(
+            len(re.findall(r"(?:^|,)\s*t:", d.actions)) for d in all_directives
+        ),
+        "operator_variant_count": len(
+            {d.operator for d in all_directives if d.kind == "SecRule"}
+        ),
+        "xml_attribute_target_rule_count": sum(
+            d.kind == "SecRule" and "XML://@*" in d.targets for d in all_directives
+        ),
+        "pm_from_file_reference_count": sum(
+            d.kind == "SecRule" and d.operator.lstrip("!") == "@pmFromFile"
+            for d in all_directives
+        ),
+        "data_record_count": sum(
+            1
+            for data_file in sorted(source_dir.glob("*.data"))
+            for line in data_file.read_text(encoding="utf-8").splitlines()
+            if line.strip() and not line.lstrip().startswith("#")
+        ),
         "data_file_count": len(data_files),
         "data_files": data_files,
         "files": manifest_files,
@@ -305,8 +435,11 @@ def main() -> None:
         encoding="utf-8",
     )
     print(
-        f"generated {len(modules)} category modules with {manifest['sec_rule_count']} SecRule, "
-        f"{manifest['sec_action_count']} SecAction, and {manifest['sec_marker_count']} SecMarker directives"
+        f"generated {len(modules)} category modules with {manifest['directive_count']} directives: "
+        f"{manifest['sec_rule_count']} SecRule, {manifest['sec_action_count']} SecAction, "
+        f"{manifest['sec_marker_count']} SecMarker, "
+        f"{manifest['sec_rule_update_target_by_id_count']} SecRuleUpdateTargetById, and "
+        f"{manifest['sec_component_signature_count']} SecComponentSignature"
     )
 
 

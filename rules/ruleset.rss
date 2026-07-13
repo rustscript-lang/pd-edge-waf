@@ -56,4 +56,4 @@ loaded = loaded + response_955_web_shells::load_response_955_web_shells();
 loaded = loaded + response_956_data_leakages_ruby::load_response_956_data_leakages_ruby();
 loaded = loaded + response_959_blocking_evaluation::load_response_959_blocking_evaluation();
 loaded = loaded + response_980_correlation::load_response_980_correlation();
-assert(loaded == 732);
+assert(loaded == 788);

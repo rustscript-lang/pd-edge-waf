@@ -8,6 +8,9 @@ The repository is pinned to **OWASP CRS 4.28.0**. Its generated RustScript set c
 - 695 `SecRule` directives;
 - 7 `SecAction` directives;
 - 30 `SecMarker` directives;
+- 55 `SecRuleUpdateTargetById` directives;
+- 1 `SecComponentSignature` directive;
+- 788 active directives in total;
 - 21 associated CRS data files.
 
 ## Layout
@@ -39,9 +42,9 @@ waf::rule(
 );
 ```
 
-`SecAction` and `SecMarker` map to `waf::action(...)` and `waf::marker(...)`. Chained rules retain their parent ID and chain position. Targets, operator, pattern, actions, message, source category, and source line remain independently available to the host.
+`SecAction`, `SecMarker`, `SecRuleUpdateTargetById`, and `SecComponentSignature` map to `waf::action(...)`, `waf::marker(...)`, `waf::update_target(...)`, and `waf::component_signature(...)`. Chained rules retain their parent ID and chain position. Targets, operator, pattern, actions, message, source category, and source line remain independently available to the host.
 
-A `pd-edge` host using these modules must register the three `waf::*` imports and implement the desired ModSecurity-compatible operators, transformations, transaction variables, anomaly scoring, skip markers, and disruptive actions. The smoke test supplies a strict descriptor host and proves that the complete translated ruleset compiles, binds, and runs through the VM.
+A `pd-edge` host using these modules must register the five `waf::*` imports and implement the desired ModSecurity-compatible operators, transformations, transaction variables, anomaly scoring, skip markers, and disruptive actions. The smoke test supplies a strict descriptor host and proves that the complete translated ruleset compiles, binds, and runs through the VM.
 
 ## Verification
 

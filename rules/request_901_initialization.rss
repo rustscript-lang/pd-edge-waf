@@ -3,6 +3,7 @@
 use waf;
 
 pub fn load_request_901_initialization() -> int {
+    waf::component_signature("REQUEST-901-INITIALIZATION.conf", 29, "OWASP_CRS/4.28.0");
     waf::rule("REQUEST-901-INITIALIZATION.conf", 54, 901001, 1, 0, "&TX:crs_setup_version", "@eq", "0", "id:901001, phase:1, deny, status:500, log, auditlog, msg:'CRS is deployed without configuration! Please copy the crs-setup.conf.example template to crs-setup.conf, and include the crs-setup.conf file in your webserver configuration before including the CRS rules. See the INSTALL file in the CRS directory for detailed instructions', tag:'OWASP_CRS', ver:'OWASP_CRS/4.28.0', severity:'CRITICAL'", "CRS is deployed without configuration! Please copy the crs-setup.conf.example template to crs-setup.conf, and include the crs-setup.conf file in your webserver configuration before including the CRS rules. See the INSTALL file in the CRS directory for detailed instructions");
     waf::rule("REQUEST-901-INITIALIZATION.conf", 76, 901100, 1, 0, "&TX:inbound_anomaly_score_threshold", "@eq", "0", "id:901100, phase:1, pass, nolog, tag:'OWASP_CRS', ver:'OWASP_CRS/4.28.0', setvar:'tx.inbound_anomaly_score_threshold=5'", "");
     waf::rule("REQUEST-901-INITIALIZATION.conf", 86, 901110, 1, 0, "&TX:outbound_anomaly_score_threshold", "@eq", "0", "id:901110, phase:1, pass, nolog, tag:'OWASP_CRS', ver:'OWASP_CRS/4.28.0', setvar:'tx.outbound_anomaly_score_threshold=4'", "");
@@ -38,5 +39,5 @@ pub fn load_request_901_initialization() -> int {
     waf::rule("REQUEST-901-INITIALIZATION.conf", 463, 901450, 1, 0, "TX:sampling_rnd100", "!@lt", "%{tx.sampling_percentage}", "id:901450, phase:1, pass, log, noauditlog, msg:'Sampling: Disable the rule engine based on sampling_percentage %{TX.sampling_percentage} and random number %{TX.sampling_rnd100}', tag:'OWASP_CRS', ctl:ruleRemoveByTag=OWASP_CRS, ver:'OWASP_CRS/4.28.0'", "Sampling: Disable the rule engine based on sampling_percentage %{TX.sampling_percentage} and random number %{TX.sampling_rnd100}");
     waf::marker("REQUEST-901-INITIALIZATION.conf", 474, "END-SAMPLING");
     waf::rule("REQUEST-901-INITIALIZATION.conf", 482, 901500, 1, 0, "TX:detection_paranoia_level", "@lt", "%{tx.blocking_paranoia_level}", "id:901500, phase:1, deny, status:500, t:none, log, msg:'Detection paranoia level configured is lower than the paranoia level itself. This is illegal. Blocking request. Aborting', tag:'OWASP_CRS', ver:'OWASP_CRS/4.28.0'", "Detection paranoia level configured is lower than the paranoia level itself. This is illegal. Blocking request. Aborting");
-    35
+    36
 }

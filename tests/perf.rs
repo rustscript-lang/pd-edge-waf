@@ -3,16 +3,20 @@ use std::{
     time::{Duration, Instant},
 };
 
-use vm::{Value, Vm, VmStatus};
+use vm::{JitConfig, Value, Vm, VmStatus};
 
 const DEFAULT_WARMUP_BATCHES: usize = 1;
 const DEFAULT_MEASURED_BATCHES: usize = 5;
 const DEFAULT_BATCH_SIZE: usize = 2;
+const DEFAULT_JIT_STABLE_REQUESTS: usize = 2;
+const DEFAULT_JIT_MAX_WARMUP_REQUESTS: usize = 32;
 
 struct PerfConfig {
     warmup_batches: usize,
     measured_batches: usize,
     batch_size: usize,
+    jit_stable_requests: usize,
+    jit_max_warmup_requests: usize,
 }
 
 impl PerfConfig {
@@ -21,7 +25,21 @@ impl PerfConfig {
             warmup_batches: env_usize("WAF_PERF_WARMUP_BATCHES", DEFAULT_WARMUP_BATCHES, 1),
             measured_batches: env_usize("WAF_PERF_BATCHES", DEFAULT_MEASURED_BATCHES, 2),
             batch_size: env_usize("WAF_PERF_BATCH_SIZE", DEFAULT_BATCH_SIZE, 2),
+            jit_stable_requests: env_usize(
+                "WAF_PERF_JIT_STABLE_REQUESTS",
+                DEFAULT_JIT_STABLE_REQUESTS,
+                2,
+            ),
+            jit_max_warmup_requests: env_usize(
+                "WAF_PERF_JIT_MAX_WARMUP_REQUESTS",
+                DEFAULT_JIT_MAX_WARMUP_REQUESTS,
+                4,
+            ),
         }
+    }
+
+    fn fixed_warmup_requests(&self) -> usize {
+        self.warmup_batches * self.batch_size
     }
 }
 
@@ -29,6 +47,30 @@ struct PerfStats {
     average_request: Duration,
     min_batch_average: Duration,
     max_batch_average: Duration,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct JitCompilationState {
+    attempts: usize,
+    recorded_traces: usize,
+    native_traces: usize,
+}
+
+impl JitCompilationState {
+    fn capture(vm: &Vm) -> Self {
+        let snapshot = vm.jit_snapshot();
+        Self {
+            attempts: snapshot.attempts.len(),
+            recorded_traces: snapshot.traces.len(),
+            native_traces: vm.jit_native_trace_count(),
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+enum WarmupPolicy {
+    Fixed,
+    JitUntilStable,
 }
 
 fn env_usize(name: &str, default: usize, minimum: usize) -> usize {
@@ -120,6 +162,61 @@ fn execute_and_verify(vm: &mut Vm, expected: &Value, label: &str) -> VmStatus {
     status
 }
 
+fn execute_and_reset(vm: &mut Vm, expected: &Value, label: &str) {
+    execute_and_verify(vm, expected, label);
+    vm.reset_for_reuse();
+}
+
+fn run_fixed_warmup(vm: &mut Vm, expected: &Value, label: &str, requests: usize) -> usize {
+    for _ in 0..requests {
+        execute_and_reset(vm, expected, label);
+    }
+    requests
+}
+
+fn run_jit_warmup_until_stable(
+    vm: &mut Vm,
+    expected: &Value,
+    label: &str,
+    config: &PerfConfig,
+) -> usize {
+    assert!(vm.jit_config().enabled, "JIT warmup requires JIT");
+    let minimum_requests = config
+        .fixed_warmup_requests()
+        .max(vm.jit_config().hot_loop_threshold as usize);
+    let required_requests = minimum_requests + config.jit_stable_requests;
+    assert!(
+        config.jit_max_warmup_requests >= required_requests,
+        "WAF_PERF_JIT_MAX_WARMUP_REQUESTS must be at least {required_requests}"
+    );
+
+    let mut previous = JitCompilationState::capture(vm);
+    let mut stable_requests = 0usize;
+    for request in 1..=config.jit_max_warmup_requests {
+        execute_and_reset(vm, expected, label);
+        let current = JitCompilationState::capture(vm);
+        if request >= minimum_requests && current == previous {
+            stable_requests += 1;
+        } else {
+            stable_requests = 0;
+        }
+        previous = current;
+
+        if stable_requests >= config.jit_stable_requests {
+            println!(
+                "jit_warmup label={label} requests={request} minimum_requests={minimum_requests} stable_requests={stable_requests} attempts={} recorded_traces={} native_traces={}",
+                current.attempts, current.recorded_traces, current.native_traces,
+            );
+            return request;
+        }
+    }
+
+    panic!(
+        "{label} JIT did not stabilize after {} warmup requests; last state: {previous:?}",
+        config.jit_max_warmup_requests
+    );
+}
+
 fn run_batch(vm: &mut Vm, expected: &Value, label: &str, batch_size: usize) -> Duration {
     let started = Instant::now();
     for request_index in 0..batch_size {
@@ -137,27 +234,37 @@ fn run_batch(vm: &mut Vm, expected: &Value, label: &str, batch_size: usize) -> D
 
 fn measure_case(
     label: &str,
-    program: vm::Program,
+    mut vm: Vm,
+    warmup_policy: WarmupPolicy,
     config: &PerfConfig,
     expected: &Value,
 ) -> PerfStats {
-    let mut vm = Vm::new(program);
     let execution_mode = if vm.jit_config().enabled {
         "trace_jit"
     } else {
         "interpreter"
     };
-
-    for _ in 0..config.warmup_batches {
-        for _ in 0..config.batch_size {
-            execute_and_verify(&mut vm, expected, label);
-            vm.reset_for_reuse();
+    let warmup_requests = match warmup_policy {
+        WarmupPolicy::Fixed => {
+            run_fixed_warmup(&mut vm, expected, label, config.fixed_warmup_requests())
         }
-    }
+        WarmupPolicy::JitUntilStable => {
+            run_jit_warmup_until_stable(&mut vm, expected, label, config)
+        }
+    };
+    let jit_before = JitCompilationState::capture(&vm);
 
     let mut batches = Vec::with_capacity(config.measured_batches);
     for _ in 0..config.measured_batches {
         batches.push(run_batch(&mut vm, expected, label, config.batch_size));
+    }
+
+    let jit_after = JitCompilationState::capture(&vm);
+    if vm.jit_config().enabled {
+        assert_eq!(
+            jit_after, jit_before,
+            "{label} compiled new JIT traces inside the measured region"
+        );
     }
 
     let total_duration: Duration = batches.iter().copied().sum();
@@ -179,16 +286,24 @@ fn measure_case(
     };
 
     println!(
-        "{label} mode={} batches={} batch_size={} requests={} average_us={:.3} min_batch_average_us={:.3} max_batch_average_us={:.3}",
-        execution_mode,
+        "{label} mode={execution_mode} warmup_requests={warmup_requests} batches={} batch_size={} requests={} average_us={:.3} min_batch_average_us={:.3} max_batch_average_us={:.3} jit_attempts={} recorded_traces={} native_traces={}",
         config.measured_batches,
         config.batch_size,
         total_requests,
         stats.average_request.as_secs_f64() * 1_000_000.0,
         stats.min_batch_average.as_secs_f64() * 1_000_000.0,
         stats.max_batch_average.as_secs_f64() * 1_000_000.0,
+        jit_after.attempts,
+        jit_after.recorded_traces,
+        jit_after.native_traces,
     );
     stats
+}
+
+fn incremental_average(measured: &PerfStats, baseline: &PerfStats) -> Duration {
+    measured
+        .average_request
+        .saturating_sub(baseline.average_request)
 }
 
 fn run_default_ruleset_perf() {
@@ -199,30 +314,48 @@ fn run_default_ruleset_perf() {
 
     let baseline = measure_case(
         "framework_baseline_perf",
-        baseline_program,
+        Vm::new(baseline_program),
+        WarmupPolicy::Fixed,
         &config,
         &expected,
     );
-    let default_ruleset = measure_case(
-        "default_ruleset_perf",
-        default_ruleset_program,
+    let interpreter = measure_case(
+        "default_ruleset_interpreter_perf",
+        Vm::new_with_jit_config(
+            default_ruleset_program.clone(),
+            JitConfig {
+                enabled: false,
+                ..JitConfig::default()
+            },
+        ),
+        WarmupPolicy::Fixed,
+        &config,
+        &expected,
+    );
+    let jit = measure_case(
+        "default_ruleset_jit_perf",
+        Vm::new(default_ruleset_program),
+        WarmupPolicy::JitUntilStable,
         &config,
         &expected,
     );
 
-    let incremental = default_ruleset
-        .average_request
-        .saturating_sub(baseline.average_request);
-    let ratio = default_ruleset.average_request.as_secs_f64()
-        / baseline.average_request.as_secs_f64().max(f64::EPSILON);
+    let interpreter_incremental = incremental_average(&interpreter, &baseline);
+    let jit_incremental = incremental_average(&jit, &baseline);
+    let jit_to_interpreter_ratio = jit.average_request.as_secs_f64()
+        / interpreter.average_request.as_secs_f64().max(f64::EPSILON);
     println!(
-        "waf_incremental_perf average_us={:.3} default_to_baseline_ratio={ratio:.3}",
-        incremental.as_secs_f64() * 1_000_000.0,
+        "waf_comparison_perf baseline_average_us={:.3} interpreter_average_us={:.3} interpreter_incremental_us={:.3} jit_average_us={:.3} jit_incremental_us={:.3} jit_to_interpreter_ratio={jit_to_interpreter_ratio:.3}",
+        baseline.average_request.as_secs_f64() * 1_000_000.0,
+        interpreter.average_request.as_secs_f64() * 1_000_000.0,
+        interpreter_incremental.as_secs_f64() * 1_000_000.0,
+        jit.average_request.as_secs_f64() * 1_000_000.0,
+        jit_incremental.as_secs_f64() * 1_000_000.0,
     );
 }
 
 #[test]
 #[ignore = "performance test; run explicitly with --ignored --nocapture"]
-fn baseline_and_default_ruleset_batch_latency() {
+fn baseline_interpreter_and_jit_batch_latency() {
     run_default_ruleset_perf();
 }

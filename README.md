@@ -85,7 +85,13 @@ Allowed traffic is forwarded and carries `x-waf-blocked: 0` plus its current sco
 
 ## Performance test
 
-The pd-vm performance test compiles both cases outside the timed region and evaluates the same fixed benign request context using pd-vm's default execution configuration (trace JIT on supported native targets, interpreter elsewhere). It always measures the framework baseline first. The baseline constructs and validates the simulated request context in RSS without loading any WAF rules or calling `inspect_request`. The second case executes the committed default enabled ruleset.
+The pd-vm performance test compiles all programs outside the timed region and evaluates the same fixed benign request context in three stages:
+
+1. framework baseline, without loading WAF rules or calling `inspect_request`;
+2. default enabled ruleset in interpreter mode;
+3. default enabled ruleset with trace JIT.
+
+The JIT case warms up for at least `hot_loop_threshold` requests and then requires the JIT compilation state to remain unchanged for consecutive requests. The test captures compile attempts, recorded traces, and native traces before and after the measured batches and fails if any count changes inside the timed region.
 
 ```bash
 cargo test --release --test perf -- --ignored --nocapture
@@ -97,13 +103,17 @@ Defaults:
 - 5 measured batches;
 - 2 requests per batch;
 - 10 measured requests in total.
+- 2 consecutive unchanged JIT warmup requests;
+- at most 32 JIT warmup requests.
 
-Each case runs warmup traffic followed by multiple measured batches. The output reports both average latencies, minimum/maximum batch averages, incremental WAF latency, and the default-ruleset-to-baseline ratio. Batch counts can be overridden without editing the test:
+The output reports each mode's average latency, minimum/maximum batch averages, JIT compilation state, incremental WAF latency, and the JIT-to-interpreter ratio. Counts can be overridden without editing the test:
 
 ```bash
 WAF_PERF_WARMUP_BATCHES=2 \
 WAF_PERF_BATCHES=10 \
 WAF_PERF_BATCH_SIZE=4 \
+WAF_PERF_JIT_STABLE_REQUESTS=3 \
+WAF_PERF_JIT_MAX_WARMUP_REQUESTS=48 \
 cargo test --release --test perf -- --ignored --nocapture
 ```
 

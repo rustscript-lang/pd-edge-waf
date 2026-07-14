@@ -20,6 +20,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: rustscript-lang/rustscript
+          ref: 725f0936f143ec459e15009435134be92df51b14
           path: rustscript
       - uses: actions/checkout@v4
         with:

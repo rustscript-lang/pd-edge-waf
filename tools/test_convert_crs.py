@@ -104,9 +104,38 @@ class TransformPlanTests(unittest.TestCase):
         )
         self.assertEqual(
             convert_crs.render_directive_call(directive, {}),
-            'next = engine_bundle::update_target(next, 123, "!REQUEST_HEADERS", "Cookie", "!REQUEST_HEADERS:Cookie"); '
-            'next = engine_bundle::update_target(next, 123, "!ARGS", "/^secret:/", "!ARGS:/^secret:/");',
+            'next = engine_bundle::update_target(next, 123, "!REQUEST_HEADERS", "Cookie"); '
+            'next = engine_bundle::update_target(next, 123, "!ARGS", "/^secret:/");',
         )
+
+    def test_entry_includes_relevant_target_update_dependencies(self) -> None:
+        enabled_rule = convert_crs.Directive(
+            kind="SecRule", source="REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+            source_line=1, rule_id=942290, phase=2, chain_index=0,
+            targets="REQUEST_COOKIES", operator="@rx", pattern="attack",
+        )
+        relevant_update = convert_crs.Directive(
+            kind="SecRuleUpdateTargetById", source="REQUEST-999-COMMON-EXCEPTIONS-AFTER.conf",
+            source_line=2, rule_id=942290, phase=0, chain_index=0,
+            value="!REQUEST_COOKIES:_ga",
+        )
+        irrelevant_update = convert_crs.Directive(
+            kind="SecRuleUpdateTargetById", source="REQUEST-999-COMMON-EXCEPTIONS-AFTER.conf",
+            source_line=3, rule_id=941100, phase=0, chain_index=0,
+            value="!REQUEST_COOKIES:_ga",
+        )
+        rendered = convert_crs.render_entry(
+            [enabled_rule, relevant_update, irrelevant_update],
+            "4.28.0", {}, {"request_942_application_attack_sqli"},
+        )
+        self.assertNotIn("fn evaluate_request_999_common_exceptions_after", rendered)
+        self.assertIn(
+            '"REQUEST_COOKIES", "", "REQUEST_COOKIES", '
+            '"!REQUEST_COOKIES", "_ga", "!REQUEST_COOKIES:_ga"',
+            rendered,
+        )
+        self.assertNotIn("update_target(next,", rendered)
+        self.assertNotIn("941100", rendered)
 
     def test_rendered_rule_has_precompiled_targets_and_decimal_plan(self) -> None:
         directive = convert_crs.Directive(

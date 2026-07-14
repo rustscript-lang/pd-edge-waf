@@ -318,12 +318,28 @@ def target_descriptors(targets: str) -> list[str]:
     return descriptors
 
 
-def rule_arguments(directive: Directive, data_contents: dict[str, str]) -> list[str]:
+def collect_target_updates(directives: list[Directive]) -> dict[int, list[str]]:
+    updates: dict[int, list[str]] = {}
+    for directive in directives:
+        if directive.kind == "SecRuleUpdateTargetById":
+            updates.setdefault(directive.rule_id, []).extend(
+                target_descriptors(directive.value)
+            )
+    return updates
+
+
+def rule_arguments(
+    directive: Directive,
+    data_contents: dict[str, str],
+    target_updates: dict[int, list[str]] | None = None,
+) -> list[str]:
     pattern = directive.pattern
     if directive.operator.lstrip("!") == "@pmFromFile":
         pattern = data_contents.get(pattern, "")
     transforms = action_values(directive.actions, "t")
     descriptors = target_descriptors(directive.targets)
+    if target_updates:
+        descriptors.extend(target_updates.get(directive.rule_id, []))
     text = [
         rss_string(directive.operator),
         rss_string(pattern),
@@ -346,9 +362,15 @@ def rule_arguments(directive: Directive, data_contents: dict[str, str]) -> list[
     ]
 
 
-def render_directive_call(directive: Directive, data_contents: dict[str, str]) -> str:
+def render_directive_call(
+    directive: Directive,
+    data_contents: dict[str, str],
+    target_updates: dict[int, list[str]] | None = None,
+) -> str:
     if directive.kind == "SecRule":
-        rendered = ", ".join(rule_arguments(directive, data_contents))
+        rendered = ", ".join(
+            rule_arguments(directive, data_contents, target_updates)
+        )
         return f"next = engine_bundle::apply_rule(next, {rendered});"
     if directive.kind == "SecAction":
         return f"next = engine_bundle::apply_action(next, {directive.phase});"
@@ -358,11 +380,11 @@ def render_directive_call(directive: Directive, data_contents: dict[str, str]) -
         descriptors = target_descriptors(directive.value)
         calls = []
         for index in range(0, len(descriptors), 3):
-            base, selector, canonical = descriptors[index : index + 3]
+            base, selector, _canonical = descriptors[index : index + 3]
             calls.append(
                 "next = engine_bundle::update_target("
                 f"next, {directive.rule_id}, {rss_string(base)}, "
-                f"{rss_string(selector)}, {rss_string(canonical)});"
+                f"{rss_string(selector)});"
             )
         return " ".join(calls)
     return f"next = engine_bundle::component_signature(next, {rss_string(directive.value)});"
@@ -374,6 +396,7 @@ def render_module(
     directives: list[Directive],
     version: str,
     data_contents: dict[str, str],
+    target_updates: dict[int, list[str]],
 ) -> str:
     lines = [
         f"// Generated from OWASP CRS {version}: {filename}",
@@ -384,7 +407,9 @@ def render_module(
         "    let mut next = state;",
     ]
     for directive in directives:
-        lines.append(f"    {render_directive_call(directive, data_contents)}")
+        lines.append(
+            f"    {render_directive_call(directive, data_contents, target_updates)}"
+        )
     lines.extend(["    next", "}", ""])
     return "\n".join(lines)
 
@@ -395,6 +420,7 @@ def render_entry(
     data_contents: dict[str, str],
     enabled_categories: set[str],
 ) -> str:
+    target_updates = collect_target_updates(directives)
     grouped: dict[str, list[Directive]] = {}
     for directive in directives:
         if module_name(directive.source) in enabled_categories:
@@ -422,7 +448,7 @@ def render_entry(
                 '    next = engine_bundle::apply_rule(next, 942100, 2, 0, false, ["@detectSQLi", "", "", "SQL Injection Attack Detected", "QUERY_STRING", "", "QUERY_STRING", "ARGS", "", "ARGS", "REQUEST_BODY", "", "REQUEST_BODY"], 3, 15979, 1, 5, false, 403);'
             )
         for directive in source_directives:
-            call = render_directive_call(directive, data_contents)
+            call = render_directive_call(directive, data_contents, target_updates)
             lines.append(
                 f'    if engine_bundle::category_enabled(&next, "{category}") {{ {call} }}'
             )
@@ -441,13 +467,10 @@ def render_entry(
             "    let mut next = state;",
         ]
     )
-    exception_source = "REQUEST-999-COMMON-EXCEPTIONS-AFTER.conf"
-    if exception_source in evaluators:
-        append_enabled_call(exception_source)
     for phase in (1, 2):
         lines.append(f"    next = engine_bundle::set_phase(next, {phase});")
         for source in grouped:
-            if source.startswith("REQUEST-") and source != exception_source:
+            if source.startswith("REQUEST-"):
                 append_enabled_call(source)
     lines.extend(["    next", "}", ""])
 
@@ -526,13 +549,11 @@ def main() -> None:
     manifest_files = []
     modules: list[tuple[str, int]] = []
     all_directives: list[Directive] = []
+    parsed_modules: list[tuple[Path, str, list[Directive]]] = []
     for conf in sorted(source_dir.glob("*.conf")):
         directives = parse_conf(conf)
         name = module_name(conf.name)
-        (output_dir / f"{name}.rss").write_text(
-            render_module(conf.name, name, directives, args.version, data_contents),
-            encoding="utf-8",
-        )
+        parsed_modules.append((conf, name, directives))
         modules.append((name, len(directives)))
         all_directives.extend(directives)
         manifest_files.append(
@@ -549,6 +570,20 @@ def main() -> None:
                     d.kind == "SecComponentSignature" for d in directives
                 ),
             }
+        )
+
+    target_updates = collect_target_updates(all_directives)
+    for conf, name, directives in parsed_modules:
+        (output_dir / f"{name}.rss").write_text(
+            render_module(
+                conf.name,
+                name,
+                directives,
+                args.version,
+                data_contents,
+                target_updates,
+            ),
+            encoding="utf-8",
         )
 
     expected = len(all_directives)

@@ -144,3 +144,18 @@ fn enabled_ruleset_fits_the_standard_vm() {
     assert!(compiled.program.local_count <= 256);
     assert!(compiled.program.imports.is_empty());
 }
+
+#[test]
+fn enabled_ruleset_folds_common_exception_updates_into_rule_payloads() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let source = std::fs::read_to_string(root.join("rules/ruleset.rss"))
+        .expect("enabled ruleset source should be readable");
+    assert!(!source.contains("fn evaluate_request_999_common_exceptions_after"));
+    assert!(!source.contains("engine_bundle::update_target(next,"));
+    assert!(!source.contains("update_target(next, 941100"));
+    let rule = source
+        .lines()
+        .find(|line| line.contains("apply_rule(next, 942290,"))
+        .expect("enabled rule 942290 should exist");
+    assert!(rule.contains("\"!REQUEST_COOKIES\", \"__gads\", \"!REQUEST_COOKIES:__gads\""));
+}

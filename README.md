@@ -83,6 +83,32 @@ Blocked responses return HTTP 403 with:
 
 Allowed traffic is forwarded and carries `x-waf-blocked: 0` plus its current score.
 
+## Performance test
+
+The pd-vm performance test compiles the standalone default ruleset once, outside the timed region, then evaluates a fixed benign request context repeatedly in interpreter mode. It runs warmup traffic first and reports the average across multiple measured batches:
+
+```bash
+cargo test --release --test perf -- --ignored --nocapture
+```
+
+Defaults:
+
+- 1 warmup batch;
+- 5 measured batches;
+- 2 requests per batch;
+- 10 measured requests in total.
+
+The output includes the overall average latency per request and the minimum/maximum batch-average latency. Batch counts can be overridden without editing the test:
+
+```bash
+WAF_PERF_WARMUP_BATCHES=2 \
+WAF_PERF_BATCHES=10 \
+WAF_PERF_BATCH_SIZE=4 \
+cargo test --release --test perf -- --ignored --nocapture
+```
+
+Compilation latency is excluded. Each measured request rebuilds the simulated request transaction inside RSS and executes the committed default enabled ruleset through pd-vm.
+
 ## Tests
 
 Run the VM and real HTTP end-to-end tests:

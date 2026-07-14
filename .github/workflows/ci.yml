@@ -31,5 +31,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Rebuild rules and run smoke test
         run: bash tools/smoke.sh
+      - name: Measure default ruleset batch latency
+        run: cargo test --release --test perf -- --ignored --nocapture
       - name: Clippy
         run: cargo clippy --all-targets -- -D warnings

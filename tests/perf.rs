@@ -1,9 +1,10 @@
 use std::{
+    collections::HashMap,
     hint::black_box,
     time::{Duration, Instant},
 };
 
-use vm::{JitConfig, Value, Vm, VmStatus};
+use vm::{JitConfig, JitTraceTerminal, Value, Vm, VmStatus};
 
 const DEFAULT_WARMUP_BATCHES: usize = 1;
 const DEFAULT_MEASURED_BATCHES: usize = 5;
@@ -64,6 +65,134 @@ impl JitCompilationState {
             recorded_traces: snapshot.traces.len(),
             native_traces: vm.jit_native_trace_count(),
         }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct TraceShape {
+    terminal: JitTraceTerminal,
+    has_call: bool,
+    entry_stack_depth: usize,
+    op_count: usize,
+    traces: usize,
+    executions: u64,
+    ssa_exits: usize,
+    boxed_load_sites: u64,
+    boxed_store_sites: u64,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct TraceShapeStats {
+    shapes: Vec<TraceShape>,
+    native_exec: u64,
+    trace_exits: u64,
+    loop_backs: u64,
+    handoffs: u64,
+    short_trace_exec: u64,
+    estimated_materialized_slots: u64,
+}
+
+impl TraceShapeStats {
+    fn capture(vm: &Vm) -> Self {
+        let snapshot = vm.jit_snapshot();
+        let local_count = vm.program().local_count as u64;
+        let mut by_shape = HashMap::new();
+        let mut short_trace_exec = 0u64;
+        let mut estimated_materialized_slots = 0u64;
+
+        for trace in &snapshot.traces {
+            let op_count = trace.op_names().len();
+            if op_count <= 10 {
+                short_trace_exec = short_trace_exec.saturating_add(trace.executions);
+            }
+            estimated_materialized_slots = estimated_materialized_slots.saturating_add(
+                trace
+                    .executions
+                    .saturating_mul(trace.ssa_exit_count() as u64)
+                    .saturating_mul(local_count),
+            );
+
+            let shape = by_shape
+                .entry((
+                    trace.terminal.clone(),
+                    trace.has_call,
+                    trace.entry_stack_depth,
+                    op_count,
+                ))
+                .or_insert_with(|| TraceShape {
+                    terminal: trace.terminal.clone(),
+                    has_call: trace.has_call,
+                    entry_stack_depth: trace.entry_stack_depth,
+                    op_count,
+                    traces: 0,
+                    executions: 0,
+                    ssa_exits: 0,
+                    boxed_load_sites: 0,
+                    boxed_store_sites: 0,
+                });
+            shape.traces = shape.traces.saturating_add(1);
+            shape.executions = shape.executions.saturating_add(trace.executions);
+            shape.ssa_exits = shape.ssa_exits.saturating_add(trace.ssa_exit_count());
+            shape.boxed_load_sites = shape
+                .boxed_load_sites
+                .saturating_add(trace.boxed_load_site_count());
+            shape.boxed_store_sites = shape
+                .boxed_store_sites
+                .saturating_add(trace.boxed_store_site_count());
+        }
+
+        let mut shapes: Vec<_> = by_shape.into_values().collect();
+        shapes.sort_by(|left, right| {
+            terminal_rank(&left.terminal)
+                .cmp(&terminal_rank(&right.terminal))
+                .then_with(|| left.has_call.cmp(&right.has_call))
+                .then_with(|| left.entry_stack_depth.cmp(&right.entry_stack_depth))
+                .then_with(|| left.op_count.cmp(&right.op_count))
+        });
+
+        Self {
+            shapes,
+            native_exec: vm.jit_native_exec_count(),
+            trace_exits: snapshot.metrics.trace_exit_count,
+            loop_backs: snapshot.metrics.native_loop_back_count,
+            handoffs: vm.jit_native_link_handoff_count(),
+            short_trace_exec,
+            estimated_materialized_slots,
+        }
+    }
+
+    fn print(&self, label: &str) {
+        println!(
+            "jit_trace_stats label={label} native_exec={} trace_exits={} loop_backs={} handoffs={} short_trace_exec={} estimated_materialized_slots={}",
+            self.native_exec,
+            self.trace_exits,
+            self.loop_backs,
+            self.handoffs,
+            self.short_trace_exec,
+            self.estimated_materialized_slots,
+        );
+        for shape in &self.shapes {
+            println!(
+                "jit_trace_shape label={label} terminal={:?} has_call={} entry_stack_depth={} op_count={} traces={} executions={} ssa_exits={} boxed_load_sites={} boxed_store_sites={}",
+                shape.terminal,
+                shape.has_call,
+                shape.entry_stack_depth,
+                shape.op_count,
+                shape.traces,
+                shape.executions,
+                shape.ssa_exits,
+                shape.boxed_load_sites,
+                shape.boxed_store_sites,
+            );
+        }
+    }
+}
+
+fn terminal_rank(terminal: &JitTraceTerminal) -> u8 {
+    match terminal {
+        JitTraceTerminal::LoopBack => 0,
+        JitTraceTerminal::BranchExit => 1,
+        JitTraceTerminal::Halt => 2,
     }
 }
 
@@ -265,6 +394,7 @@ fn measure_case(
             jit_after, jit_before,
             "{label} compiled new JIT traces inside the measured region"
         );
+        TraceShapeStats::capture(&vm).print(label);
     }
 
     let total_duration: Duration = batches.iter().copied().sum();
@@ -351,6 +481,84 @@ fn run_default_ruleset_perf() {
         interpreter_incremental.as_secs_f64() * 1_000_000.0,
         jit.average_request.as_secs_f64() * 1_000_000.0,
         jit_incremental.as_secs_f64() * 1_000_000.0,
+    );
+}
+
+#[test]
+fn trace_shape_stats_capture_real_jit_program() {
+    if !JitConfig::default().enabled {
+        return;
+    }
+
+    let compiled = vm::compile_source(
+        r#"
+let mut total = 0;
+let mut index = 0;
+while index < 8 {
+    total = total + index;
+    index = index + 1;
+}
+assert(total == 28);
+"done";
+"#,
+    )
+    .expect("trace-shape test program should compile");
+    let expected = Value::string("done");
+    let mut vm = Vm::new_with_jit_config(
+        compiled.program,
+        JitConfig {
+            enabled: true,
+            hot_loop_threshold: 1,
+            ..JitConfig::default()
+        },
+    );
+    execute_and_reset(&mut vm, &expected, "trace_shape_stats_test");
+    execute_and_reset(&mut vm, &expected, "trace_shape_stats_test");
+
+    let stats = TraceShapeStats::capture(&vm);
+    let snapshot = vm.jit_snapshot();
+    assert!(!stats.shapes.is_empty());
+    assert_eq!(stats.native_exec, vm.jit_native_exec_count());
+    assert_eq!(stats.trace_exits, snapshot.metrics.trace_exit_count);
+    assert_eq!(stats.loop_backs, snapshot.metrics.native_loop_back_count);
+    assert_eq!(stats.handoffs, vm.jit_native_link_handoff_count());
+    assert_eq!(
+        stats.short_trace_exec,
+        snapshot
+            .traces
+            .iter()
+            .filter(|trace| trace.op_names().len() <= 10)
+            .map(|trace| trace.executions)
+            .sum::<u64>()
+    );
+    assert_eq!(
+        stats.estimated_materialized_slots,
+        snapshot
+            .traces
+            .iter()
+            .map(|trace| {
+                trace
+                    .executions
+                    .saturating_mul(trace.ssa_exit_count() as u64)
+                    .saturating_mul(vm.program().local_count as u64)
+            })
+            .sum::<u64>()
+    );
+    assert_eq!(
+        stats.shapes.iter().map(|shape| shape.traces).sum::<usize>(),
+        snapshot.traces.len()
+    );
+    assert_eq!(
+        stats
+            .shapes
+            .iter()
+            .map(|shape| shape.executions)
+            .sum::<u64>(),
+        snapshot
+            .traces
+            .iter()
+            .map(|trace| trace.executions)
+            .sum::<u64>()
     );
 }
 

@@ -85,7 +85,7 @@ Allowed traffic is forwarded and carries `x-waf-blocked: 0` plus its current sco
 
 ## Performance test
 
-The pd-vm performance test compiles the standalone default ruleset once, outside the timed region, then evaluates a fixed benign request context repeatedly using pd-vm's default execution configuration (trace JIT on supported native targets, interpreter elsewhere). It runs warmup traffic first, reports the selected mode, and calculates the average across multiple measured batches:
+The pd-vm performance test compiles both cases outside the timed region and evaluates the same fixed benign request context using pd-vm's default execution configuration (trace JIT on supported native targets, interpreter elsewhere). It always measures the framework baseline first. The baseline constructs and validates the simulated request context in RSS without loading any WAF rules or calling `inspect_request`. The second case executes the committed default enabled ruleset.
 
 ```bash
 cargo test --release --test perf -- --ignored --nocapture
@@ -98,7 +98,7 @@ Defaults:
 - 2 requests per batch;
 - 10 measured requests in total.
 
-The output includes the overall average latency per request and the minimum/maximum batch-average latency. Batch counts can be overridden without editing the test:
+Each case runs warmup traffic followed by multiple measured batches. The output reports both average latencies, minimum/maximum batch averages, incremental WAF latency, and the default-ruleset-to-baseline ratio. Batch counts can be overridden without editing the test:
 
 ```bash
 WAF_PERF_WARMUP_BATCHES=2 \
@@ -107,7 +107,7 @@ WAF_PERF_BATCH_SIZE=4 \
 cargo test --release --test perf -- --ignored --nocapture
 ```
 
-Compilation latency is excluded. Each measured request rebuilds the simulated request transaction inside RSS and executes the committed default enabled ruleset through pd-vm.
+Compilation latency is excluded. Both cases rebuild the simulated request context inside RSS for every measured request.
 
 ## Tests
 

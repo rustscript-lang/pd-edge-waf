@@ -25,12 +25,48 @@ impl PerfConfig {
     }
 }
 
+struct PerfStats {
+    average_request: Duration,
+    min_batch_average: Duration,
+    max_batch_average: Duration,
+}
+
 fn env_usize(name: &str, default: usize, minimum: usize) -> usize {
     std::env::var(name)
         .ok()
         .and_then(|value| value.parse().ok())
         .unwrap_or(default)
         .max(minimum)
+}
+
+fn baseline_request_program() -> vm::Program {
+    let source = r#"
+let method = "GET";
+let path = "/products";
+let query = "category=books&page=2";
+let protocol = "HTTP/1.1";
+let remote_addr = "192.0.2.10";
+let headers: map<string> = {
+    "host": "shop.example.test",
+    "accept": "text/html,application/xhtml+xml",
+    "user-agent": "pd-edge-waf-perf/1.0"
+};
+let args: map<string> = { "category": "books", "page": "2" };
+let body = "";
+assert(method == "GET");
+assert(path == "/products");
+assert(query == "category=books&page=2");
+assert(protocol == "HTTP/1.1");
+assert(remote_addr == "192.0.2.10");
+assert((&headers)["host"] == "shop.example.test");
+assert((&args)["category"] == "books");
+assert(body == "");
+"allow";
+"#;
+    let compiled =
+        vm::compile_source(source).expect("framework baseline perf program should compile");
+    assert!(compiled.program.imports.is_empty());
+    compiled.program
 }
 
 fn default_request_program() -> vm::Program {
@@ -68,28 +104,26 @@ assert((&result)["blocked"] == "0");
     compiled.program
 }
 
-fn run_and_verify(vm: &mut Vm, expected: &Value) {
+fn execute_and_verify(vm: &mut Vm, expected: &Value, label: &str) -> VmStatus {
     let status = vm.run().unwrap_or_else(|error| {
         let line = vm
             .debug_info()
             .and_then(|info| info.line_for_offset(vm.ip()));
         panic!(
-            "default ruleset perf request failed at ip {}, line {line:?}, stack_depth={}: {error:?}",
+            "{label} request failed at ip {}, line {line:?}, stack_depth={}: {error:?}",
             vm.ip(),
             vm.stack().len(),
         );
     });
     assert_eq!(status, VmStatus::Halted);
     assert_eq!(vm.stack().last(), Some(expected));
+    status
 }
 
-fn run_batch(vm: &mut Vm, expected: &Value, batch_size: usize) -> Duration {
+fn run_batch(vm: &mut Vm, expected: &Value, label: &str, batch_size: usize) -> Duration {
     let started = Instant::now();
     for request_index in 0..batch_size {
-        let status = black_box(
-            vm.run()
-                .expect("default ruleset measured request should execute"),
-        );
+        let status = black_box(execute_and_verify(vm, expected, label));
         assert_eq!(status, VmStatus::Halted);
         if request_index + 1 == batch_size {
             assert_eq!(vm.stack().last(), Some(expected));
@@ -101,10 +135,12 @@ fn run_batch(vm: &mut Vm, expected: &Value, batch_size: usize) -> Duration {
     started.elapsed()
 }
 
-fn run_default_ruleset_perf() {
-    let config = PerfConfig::from_env();
-    let program = default_request_program();
-    let expected = Value::string("allow");
+fn measure_case(
+    label: &str,
+    program: vm::Program,
+    config: &PerfConfig,
+    expected: &Value,
+) -> PerfStats {
     let mut vm = Vm::new(program);
     let execution_mode = if vm.jit_config().enabled {
         "trace_jit"
@@ -114,46 +150,79 @@ fn run_default_ruleset_perf() {
 
     for _ in 0..config.warmup_batches {
         for _ in 0..config.batch_size {
-            run_and_verify(&mut vm, &expected);
+            execute_and_verify(&mut vm, expected, label);
             vm.reset_for_reuse();
         }
     }
 
     let mut batches = Vec::with_capacity(config.measured_batches);
     for _ in 0..config.measured_batches {
-        batches.push(run_batch(&mut vm, &expected, config.batch_size));
+        batches.push(run_batch(&mut vm, expected, label, config.batch_size));
     }
 
     let total_duration: Duration = batches.iter().copied().sum();
     let total_requests = config.measured_batches * config.batch_size;
-    let average_request = total_duration.div_f64(total_requests as f64);
-    let min_batch_average = batches
-        .iter()
-        .copied()
-        .min()
-        .expect("at least two measured batches")
-        .div_f64(config.batch_size as f64);
-    let max_batch_average = batches
-        .iter()
-        .copied()
-        .max()
-        .expect("at least two measured batches")
-        .div_f64(config.batch_size as f64);
+    let stats = PerfStats {
+        average_request: total_duration.div_f64(total_requests as f64),
+        min_batch_average: batches
+            .iter()
+            .copied()
+            .min()
+            .expect("at least two measured batches")
+            .div_f64(config.batch_size as f64),
+        max_batch_average: batches
+            .iter()
+            .copied()
+            .max()
+            .expect("at least two measured batches")
+            .div_f64(config.batch_size as f64),
+    };
 
     println!(
-        "default_ruleset_perf mode={} batches={} batch_size={} requests={} average_us={:.3} min_batch_average_us={:.3} max_batch_average_us={:.3}",
+        "{label} mode={} batches={} batch_size={} requests={} average_us={:.3} min_batch_average_us={:.3} max_batch_average_us={:.3}",
         execution_mode,
         config.measured_batches,
         config.batch_size,
         total_requests,
-        average_request.as_secs_f64() * 1_000_000.0,
-        min_batch_average.as_secs_f64() * 1_000_000.0,
-        max_batch_average.as_secs_f64() * 1_000_000.0,
+        stats.average_request.as_secs_f64() * 1_000_000.0,
+        stats.min_batch_average.as_secs_f64() * 1_000_000.0,
+        stats.max_batch_average.as_secs_f64() * 1_000_000.0,
+    );
+    stats
+}
+
+fn run_default_ruleset_perf() {
+    let config = PerfConfig::from_env();
+    let baseline_program = baseline_request_program();
+    let default_ruleset_program = default_request_program();
+    let expected = Value::string("allow");
+
+    let baseline = measure_case(
+        "framework_baseline_perf",
+        baseline_program,
+        &config,
+        &expected,
+    );
+    let default_ruleset = measure_case(
+        "default_ruleset_perf",
+        default_ruleset_program,
+        &config,
+        &expected,
+    );
+
+    let incremental = default_ruleset
+        .average_request
+        .saturating_sub(baseline.average_request);
+    let ratio = default_ruleset.average_request.as_secs_f64()
+        / baseline.average_request.as_secs_f64().max(f64::EPSILON);
+    println!(
+        "waf_incremental_perf average_us={:.3} default_to_baseline_ratio={ratio:.3}",
+        incremental.as_secs_f64() * 1_000_000.0,
     );
 }
 
 #[test]
 #[ignore = "performance test; run explicitly with --ignored --nocapture"]
-fn default_ruleset_batch_latency() {
+fn baseline_and_default_ruleset_batch_latency() {
     run_default_ruleset_perf();
 }

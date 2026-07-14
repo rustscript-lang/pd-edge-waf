@@ -416,7 +416,7 @@ fn measure_case(
     };
 
     println!(
-        "{label} mode={execution_mode} warmup_requests={warmup_requests} batches={} batch_size={} requests={} average_us={:.3} min_batch_average_us={:.3} max_batch_average_us={:.3} jit_attempts={} recorded_traces={} native_traces={}",
+        "{label} mode={execution_mode} warmup_requests={warmup_requests} batches={} batch_size={} requests={} average_us={:.3} min_batch_average_us={:.3} max_batch_average_us={:.3} jit_attempts={} recorded_traces={} native_traces={} regex_cache_entries={} regex_compile_count={} regex_cache_hits={}",
         config.measured_batches,
         config.batch_size,
         total_requests,
@@ -426,6 +426,9 @@ fn measure_case(
         jit_after.attempts,
         jit_after.recorded_traces,
         jit_after.native_traces,
+        vm.regex_cache_entry_count(),
+        vm.regex_cache_compile_count(),
+        vm.regex_cache_hit_count(),
     );
     stats
 }

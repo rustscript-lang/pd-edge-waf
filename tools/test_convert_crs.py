@@ -68,7 +68,20 @@ class TransformPlanTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unknown transformation: mystery"):
             convert_crs.encode_transform_plan(["mystery"])
 
-    def test_rendered_rule_has_five_strings_and_decimal_plan(self) -> None:
+    def test_target_descriptors_preserve_precompiled_exclusions(self) -> None:
+        self.assertEqual(
+            convert_crs.target_descriptors(
+                "ARGS|REQUEST_HEADERS:Host|!REQUEST_HEADERS:Cookie|&TX:COUNT"
+            ),
+            [
+                "ARGS", "", "ARGS",
+                "REQUEST_HEADERS", "Host", "REQUEST_HEADERS:Host",
+                "!REQUEST_HEADERS", "Cookie", "!REQUEST_HEADERS:Cookie",
+                "&TX", "COUNT", "&TX:COUNT",
+            ],
+        )
+
+    def test_rendered_rule_has_precompiled_targets_and_decimal_plan(self) -> None:
         directive = convert_crs.Directive(
             kind="SecRule",
             source="REQUEST-TEST.conf",
@@ -88,8 +101,8 @@ class TransformPlanTests(unittest.TestCase):
         self.assertEqual(
             convert_crs.render_directive_call(directive, {}),
             'next = engine_bundle::apply_rule(next, 123, 2, 0, false, '
-            '["TARGET", "@rx", "PATTERN", "", "ordered"], '
-            '10858, 0, 0, false, 403);',
+            '["@rx", "PATTERN", "", "ordered", "TARGET", "", "TARGET"], '
+            '1, 10858, 0, 0, false, 403);',
         )
 
     def test_enabled_sqli_probe_uses_plan_abi(self) -> None:
@@ -110,8 +123,9 @@ class TransformPlanTests(unittest.TestCase):
         )
         self.assertIn(
             'apply_rule(next, 942100, 2, 0, false, '
-            '["QUERY_STRING|ARGS|REQUEST_BODY", "@detectSQLi", "", "", '
-            '"SQL Injection Attack Detected"], 15979, 1, 5, false, 403);',
+            '["@detectSQLi", "", "", "SQL Injection Attack Detected", '
+            '"QUERY_STRING", "", "QUERY_STRING", "ARGS", "", "ARGS", '
+            '"REQUEST_BODY", "", "REQUEST_BODY"], 3, 15979, 1, 5, false, 403);',
             rendered,
         )
         self.assertNotIn("none,urlDecodeUni,removeNulls", rendered)

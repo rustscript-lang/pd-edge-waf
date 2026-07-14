@@ -290,17 +290,30 @@ def rss_string(value: str) -> str:
     return json.dumps(value, ensure_ascii=False)
 
 
+def target_descriptors(targets: str) -> list[str]:
+    descriptors: list[str] = []
+    for spec in targets.split("|"):
+        if not spec:
+            continue
+        pieces = spec.split(":")
+        base = pieces[0]
+        selector = pieces[1] if len(pieces) > 1 else ""
+        descriptors.extend((base, selector, spec))
+    return descriptors
+
+
 def rule_arguments(directive: Directive, data_contents: dict[str, str]) -> list[str]:
     pattern = directive.pattern
     if directive.operator.lstrip("!") == "@pmFromFile":
         pattern = data_contents.get(pattern, "")
     transforms = action_values(directive.actions, "t")
+    descriptors = target_descriptors(directive.targets)
     text = [
-        rss_string(directive.targets),
         rss_string(directive.operator),
         rss_string(pattern),
         rss_string(action_value(directive.actions, "skipAfter")),
         rss_string(directive.message),
+        *(rss_string(value) for value in descriptors),
     ]
     return [
         str(directive.rule_id),
@@ -308,6 +321,7 @@ def rule_arguments(directive: Directive, data_contents: dict[str, str]) -> list[
         str(directive.chain_index),
         "true" if has_action(directive.actions, "chain") else "false",
         f"[{', '.join(text)}]",
+        str(len(descriptors) // 3),
         str(encode_transform_plan(transforms)),
         str(paranoia_level(directive.actions)),
         str(anomaly_score(directive.actions)),
@@ -380,7 +394,7 @@ def render_entry(
         )
         if category == "request_942_application_attack_sqli":
             lines.append(
-                '    next = engine_bundle::apply_rule(next, 942100, 2, 0, false, ["QUERY_STRING|ARGS|REQUEST_BODY", "@detectSQLi", "", "", "SQL Injection Attack Detected"], 15979, 1, 5, false, 403);'
+                '    next = engine_bundle::apply_rule(next, 942100, 2, 0, false, ["@detectSQLi", "", "", "SQL Injection Attack Detected", "QUERY_STRING", "", "QUERY_STRING", "ARGS", "", "ARGS", "REQUEST_BODY", "", "REQUEST_BODY"], 3, 15979, 1, 5, false, 403);'
             )
         for directive in source_directives:
             call = render_directive_call(directive, data_contents)

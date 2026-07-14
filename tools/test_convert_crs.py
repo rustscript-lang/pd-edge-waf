@@ -81,6 +81,17 @@ class TransformPlanTests(unittest.TestCase):
             ],
         )
 
+    def test_target_descriptors_preserve_escaped_pipes_and_selector_colons(self) -> None:
+        self.assertEqual(
+            convert_crs.target_descriptors(
+                r"ARGS:/foo\|bar:baz/|REQUEST_HEADERS:Host"
+            ),
+            [
+                "ARGS", r"/foo\|bar:baz/", r"ARGS:/foo\|bar:baz/",
+                "REQUEST_HEADERS", "Host", "REQUEST_HEADERS:Host",
+            ],
+        )
+
     def test_rendered_rule_has_precompiled_targets_and_decimal_plan(self) -> None:
         directive = convert_crs.Directive(
             kind="SecRule",

@@ -290,12 +290,28 @@ def rss_string(value: str) -> str:
     return json.dumps(value, ensure_ascii=False)
 
 
+def split_target_specs(targets: str) -> list[str]:
+    specs: list[str] = []
+    start = 0
+    backslashes = 0
+    for index, char in enumerate(targets):
+        if char == "|" and backslashes % 2 == 0:
+            specs.append(targets[start:index])
+            start = index + 1
+        if char == "\\":
+            backslashes += 1
+        else:
+            backslashes = 0
+    specs.append(targets[start:])
+    return specs
+
+
 def target_descriptors(targets: str) -> list[str]:
     descriptors: list[str] = []
-    for spec in targets.split("|"):
+    for spec in split_target_specs(targets):
         if not spec:
             continue
-        pieces = spec.split(":")
+        pieces = spec.split(":", 1)
         base = pieces[0]
         selector = pieces[1] if len(pieces) > 1 else ""
         descriptors.extend((base, selector, spec))

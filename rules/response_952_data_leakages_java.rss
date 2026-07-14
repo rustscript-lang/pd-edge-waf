@@ -4,16 +4,16 @@ use engine_bundle;
 
 pub fn evaluate_response_952_data_leakages_java(state: map<string>) -> map<string> {
     let mut next = state;
-    next = engine_bundle::apply_rule(next, ["R", "952010", "4", "0", "0", "RESPONSE_HEADERS:Content-Encoding", "@pm", "gzip compress deflate br zstd", "", "0", "0", "0", "403", "END-RESPONSE-952-DATA-LEAKAGES-JAVA", ""]);
-    next = engine_bundle::apply_rule(next, ["R", "952011", "3", "0", "0", "TX:DETECTION_PARANOIA_LEVEL", "@lt", "1", "", "0", "0", "0", "403", "END-RESPONSE-952-DATA-LEAKAGES-JAVA", ""]);
-    next = engine_bundle::apply_rule(next, ["R", "952012", "4", "0", "0", "TX:DETECTION_PARANOIA_LEVEL", "@lt", "1", "", "0", "0", "0", "403", "END-RESPONSE-952-DATA-LEAKAGES-JAVA", ""]);
-    next = engine_bundle::apply_rule(next, ["R", "952110", "4", "0", "0", "RESPONSE_BODY", "@rx", "(?i)\\b(?:java[\\.a-z]+E(?:xception|rror)|(?:org|com)\\.[\\.a-z]+Exception|Exception in thread \\\"[^\\\"]*\\\"|at[\\s\\x0b]+(?:ja(?:vax?|karta)|org|com))\\b", "none", "1", "4", "0", "403", "", "Java Errors"]);
-    next = engine_bundle::apply_rule(next, ["R", "952013", "3", "0", "0", "TX:DETECTION_PARANOIA_LEVEL", "@lt", "2", "", "0", "0", "0", "403", "END-RESPONSE-952-DATA-LEAKAGES-JAVA", ""]);
-    next = engine_bundle::apply_rule(next, ["R", "952014", "4", "0", "0", "TX:DETECTION_PARANOIA_LEVEL", "@lt", "2", "", "0", "0", "0", "403", "END-RESPONSE-952-DATA-LEAKAGES-JAVA", ""]);
-    next = engine_bundle::apply_rule(next, ["R", "952015", "3", "0", "0", "TX:DETECTION_PARANOIA_LEVEL", "@lt", "3", "", "0", "0", "0", "403", "END-RESPONSE-952-DATA-LEAKAGES-JAVA", ""]);
-    next = engine_bundle::apply_rule(next, ["R", "952016", "4", "0", "0", "TX:DETECTION_PARANOIA_LEVEL", "@lt", "3", "", "0", "0", "0", "403", "END-RESPONSE-952-DATA-LEAKAGES-JAVA", ""]);
-    next = engine_bundle::apply_rule(next, ["R", "952017", "3", "0", "0", "TX:DETECTION_PARANOIA_LEVEL", "@lt", "4", "", "0", "0", "0", "403", "END-RESPONSE-952-DATA-LEAKAGES-JAVA", ""]);
-    next = engine_bundle::apply_rule(next, ["R", "952018", "4", "0", "0", "TX:DETECTION_PARANOIA_LEVEL", "@lt", "4", "", "0", "0", "0", "403", "END-RESPONSE-952-DATA-LEAKAGES-JAVA", ""]);
+    next = engine_bundle::apply_rule(next, 952010, 4, 0, false, ["RESPONSE_HEADERS:Content-Encoding", "@pm", "gzip compress deflate br zstd", "", "END-RESPONSE-952-DATA-LEAKAGES-JAVA", ""], 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 952011, 3, 0, false, ["TX:DETECTION_PARANOIA_LEVEL", "@lt", "1", "", "END-RESPONSE-952-DATA-LEAKAGES-JAVA", ""], 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 952012, 4, 0, false, ["TX:DETECTION_PARANOIA_LEVEL", "@lt", "1", "", "END-RESPONSE-952-DATA-LEAKAGES-JAVA", ""], 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 952110, 4, 0, false, ["RESPONSE_BODY", "@rx", "(?i)\\b(?:java[\\.a-z]+E(?:xception|rror)|(?:org|com)\\.[\\.a-z]+Exception|Exception in thread \\\"[^\\\"]*\\\"|at[\\s\\x0b]+(?:ja(?:vax?|karta)|org|com))\\b", "none", "", "Java Errors"], 1, 4, false, 403);
+    next = engine_bundle::apply_rule(next, 952013, 3, 0, false, ["TX:DETECTION_PARANOIA_LEVEL", "@lt", "2", "", "END-RESPONSE-952-DATA-LEAKAGES-JAVA", ""], 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 952014, 4, 0, false, ["TX:DETECTION_PARANOIA_LEVEL", "@lt", "2", "", "END-RESPONSE-952-DATA-LEAKAGES-JAVA", ""], 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 952015, 3, 0, false, ["TX:DETECTION_PARANOIA_LEVEL", "@lt", "3", "", "END-RESPONSE-952-DATA-LEAKAGES-JAVA", ""], 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 952016, 4, 0, false, ["TX:DETECTION_PARANOIA_LEVEL", "@lt", "3", "", "END-RESPONSE-952-DATA-LEAKAGES-JAVA", ""], 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 952017, 3, 0, false, ["TX:DETECTION_PARANOIA_LEVEL", "@lt", "4", "", "END-RESPONSE-952-DATA-LEAKAGES-JAVA", ""], 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 952018, 4, 0, false, ["TX:DETECTION_PARANOIA_LEVEL", "@lt", "4", "", "END-RESPONSE-952-DATA-LEAKAGES-JAVA", ""], 0, 0, false, 403);
     next = engine_bundle::apply_marker(next, "END-RESPONSE-952-DATA-LEAKAGES-JAVA");
     next
 }

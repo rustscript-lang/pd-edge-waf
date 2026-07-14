@@ -4,10 +4,10 @@ use engine_bundle;
 
 pub fn evaluate_request_905_common_exceptions(state: map<string>) -> map<string> {
     let mut next = state;
-    next = engine_bundle::apply_rule(next, ["R", "905100", "1", "0", "1", "REQUEST_LINE", "@streq", "GET /", "none", "0", "0", "0", "403", "", ""]);
-    next = engine_bundle::apply_rule(next, ["R", "905100", "0", "1", "0", "REMOTE_ADDR", "@ipMatch", "127.0.0.1,::1", "none", "0", "0", "0", "403", "", ""]);
-    next = engine_bundle::apply_rule(next, ["R", "905110", "1", "0", "1", "REMOTE_ADDR", "@ipMatch", "127.0.0.1,::1", "none", "0", "0", "0", "403", "", ""]);
-    next = engine_bundle::apply_rule(next, ["R", "905110", "0", "1", "1", "REQUEST_HEADERS:User-Agent", "@endsWith", "(internal dummy connection)", "none", "0", "0", "0", "403", "", ""]);
-    next = engine_bundle::apply_rule(next, ["R", "905110", "0", "2", "0", "REQUEST_LINE", "@rx", "^(?:GET /|OPTIONS \\*) HTTP/[12]\\.[01]$", "none", "0", "0", "0", "403", "", ""]);
+    next = engine_bundle::apply_rule(next, 905100, 1, 0, true, ["REQUEST_LINE", "@streq", "GET /", "none", "", ""], 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 905100, 0, 1, false, ["REMOTE_ADDR", "@ipMatch", "127.0.0.1,::1", "none", "", ""], 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 905110, 1, 0, true, ["REMOTE_ADDR", "@ipMatch", "127.0.0.1,::1", "none", "", ""], 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 905110, 0, 1, true, ["REQUEST_HEADERS:User-Agent", "@endsWith", "(internal dummy connection)", "none", "", ""], 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 905110, 0, 2, false, ["REQUEST_LINE", "@rx", "^(?:GET /|OPTIONS \\*) HTTP/[12]\\.[01]$", "none", "", ""], 0, 0, false, 403);
     next
 }

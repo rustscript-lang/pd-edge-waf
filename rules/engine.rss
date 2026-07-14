@@ -111,40 +111,35 @@ fn record(state: map<string>, matched: [string]) -> map<string> {
     s
 }
 
-// Rule fields: kind, id, phase, chain index, has-chain, targets, operator,
-// pattern, transforms, paranoia, score, disruptive, status, skip-after, message.
-pub fn apply_rule(state: map<string>, rule: [string]) -> map<string> {
+pub fn apply_rule(state: map<string>, id: int, phase: int, chain_index: int, has_chain: bool, text: [string], paranoia: int, score: int, disruptive: bool, status: int) -> map<string> {
     let mut s = state;
-    let id = engine_text::number((&rule)[1], -1);
-    let phase = engine_text::number((&rule)[2], 0);
-    let chain_index = engine_text::number((&rule)[3], 0);
     let current_user = engine_text::number(engine_context::ctx_get(&s, "phase"), 1);
     let skip_state = engine_context::ctx_get(&s, "skip");
-    if (phase == 0 || phase == current_user) && engine_text::number((&rule)[9], 0) <= engine_text::number(engine_context::ctx_get(&s, "paranoia"), 1) && skip_state == "" {
+    if (phase == 0 || phase == current_user) && paranoia <= engine_text::number(engine_context::ctx_get(&s, "paranoia"), 1) && skip_state == "" {
     let mut matched = false;
     if chain_index == 0 || engine_context::ctx_get(&s, "chain_matched") == "1" {
-        let values: [string] = engine_context::ctx_targets(&s, (&rule)[5], id);
+        let values: [string] = engine_context::ctx_targets(&s, &(&text)[0], id);
         for i in 0..values.length {
-            let transformed: string = engine_text::transforms((&values)[i], (&rule)[8]);
-            if engine_operators::op_matches(&s, (&rule)[6], (&rule)[7], transformed) {
+            let transformed: string = engine_text::transforms((&values)[i], &(&text)[3]);
+            if engine_operators::op_matches(&s, &(&text)[1], &(&text)[2], transformed) {
                 matched = true;
                 break;
             }
         }
     }
-    if chain_index == 0 && (&rule)[4] == "1" {
+    if chain_index == 0 && has_chain {
         s["chain_active"] = "1";
         s["chain_matched"] = if matched => { "1" } else => { "0" };
         s["chain_id"] = id + "";
-        s["chain_score"] = (&rule)[10];
-        s["chain_disruptive"] = (&rule)[11];
-        s["chain_status"] = (&rule)[12];
-        s["chain_skip"] = (&rule)[13];
-        s["chain_message"] = (&rule)[14];
+        s["chain_score"] = score + "";
+        s["chain_disruptive"] = if disruptive => { "1" } else => { "0" };
+        s["chain_status"] = status + "";
+        s["chain_skip"] = (&text)[4];
+        s["chain_message"] = (&text)[5];
     } else if chain_index > 0 {
         let ok = engine_context::ctx_get(&s, "chain_matched") == "1" && matched;
         s["chain_matched"] = if ok => { "1" } else => { "0" };
-        if (&rule)[4] != "1" {
+        if !has_chain {
             if engine_context::ctx_get(&s, "chain_active") == "1" && ok {
                 s = record(s, [
                     engine_context::ctx_get(&s, "chain_id"),
@@ -159,7 +154,7 @@ pub fn apply_rule(state: map<string>, rule: [string]) -> map<string> {
             s["chain_matched"] = "0";
         }
     } else if matched {
-        s = record(s, [(&rule)[1], (&rule)[10], (&rule)[11], (&rule)[12], (&rule)[13], (&rule)[14]]);
+        s = record(s, [id + "", score + "", if disruptive => { "1" } else => { "0" }, status + "", (&text)[4], (&text)[5]]);
     }
     }
     s

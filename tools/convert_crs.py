@@ -254,35 +254,35 @@ def rss_string(value: str) -> str:
     return json.dumps(value, ensure_ascii=False)
 
 
-def rule_fields(directive: Directive, data_contents: dict[str, str]) -> list[str]:
+def rule_arguments(directive: Directive, data_contents: dict[str, str]) -> list[str]:
     pattern = directive.pattern
     if directive.operator.lstrip("!") == "@pmFromFile":
         pattern = data_contents.get(pattern, "")
+    text = [
+        rss_string(directive.targets),
+        rss_string(directive.operator),
+        rss_string(pattern),
+        rss_string(",".join(action_values(directive.actions, "t"))),
+        rss_string(action_value(directive.actions, "skipAfter")),
+        rss_string(directive.message),
+    ]
     return [
-        "R",
         str(directive.rule_id),
         str(directive.phase),
         str(directive.chain_index),
-        "1" if has_action(directive.actions, "chain") else "0",
-        directive.targets,
-        directive.operator,
-        pattern,
-        ",".join(action_values(directive.actions, "t")),
+        "true" if has_action(directive.actions, "chain") else "false",
+        f"[{', '.join(text)}]",
         str(paranoia_level(directive.actions)),
         str(anomaly_score(directive.actions)),
-        "1" if has_action(directive.actions, "deny") else "0",
+        "true" if has_action(directive.actions, "deny") else "false",
         str(action_int(directive.actions, "status", 403)),
-        action_value(directive.actions, "skipAfter"),
-        directive.message,
     ]
 
 
 def render_directive_call(directive: Directive, data_contents: dict[str, str]) -> str:
     if directive.kind == "SecRule":
-        rendered = ", ".join(
-            rss_string(value) for value in rule_fields(directive, data_contents)
-        )
-        return f"next = engine_bundle::apply_rule(next, [{rendered}]);"
+        rendered = ", ".join(rule_arguments(directive, data_contents))
+        return f"next = engine_bundle::apply_rule(next, {rendered});"
     if directive.kind == "SecAction":
         return f"next = engine_bundle::apply_action(next, {directive.phase});"
     if directive.kind == "SecMarker":
@@ -343,7 +343,7 @@ def render_entry(
         )
         if category == "request_942_application_attack_sqli":
             lines.append(
-                '    next = engine_bundle::apply_rule(next, ["R", "942100", "2", "0", "0", "QUERY_STRING|ARGS|REQUEST_BODY", "@detectSQLi", "", "none,urlDecodeUni,removeNulls", "1", "5", "0", "403", "", "SQL Injection Attack Detected"]);'
+                '    next = engine_bundle::apply_rule(next, 942100, 2, 0, false, ["QUERY_STRING|ARGS|REQUEST_BODY", "@detectSQLi", "", "none,urlDecodeUni,removeNulls", "", "SQL Injection Attack Detected"], 1, 5, false, 403);'
             )
         for directive in source_directives:
             call = render_directive_call(directive, data_contents)

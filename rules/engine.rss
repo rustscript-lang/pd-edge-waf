@@ -72,8 +72,8 @@ pub fn apply_marker(state: map<string>, marker: string) -> map<string> {
     s
 }
 
-pub fn update_target(state: map<string>, id: int, target: string) -> map<string> {
-    engine_context::ctx_update(state, id, target)
+pub fn update_target(state: map<string>, id: int, base: string, selector: string, canonical: string) -> map<string> {
+    engine_context::ctx_update(state, id, base, selector, canonical)
 }
 
 pub fn component_signature(state: map<string>, signature: string) -> map<string> {

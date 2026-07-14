@@ -37,18 +37,43 @@ assert((&values)[0] == "example.test");
 assert((&values)[1] == "selected");
 assert((&values)[2] == "2");
 
-let updated: map<string> = ctx_update(state, 123, "!REQUEST_HEADERS");
+let updated: map<string> = update_target(state, 123, "REQUEST_HEADERS", "Host", "REQUEST_HEADERS:Host");
 let remaining: [string] = ctx_targets(&updated, &text, 3, 123);
-assert(remaining.length == 1);
-assert((&remaining)[0] == "2");
+assert(remaining.length == 2);
+assert((&remaining)[0] == "selected");
+assert((&remaining)[1] == "2");
+
+let regex_updated: map<string> = update_target(updated, 123, "REQUEST_HEADERS", "/^X-/", "REQUEST_HEADERS:/^X-/");
+let regex_remaining: [string] = ctx_targets(&regex_updated, &text, 3, 123);
+assert(regex_remaining.length == 1);
+assert((&regex_remaining)[0] == "2");
+
+let counted_updated: map<string> = update_target(regex_updated, 123, "ARGS", "a", "ARGS:a");
+let counted_remaining: [string] = ctx_targets(&counted_updated, &text, 3, 123);
+assert(counted_remaining.length == 1);
+assert((&counted_remaining)[0] == "1");
+
+let broad_updated: map<string> = update_target(counted_updated, 123, "REQUEST_HEADERS", "", "REQUEST_HEADERS");
+let broad_remaining: [string] = ctx_targets(&broad_updated, &text, 3, 123);
+assert(broad_remaining.length == 1);
+assert((&broad_remaining)[0] == "1");
 
 let regex_text: [string] = [
     "@rx", "", "", "",
     "REQUEST_HEADERS", "/^X-/", "REQUEST_HEADERS:/^X-/"
 ];
-let selected: [string] = ctx_targets(&updated, &regex_text, 1, 124);
+let selected: [string] = ctx_targets(&broad_updated, &regex_text, 1, 124);
 assert(selected.length == 1);
 assert((&selected)[0] == "selected");
+
+let complex_state: map<string> = { "request_headers": "X|Alt:Name=complex" };
+let complex_text: [string] = [
+    "@rx", "", "", "",
+    "REQUEST_HEADERS", "/^X\\|Alt:Name$/", "REQUEST_HEADERS:/^X\\|Alt:Name$/"
+];
+let complex_selected: [string] = ctx_targets(&complex_state, &complex_text, 1, 125);
+assert(complex_selected.length == 1);
+assert((&complex_selected)[0] == "complex");
 "ok";
 "#,
     );

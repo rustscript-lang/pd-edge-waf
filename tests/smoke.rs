@@ -49,6 +49,33 @@ fn generated_rules_preserve_all_crs_regex_operators() {
     assert_eq!(positive, 297);
     assert_eq!(negative, 21);
     assert_eq!(positive + negative, 318);
+
+    let categories = directives
+        .iter()
+        .filter_map(|directive| directive["source"].as_str())
+        .map(|source| {
+            source
+                .trim_end_matches(".conf")
+                .to_ascii_lowercase()
+                .replace('-', "_")
+        })
+        .collect::<std::collections::BTreeSet<_>>();
+    let mut generated_positive = 0usize;
+    let mut generated_negative = 0usize;
+    for category in categories {
+        let generated = std::fs::read_to_string(root.join("rules").join(format!("{category}.rss")))
+            .expect("generated category module should be readable");
+        generated_positive += generated
+            .lines()
+            .filter(|line| line.contains(", [\"@rx\", "))
+            .count();
+        generated_negative += generated
+            .lines()
+            .filter(|line| line.contains(", [\"!@rx\", "))
+            .count();
+    }
+    assert_eq!(generated_positive, 297);
+    assert_eq!(generated_negative, 21);
 }
 
 #[test]

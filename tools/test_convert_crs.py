@@ -92,6 +92,22 @@ class TransformPlanTests(unittest.TestCase):
             ],
         )
 
+    def test_rendered_update_target_uses_precompiled_descriptors(self) -> None:
+        directive = convert_crs.Directive(
+            kind="SecRuleUpdateTargetById",
+            source="REQUEST-999.conf",
+            source_line=10,
+            rule_id=123,
+            phase=0,
+            chain_index=0,
+            value="!REQUEST_HEADERS:Cookie|!ARGS:/^secret:/",
+        )
+        self.assertEqual(
+            convert_crs.render_directive_call(directive, {}),
+            'next = engine_bundle::update_target(next, 123, "!REQUEST_HEADERS", "Cookie", "!REQUEST_HEADERS:Cookie"); '
+            'next = engine_bundle::update_target(next, 123, "!ARGS", "/^secret:/", "!ARGS:/^secret:/");',
+        )
+
     def test_rendered_rule_has_precompiled_targets_and_decimal_plan(self) -> None:
         directive = convert_crs.Directive(
             kind="SecRule",

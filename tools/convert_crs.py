@@ -355,7 +355,16 @@ def render_directive_call(directive: Directive, data_contents: dict[str, str]) -
     if directive.kind == "SecMarker":
         return f"next = engine_bundle::apply_marker(next, {rss_string(directive.marker)});"
     if directive.kind == "SecRuleUpdateTargetById":
-        return f"next = engine_bundle::update_target(next, {directive.rule_id}, {rss_string(directive.value)});"
+        descriptors = target_descriptors(directive.value)
+        calls = []
+        for index in range(0, len(descriptors), 3):
+            base, selector, canonical = descriptors[index : index + 3]
+            calls.append(
+                "next = engine_bundle::update_target("
+                f"next, {directive.rule_id}, {rss_string(base)}, "
+                f"{rss_string(selector)}, {rss_string(canonical)});"
+            )
+        return " ".join(calls)
     return f"next = engine_bundle::component_signature(next, {rss_string(directive.value)});"
 
 

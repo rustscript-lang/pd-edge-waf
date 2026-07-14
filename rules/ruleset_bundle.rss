@@ -1,0 +1,422 @@
+use re;
+use bytes;
+
+// bundled from engine_text.rss
+
+pub fn lower(value: string) -> string {
+ let mut out = "";
+ for i in 0..value.length {
+  let ch = (&value)[i:(i + 1)];
+  out = out + match ch {
+   "A" => "a", "B" => "b", "C" => "c", "D" => "d", "E" => "e", "F" => "f",
+   "G" => "g", "H" => "h", "I" => "i", "J" => "j", "K" => "k", "L" => "l",
+   "M" => "m", "N" => "n", "O" => "o", "P" => "p", "Q" => "q", "R" => "r",
+   "S" => "s", "T" => "t", "U" => "u", "V" => "v", "W" => "w", "X" => "x",
+   "Y" => "y", "Z" => "z", _ => ch,
+  };
+ }
+ out
+}
+pub fn contains(value: string, needle: string) -> bool {
+ let mut found: bool = needle.length == 0;
+ if needle.length > 0 && needle.length <= value.length { for i in 0..(value.length - needle.length + 1) { if (&value)[i:(i + needle.length)] == needle { found = true; break; } } }
+ found
+}
+pub fn replace(value: string, needle: string, replacement: string) -> string {
+ let mut out = ""; let mut cursor = 0;
+ while cursor < value.length { if cursor + needle.length <= value.length && (&value)[cursor:(cursor + needle.length)] == needle { out = out + replacement; cursor = cursor + needle.length; } else { out = out + (&value)[cursor:(cursor + 1)]; cursor = cursor + 1; } }
+ out
+}
+pub fn starts(value: string, prefix: string) -> bool { prefix.length <= value.length && (&value)[0:prefix.length] == prefix }
+pub fn ends(value: string, suffix: string) -> bool { suffix.length <= value.length && (&value)[(value.length - suffix.length):value.length] == suffix }
+pub fn number(value: string, fallback: int) -> int {
+ let digits = "0123456789"; let mut out = 0; let mut valid = value.length > 0;
+ for i in 0..value.length { let ch = (&value)[i:(i + 1)]; let mut digit = -1; for j in 0..10 { if ch == (&digits)[j:(j + 1)] { digit = j; break; } } if digit < 0 { valid = false; break; } out = out * 10 + digit; }
+ if valid => { out } else => { fallback }
+}
+pub fn encode_map(values: map<string>) -> string {
+ let keys = (&values).keys; let mut out = "";
+ for i in 0..keys.length { let key: string = (&keys)[i]; out = out + key + "=" + (&values)[key] + "\n"; }
+ out
+}
+pub fn transforms(value: string, list: string) -> string {
+ let mut out = value;
+ if contains(&list, "urlDecodeUni") || contains(&list, "cssDecode") || contains(&list, "jsDecode") { out = replace(out, "%27", "'"); out = replace(out, "%22", "\""); out = replace(out, "%20", " "); out = replace(out, "%3d", "="); out = replace(out, "%3D", "="); out = replace(out, "%3c", "<"); out = replace(out, "%3C", "<"); out = replace(out, "%3e", ">"); out = replace(out, "%3E", ">"); out = replace(out, "+", " "); }
+ if contains(&list, "htmlEntityDecode") { out = replace(out, "&lt;", "<"); out = replace(out, "&gt;", ">"); out = replace(out, "&quot;", "\""); out = replace(out, "&#39;", "'"); }
+ if contains(&list, "removeNulls") { out = replace(out, "\0", ""); }
+ if contains(&list, "removeWhitespace") { out = re::replace("\\s+", out, ""); }
+ if contains(&list, "compressWhitespace") { out = re::replace("\\s+", out, " "); }
+ if contains(&list, "replaceComments") { out = re::replace("(?s)/\\*.*?\\*/", out, " "); }
+ if contains(&list, "normalizePath") { out = replace(out, "\\", "/"); }
+ if contains(&list, "cmdLine") { out = replace(out, "\\", ""); }
+ if contains(&list, "lowercase") || contains(&list, "cmdLine") { out = lower(out); }
+ if contains(&list, "length") { out = out.length + ""; }
+ out
+}
+
+// bundled from engine_context.rss
+
+pub fn ctx_get(state: map<string>, key: string) -> string {
+ if (&state).has(&key) => { (&state)[key] } else => { "" }
+}
+pub fn ctx_set_phase(state: map<string>, phase: int) -> map<string> {
+ let mut s = state; s["phase"] = phase + ""; s["skip"] = ""; s["chain_active"] = "0"; s["chain_matched"] = "0"; s
+}
+pub fn pair_values(encoded: string, selector: string, names: bool) -> [string] {
+ let lines: [string] = re::split("\n", encoded); let mut out: [string] = [];
+ for i in 0..lines.length { let line: string = (&lines)[i]; let pieces: [string] = re::split("=", line);
+  if pieces.length > 0 { let key: string = (&pieces)[0]; let selected: bool = selector == "" || lower(&key) == lower(&selector) || (selector.length > 2 && (&selector)[0:1] == "/" && re::match((&selector)[1:(selector.length - 1)], &key)); if selected { out[out.length] = if names => { key } else if pieces.length > 1 => { (&pieces)[1] } else => { "" }; } }
+ }
+ out
+}
+pub fn selector(target: string) -> string { let pieces: [string] = re::split(":", target); if pieces.length > 1 => { (&pieces)[1] } else => { "" } }
+pub fn one(state: map<string>, raw: string) -> [string] {
+ let counted: bool = starts(&raw, "&"); let target: string = if counted => { (&raw)[1:raw.length] } else => { raw };
+ let pieces: [string] = re::split(":", &target); let base: string = (&pieces)[0]; let name: string = selector(&target); let mut out: [string] = [];
+ if base == "REQUEST_METHOD" { out = [ctx_get(&state, "method")]; }
+ else if base == "REQUEST_FILENAME" || base == "REQUEST_URI" || base == "REQUEST_URI_RAW" || base == "REQUEST_BASENAME" { out = [ctx_get(&state, "path")]; }
+ else if base == "QUERY_STRING" { out = [ctx_get(&state, "query")]; }
+ else if base == "REQUEST_BODY" || base == "XML" || base == "FILES" || base == "FILES_NAMES" || base == "MULTIPART_PART_HEADERS" { out = [ctx_get(&state, "request_body")]; }
+ else if base == "REQUEST_BODY_LENGTH" { out = [ctx_get(&state, "request_body").length + ""]; }
+ else if base == "REQUEST_PROTOCOL" { out = [ctx_get(&state, "protocol")]; }
+ else if base == "REQUEST_LINE" { out = [ctx_get(&state, "method") + " " + ctx_get(&state, "path") + (if ctx_get(&state, "query") == "" => { "" } else => { "?" + ctx_get(&state, "query") }) + " " + ctx_get(&state, "protocol")]; }
+ else if base == "REMOTE_ADDR" { out = [ctx_get(&state, "client_ip")]; }
+ else if base == "REQUEST_HEADERS" { out = pair_values(ctx_get(&state, "request_headers"), name, false); }
+ else if base == "REQUEST_HEADERS_NAMES" { out = pair_values(ctx_get(&state, "request_headers"), name, true); }
+ else if base == "REQUEST_COOKIES" { out = pair_values(ctx_get(&state, "cookies"), name, false); }
+ else if base == "REQUEST_COOKIES_NAMES" { out = pair_values(ctx_get(&state, "cookies"), name, true); }
+ else if base == "ARGS" || base == "ARGS_GET" { out = pair_values(ctx_get(&state, "args"), name, false); }
+ else if base == "ARGS_NAMES" || base == "ARGS_GET_NAMES" { out = pair_values(ctx_get(&state, "args"), name, true); }
+ else if base == "RESPONSE_BODY" { out = [ctx_get(&state, "response_body")]; }
+ else if base == "RESPONSE_STATUS" { out = [ctx_get(&state, "response_status")]; }
+ else if base == "RESPONSE_HEADERS" { out = pair_values(ctx_get(&state, "response_headers"), name, false); }
+ else if base == "TX" { let tx_key: string = "tx." + lower(&name); if !starts(&name, "/") && (&state).has(&tx_key) { out = [(&state)[tx_key]]; } }
+ if counted => { [out.length + ""] } else => { out }
+}
+pub fn ctx_targets(state: map<string>, target_list: string, id: int) -> [string] {
+ let specs: [string] = re::split("\\|", target_list); let mut out: [string] = []; let id_text: string = id + ""; let excluded: string = ctx_get(&state, "exclude." + id_text);
+ for i in 0..specs.length { let spec: string = (&specs)[i]; if !starts(&spec, "!") && !contains(&excluded, "\n" + spec + "\n") { let values: [string] = one(&state, spec); for j in 0..values.length { out[out.length] = (&values)[j]; } } }
+ out
+}
+pub fn ctx_update(state: map<string>, id: int, target: string) -> map<string> {
+ let mut s = state; let clean: string = if starts(&target, "!") => { (&target)[1:target.length] } else => { target }; let id_text: string = id + ""; let key: string = "exclude." + id_text; s[key] = ctx_get(&s, &key) + "\n" + clean + "\n"; s
+}
+
+// bundled from engine_operators.rss
+pub fn op_expand(state: map<string>, value: string) -> string { let mut out = value; let keys = (&state).keys; for i in 0..keys.length { let key: string = (&keys)[i]; if starts(&key, "tx.") { out = replace(out, "%{" + key + "}", (&state)[key]); } } out }
+pub fn sqli(value: string) -> bool { let text: string = lower(value); (contains(&text, " union ") && contains(&text, "select")) || contains(&text, "' or '") || contains(&text, "'or 1=1") || contains(&text, " or 1=1") || contains(&text, "sleep(") || contains(&text, "benchmark(") || contains(&text, "information_schema") }
+pub fn xss(value: string) -> bool { let text: string = lower(value); contains(&text, "<script") || contains(&text, "javascript:") || contains(&text, "onerror=") || contains(&text, "onload=") || (contains(&text, "<svg") && contains(&text, "on")) }
+pub fn phrase(pattern: string, value: string) -> bool { let phrases: [string] = if contains(&pattern, "\n") => { re::split("\n", &pattern) } else => { re::split(" ", &pattern) }; let haystack: string = lower(value); let mut found = false; for i in 0..phrases.length { let item: string = lower((&phrases)[i]); if item != "" && contains(&haystack, item) { found = true; break; } } found }
+pub fn op_matches(state: map<string>, operator: string, argument: string, value: string) -> bool {
+ let negated: bool = starts(&operator, "!"); let name: string = if negated => { (&operator)[1:operator.length] } else => { operator }; let expected: string = op_expand(&state, argument); let mut raw: bool = false;
+ if name == "@rx" { raw = re::match(&expected, &value); }
+ else if name == "@pm" || name == "@pmFromFile" { raw = phrase(&expected, &value); }
+ else if name == "@detectSQLi" { raw = sqli(&value); }
+ else if name == "@detectXSS" { raw = xss(&value); }
+ else if name == "@contains" { raw = contains(&value, &expected); }
+ else if name == "@beginsWith" { raw = starts(&value, &expected); }
+ else if name == "@endsWith" { raw = ends(&value, &expected); }
+ else if name == "@streq" { raw = value == expected; }
+ else if name == "@within" { raw = contains(" " + expected + " ", " " + value + " "); }
+ else if name == "@eq" { raw = number(&value, 0) == number(&expected, 0); }
+ else if name == "@lt" { raw = number(&value, 0) < number(&expected, 0); }
+ else if name == "@ge" { raw = number(&value, 0) >= number(&expected, 0); }
+ else if name == "@gt" { raw = number(&value, 0) > number(&expected, 0); }
+ else if name == "@validateUrlEncoding" { raw = !re::match("%(?:[^0-9A-Fa-f]|.[^0-9A-Fa-f]|$)", &value); }
+ else if name == "@validateUtf8Encoding" || name == "@validateByteRange" { raw = false; }
+ else if name == "@unconditionalMatch" { raw = true; }
+ else if name == "@ipMatch" { raw = phrase(replace(&expected, ",", "\n"), &value); }
+ if negated => { !raw } else => { raw }
+}
+
+// bundled from engine.rss
+
+pub fn new_state(method: string, path: string, query: string, protocol: string, client_ip: string, headers: map<string>, args: map<string>, body: string) -> map<string> {
+    let mut state: map<string> = {};
+    state["method"] = method;
+    state["path"] = path;
+    state["query"] = query;
+    state["protocol"] = if starts(&protocol, "HTTP/") => { protocol } else => { "HTTP/" + protocol };
+    state["client_ip"] = client_ip;
+    state["request_headers"] = encode_map(headers);
+    state["args"] = encode_map(args);
+    state["request_body"] = body;
+    state["response_status"] = "0";
+    state["response_headers"] = "";
+    state["response_body"] = "";
+    state["phase"] = "1";
+    state["paranoia"] = "1";
+    state["score"] = "0";
+    state["outbound_score"] = "0";
+    state["blocked"] = "0";
+    state["status"] = "403";
+    state["skip"] = "";
+    state["chain_active"] = "0";
+    state["chain_matched"] = "0";
+    state["matched_ids"] = "";
+    state["messages"] = "";
+    state["enabled_ruleset"] = "";
+    state["tx.crs_setup_version"] = "428";
+    state["tx.inbound_anomaly_score_threshold"] = "5";
+    state["tx.outbound_anomaly_score_threshold"] = "4";
+    state["tx.reporting_level"] = "4";
+    state["tx.early_blocking"] = "0";
+    state["tx.blocking_paranoia_level"] = "1";
+    state["tx.detection_paranoia_level"] = "1";
+    state["tx.sampling_percentage"] = "100";
+    state["tx.critical_anomaly_score"] = "5";
+    state["tx.error_anomaly_score"] = "4";
+    state["tx.warning_anomaly_score"] = "3";
+    state["tx.notice_anomaly_score"] = "2";
+    state["tx.allowed_methods"] = "GET HEAD POST OPTIONS";
+    state["tx.allowed_request_content_type"] = "|application/x-www-form-urlencoded| |multipart/form-data| |text/xml| |application/xml| |application/soap+xml| |application/json|";
+    state["tx.allowed_request_content_type_charset"] = "|utf-8| |iso-8859-1| |iso-8859-15| |windows-1252|";
+    state["tx.allowed_http_versions"] = "HTTP/1.0 HTTP/1.1 HTTP/2 HTTP/2.0 HTTP/3 HTTP/3.0";
+    state["tx.restricted_extensions"] = ".asa .asax .ascx .bak .bat .cfg .cmd .config .conf .db .dll .ini .key .log .pem .sh .sql .sqlite .swp .tmp";
+    state["tx.restricted_headers_basic"] = "content-encoding proxy lock-token content-range if x-http-method-override x-http-method x-method-override x-middleware-subrequest expect";
+    state["tx.restricted_headers_extended"] = "accept-charset";
+    state["tx.allow_method_override_parameter"] = "0";
+    state["tx.enforce_bodyproc_urlencoded"] = "0";
+    state["tx.crs_validate_utf8_encoding"] = "1";
+    state["tx.crs_skip_response_analysis"] = "0";
+    state["tx.enable_default_collections"] = "0";
+    state["tx.inbound_anomaly_score"] = "0";
+    state["tx.outbound_anomaly_score"] = "0";
+    state
+}
+
+pub fn set_phase(state: map<string>, phase: int) -> map<string> {
+    ctx_set_phase(state, phase)
+}
+
+pub fn apply_action(state: map<string>, phase: int) -> map<string> {
+    state
+}
+
+pub fn apply_marker(state: map<string>, marker: string) -> map<string> {
+    let mut s = state;
+    if ctx_get(&s, "skip") == marker {
+        s["skip"] = "";
+    }
+    s
+}
+
+pub fn update_target(state: map<string>, id: int, target: string) -> map<string> {
+    ctx_update(state, id, target)
+}
+
+pub fn component_signature(state: map<string>, signature: string) -> map<string> {
+    let mut s = state;
+    s["tx.component_signature"] = signature;
+    s
+}
+
+// Match fields: id, score, disruptive, status, skip-after, message.
+fn record(state: map<string>, matched: [string]) -> map<string> {
+    let mut s = state;
+    let phase = number(ctx_get(&s, "phase"), 1);
+    if number((&matched)[0], -1) >= 0 {
+        let existing = ctx_get(&s, "matched_ids");
+        s["matched_ids"] = if existing == "" => { (&matched)[0] } else => { existing + "," + (&matched)[0] };
+    }
+    if (&matched)[5] != "" {
+        s["messages"] = ctx_get(&s, "messages") + (&matched)[5] + "\n";
+    }
+    let key = if phase <= 2 => { "score" } else => { "outbound_score" };
+    let total = number(ctx_get(&s, key), 0) + number((&matched)[1], 0);
+    s[key] = total + "";
+    if phase <= 2 {
+        s["tx.inbound_anomaly_score"] = total + "";
+    } else {
+        s["tx.outbound_anomaly_score"] = total + "";
+    }
+    if (&matched)[2] == "1" || (phase <= 2 && total >= 5) || (phase > 2 && total >= 4) {
+        s["blocked"] = "1";
+        s["status"] = (&matched)[3];
+    }
+    if (&matched)[4] != "" {
+        s["skip"] = (&matched)[4];
+    }
+    s
+}
+
+// Rule fields: kind, id, phase, chain index, has-chain, targets, operator,
+// pattern, transforms, paranoia, score, disruptive, status, skip-after, message.
+pub fn apply_rule(state: map<string>, rule: [string]) -> map<string> {
+    let mut s = state;
+    let id = number((&rule)[1], -1);
+    let phase = number((&rule)[2], 0);
+    let chain_index = number((&rule)[3], 0);
+    let current_user = number(ctx_get(&s, "phase"), 1);
+    let skip_state = ctx_get(&s, "skip");
+    if (phase == 0 || phase == current_user) && number((&rule)[9], 0) <= number(ctx_get(&s, "paranoia"), 1) && skip_state == "" {
+    let mut matched = false;
+    if chain_index == 0 || ctx_get(&s, "chain_matched") == "1" {
+        let values: [string] = ctx_targets(&s, (&rule)[5], id);
+        for i in 0..values.length {
+            let transformed: string = transforms((&values)[i], (&rule)[8]);
+            if op_matches(&s, (&rule)[6], (&rule)[7], transformed) {
+                matched = true;
+                break;
+            }
+        }
+    }
+    if chain_index == 0 && (&rule)[4] == "1" {
+        s["chain_active"] = "1";
+        s["chain_matched"] = if matched => { "1" } else => { "0" };
+        s["chain_id"] = id + "";
+        s["chain_score"] = (&rule)[10];
+        s["chain_disruptive"] = (&rule)[11];
+        s["chain_status"] = (&rule)[12];
+        s["chain_skip"] = (&rule)[13];
+        s["chain_message"] = (&rule)[14];
+    } else if chain_index > 0 {
+        let ok = ctx_get(&s, "chain_matched") == "1" && matched;
+        s["chain_matched"] = if ok => { "1" } else => { "0" };
+        if (&rule)[4] != "1" {
+            if ctx_get(&s, "chain_active") == "1" && ok {
+                s = record(s, [
+                    ctx_get(&s, "chain_id"),
+                    ctx_get(&s, "chain_score"),
+                    ctx_get(&s, "chain_disruptive"),
+                    ctx_get(&s, "chain_status"),
+                    ctx_get(&s, "chain_skip"),
+                    ctx_get(&s, "chain_message")
+                ]);
+            }
+            s["chain_active"] = "0";
+            s["chain_matched"] = "0";
+        }
+    } else if matched {
+        s = record(s, [(&rule)[1], (&rule)[10], (&rule)[11], (&rule)[12], (&rule)[13], (&rule)[14]]);
+    }
+    }
+    s
+}
+
+pub fn category_enabled(state: map<string>, category: string) -> bool {
+    let enabled = ctx_get(&state, "enabled_ruleset");
+    ctx_get(&state, "blocked") != "1" && (enabled == "" || contains(" " + enabled + " ", " " + category + " "))
+}
+
+// bundled from ruleset.rss
+// Executable OWASP CRS 4.28.0 ruleset.
+// Each enabled category executes generated RSS expressions directly.
+
+fn evaluate_request_911_method_enforcement(state: map<string>) -> map<string> {
+    let mut next = state;
+    if category_enabled(&next, "request_911_method_enforcement") { next = apply_rule(next, ["R", "911011", "1", "0", "0", "TX:DETECTION_PARANOIA_LEVEL", "@lt", "1", "", "0", "0", "0", "403", "END-REQUEST-911-METHOD-ENFORCEMENT", ""]); }
+    if category_enabled(&next, "request_911_method_enforcement") { next = apply_rule(next, ["R", "911012", "2", "0", "0", "TX:DETECTION_PARANOIA_LEVEL", "@lt", "1", "", "0", "0", "0", "403", "END-REQUEST-911-METHOD-ENFORCEMENT", ""]); }
+    if category_enabled(&next, "request_911_method_enforcement") { next = apply_rule(next, ["R", "911100", "1", "0", "0", "REQUEST_METHOD", "!@within", "%{tx.allowed_methods}", "", "1", "5", "0", "403", "", "Method is not allowed by policy"]); }
+    if category_enabled(&next, "request_911_method_enforcement") { next = apply_rule(next, ["R", "911013", "1", "0", "0", "TX:DETECTION_PARANOIA_LEVEL", "@lt", "2", "", "0", "0", "0", "403", "END-REQUEST-911-METHOD-ENFORCEMENT", ""]); }
+    if category_enabled(&next, "request_911_method_enforcement") { next = apply_rule(next, ["R", "911014", "2", "0", "0", "TX:DETECTION_PARANOIA_LEVEL", "@lt", "2", "", "0", "0", "0", "403", "END-REQUEST-911-METHOD-ENFORCEMENT", ""]); }
+    if category_enabled(&next, "request_911_method_enforcement") { next = apply_rule(next, ["R", "911015", "1", "0", "0", "TX:DETECTION_PARANOIA_LEVEL", "@lt", "3", "", "0", "0", "0", "403", "END-REQUEST-911-METHOD-ENFORCEMENT", ""]); }
+    if category_enabled(&next, "request_911_method_enforcement") { next = apply_rule(next, ["R", "911016", "2", "0", "0", "TX:DETECTION_PARANOIA_LEVEL", "@lt", "3", "", "0", "0", "0", "403", "END-REQUEST-911-METHOD-ENFORCEMENT", ""]); }
+    if category_enabled(&next, "request_911_method_enforcement") { next = apply_rule(next, ["R", "911017", "1", "0", "0", "TX:DETECTION_PARANOIA_LEVEL", "@lt", "4", "", "0", "0", "0", "403", "END-REQUEST-911-METHOD-ENFORCEMENT", ""]); }
+    if category_enabled(&next, "request_911_method_enforcement") { next = apply_rule(next, ["R", "911018", "2", "0", "0", "TX:DETECTION_PARANOIA_LEVEL", "@lt", "4", "", "0", "0", "0", "403", "END-REQUEST-911-METHOD-ENFORCEMENT", ""]); }
+    if category_enabled(&next, "request_911_method_enforcement") { next = apply_marker(next, "END-REQUEST-911-METHOD-ENFORCEMENT"); }
+    next
+}
+
+fn evaluate_request_942_application_attack_sqli(state: map<string>) -> map<string> {
+    let mut next = state;
+    next = apply_rule(next, ["R", "942100", "2", "0", "0", "QUERY_STRING|ARGS|REQUEST_BODY", "@detectSQLi", "", "none,urlDecodeUni,removeNulls", "1", "5", "0", "403", "", "SQL Injection Attack Detected"]);
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942011", "1", "0", "0", "TX:DETECTION_PARANOIA_LEVEL", "@lt", "1", "", "0", "0", "0", "403", "END-REQUEST-942-APPLICATION-ATTACK-SQLI", ""]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942012", "2", "0", "0", "TX:DETECTION_PARANOIA_LEVEL", "@lt", "1", "", "0", "0", "0", "403", "END-REQUEST-942-APPLICATION-ATTACK-SQLI", ""]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942100", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|REQUEST_HEADERS:User-Agent|REQUEST_HEADERS:Referer|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@detectSQLi", "", "none,utf8toUnicode,urlDecodeUni,removeNulls", "1", "5", "0", "403", "", "SQL Injection Attack Detected via libinjection"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942140", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)\\b(?:d(?:atabas|b_nam)e[^0-9A-Z_a-z]*\\(|(?:information_schema|m(?:aster\\.\\.sysdatabases|s(?:db|ys(?:ac(?:cess(?:objects|storage|xml)|es)|modules2?|(?:object|querie|relationship)s))|ysql\\.db)|northwind|pg_(?:catalog|toast)|tempdb)\\b|s(?:chema(?:_name\\b|[^0-9A-Z_a-z]*\\()|(?:qlite_(?:temp_)?master|ys(?:aux|\\.database_name))\\b))", "none,urlDecodeUni", "1", "5", "0", "403", "", "SQL Injection Attack: Common DB Names Detected"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942151", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)\\b(?:a(?:dd(?:dat|tim)e|es_(?:de|en)crypt|s(?:cii(?:str)?|in)|tan2?)|b(?:enchmark|i(?:n_to_num|t_(?:and|count|length|x?or)))|c(?:har(?:acter)?_length|eil(?:ing)?|o(?:alesce|ercibility|llation|(?:mpres)?s|n(?:cat(?:_ws)?|nection_id|v(?:ert_tz)?)|t)|rc32|ur(?:(?:dat|tim)e|rent_(?:date|setting|time(?:stamp)?|user)))|d(?:a(?:t(?:abase(?:_to_xml)?|e(?:_(?:add|format|sub)|diff))|y(?:name|of(?:month|week|year)))|count|e(?:code|s_(?:de|en)crypt)|ump)|e(?:n(?:c(?:ode|rypt)|ds_?with)|x(?:p(?:ort_set)?|tract(?:value)?))|f(?:i(?:el|n)d_in_set|ound_rows|rom_(?:base64|days|unixtime))|g(?:e(?:ometrycollection|t(?:_(?:format|lock)|pgusername))|(?:r(?:eates|oup_conca)|tid_subse)t)|hex(?:toraw)?|i(?:fnull|n(?:et6?_(?:aton|ntoa)|s(?:ert|tr)|terval)|s(?:_(?:(?:free|used)_lock|ipv(?:4(?:_(?:compat|mapped))?|6)|n(?:ot(?:_null)?|ull)|superuser)|null))|json(?:_(?:a(?:gg|rray(?:_(?:elements(?:_text)?|length))?)|build_(?:array|object)|e(?:ac|xtract_pat)h(?:_text)?|object(?:_(?:agg|keys))?|populate_record(?:set)?|strip_nulls|t(?:o_record(?:set)?|ypeof))|b(?:_(?:array(?:_(?:elements(?:_text)?|length))?|build_(?:array|object)|e(?:ac|xtract_pat)h(?:_text)?|insert|object(?:_(?:agg|keys))?|p(?:ath_(?:(?:exists|match)(?:_tz)?|query(?:_(?:(?:array|first)(?:_tz)?|tz))?)|opulate_record(?:set)?|retty)|s(?:et(?:_lax)?|trip_nulls)|t(?:o_record(?:set)?|ypeof)))?|path)?|l(?:ast_(?:day|insert_id)|case|east|i(?:kely|nestring)|o(?:_(?:from_bytea|put)|ad_file|ca(?:ltimestamp|te)|g(?:10|2))|pad|trim)|m(?:a(?:ke(?:_set|date)|ster_pos_wait)|d5|i(?:crosecon)?d|onthname|ulti(?:linestring|po(?:int|lygon)))|n(?:ame_const|ot_in|ullif)|o(?:ct(?:et_length)?|(?:ld_passwo)?rd)|p(?:eriod_(?:add|diff)|g_(?:client_encoding|(?:databas|read_fil)e|l(?:argeobject|s_dir)|sleep|user)|o(?:lygon|w)|rocedure_analyse)|qu(?:ery_to_xml|ote)|r(?:a(?:dians|nd|wtohex)|elease_lock|ow_(?:count|to_json)|pad|trim)|s(?:chema|e(?:c_to_time|ssion_user)|ha[12]?|in|oundex|q(?:lite_(?:compileoption_(?:get|used)|source_id)|rt)|t(?:arts_?with|d(?:dev_(?:po|sam)p)?|r(?:_to_date|cmp))|ub(?:(?:dat|tim)e|str(?:ing(?:_index)?)?)|ys(?:date|tem_user))|t(?:ime(?:_(?:format|to_sec)|diff|stamp(?:add|diff)?)|o(?:_(?:base64|jsonb?)|n?char|(?:day|second)s)|r(?:im|uncate))|u(?:case|n(?:compress(?:ed_length)?|hex|i(?:str|x_timestamp))|(?:pdatexm|se_json_nul)l|tc_(?:date|time(?:stamp)?)|uid(?:_short)?)|var(?:_(?:po|sam)p|iance)|we(?:ek(?:day|ofyear)|ight_string)|xmltype|yearweek)[^0-9A-Z_a-z]*\\(", "none,urlDecodeUni", "1", "5", "0", "403", "", "SQL Injection Attack: SQL function name detected"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942160", "2", "0", "0", "REQUEST_FILENAME|REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i:sleep\\s*?\\(.*?\\)|benchmark\\s*?\\(.*?\\,.*?\\))", "none,urlDecodeUni,replaceComments", "1", "5", "0", "403", "", "Detects blind sqli tests using sleep() or benchmark()"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942170", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)(?:select|;)[\\s\\x0b]+(?:benchmark|if|sleep)[\\s\\x0b]*?\\([\\s\\x0b]*?\\(?[\\s\\x0b]*?[0-9A-Z_a-z]+", "none,urlDecodeUni", "1", "5", "0", "403", "", "Detects SQL benchmark and sleep injection attempts including conditional queries"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942190", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)[\\\"'`](?:[\\s\\x0b]*![\\s\\x0b]*[\\\"'0-9A-Z_-z]|;?[\\s\\x0b]*(?:having|select|union\\b[\\s\\x0b]*(?:all|(?:distin|sele)ct))\\b[\\s\\x0b]*[^\\s\\x0b])|\\b(?:(?:(?:c(?:onnection_id|urrent_user)|database|schema|user)[\\s\\x0b]*?|select.*?[0-9A-Z_a-z]?user)\\(|exec(?:ute)?[\\s\\x0b]+master\\.|from[^0-9A-Z_a-z]+information_schema[^0-9A-Z_a-z]|into[\\s\\x0b\\+]+(?:dump|out)file[\\s\\x0b]*?[\\\"'`]|union(?:[\\s\\x0b]select[\\s\\x0b]@|[\\s\\x0b\\(0-9A-Z_a-z]*?select))|[\\s\\x0b]*?exec(?:ute)?.*?[^0-9A-Z_a-z]xp_cmdshell|[^0-9A-Z_a-z]iif[\\s\\x0b]*?\\(", "none,urlDecodeUni,removeCommentsChar", "1", "5", "0", "403", "", "Detects MSSQL code execution and information gathering attempts"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942220", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)^(?:json\\.)?(?:429496729[56]|2(?:14748364[78]|.22507385850720(?:07|11)e-308)|-(?:214748364[89]|0000023456)|00000(?:12345|23456)|1e309)$", "none,urlDecodeUni", "1", "5", "0", "403", "", "Looking for integer overflow attacks, these are taken from skipfish, except 2.2.2250738585072011e-308 is the \\\"magic number\\\" crash"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942230", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)[\\s\\x0b\\(\\)]case[\\s\\x0b]+when.*?then|\\)[\\s\\x0b]*?like[\\s\\x0b]*?\\(|select.*?having[\\s\\x0b]*?[^\\s\\x0b]+[\\s\\x0b]*?[^\\s\\x0b0-9A-Z_a-z]|if[\\s\\x0b]?\\([0-9A-Z_a-z]+[\\s\\x0b]*?[<->~]", "none,urlDecodeUni", "1", "5", "0", "403", "", "Detects conditional SQL injection attempts"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942240", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)alter[\\s\\x0b]*?[0-9A-Z_a-z]+.*?char(?:acter)?[\\s\\x0b]+set[\\s\\x0b]+[0-9A-Z_a-z]+|[\\\"'`](?:;*?[\\s\\x0b]*?waitfor[\\s\\x0b]+(?:time|delay)[\\s\\x0b]+[\\\"'`]|;.*?:[\\s\\x0b]*?goto)", "none,urlDecodeUni", "1", "5", "0", "403", "", "Detects MySQL charset switch and MSSQL DoS attempts"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942250", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)m(?:erge.*?using|atch[\\s\\x0b]*?[\\(\\)\\+-\\-0-9A-Z_a-z]+[\\s\\x0b]*?against)[\\s\\x0b]*?\\(|execute[\\s\\x0b]*?immediate[\\s\\x0b]*?[\\\"'`]", "none,urlDecodeUni", "1", "5", "0", "403", "", "Detects MATCH AGAINST, MERGE and EXECUTE IMMEDIATE injections"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942270", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)union.*?select.*?from", "none,urlDecodeUni", "1", "5", "0", "403", "", "Looking for basic sql injection. Common attack string for mysql, oracle and others"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942280", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|REQUEST_HEADERS:User-Agent|REQUEST_HEADERS:Referer|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)select[\\s\\x0b]*?pg_sleep|waitfor[\\s\\x0b]*?delay[\\s\\x0b]?[\\\"'`]+[\\s\\x0b]?[0-9]|;[\\s\\x0b]*?shutdown[\\s\\x0b]*?(?:[#;\\{]|/\\*|--)", "none,urlDecodeUni", "1", "5", "0", "403", "", "Detects Postgres pg_sleep injection, waitfor delay attacks and database shutdown attempts"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942290", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)\\[?\\$(?:a(?:bs|c(?:cumulator|osh?)|dd(?:ToSet)?|ll(?:ElementsTrue)?|n(?:d|yElementTrue)|rray(?:ElemA|ToObjec)t|sinh?|tan[2h]?|vg)|b(?:etween|i(?:narySize|t(?:And|Not|(?:O|Xo)r)?)|ottomN?|sonSize|ucket(?:Auto)?)|c(?:eil|mp|o(?:n(?:cat(?:Arrays)?|d|vert)|sh?|unt|variance(?:Po|Sam)p)|urrentDate)|d(?:a(?:te(?:Add|Diff|From(?:Parts|String)|Subtract|T(?:o(?:Parts|String)|runc))|yOf(?:Month|Week|Year))|e(?:greesToRadians|nseRank|rivative)|iv(?:ide)?|ocumentNumber)|e(?:(?:a|lemMat)ch|q|x(?:ists|p(?:MovingAvg|r)?))|f(?:i(?:lter|rstN?)|loor|unction)|g(?:etField|roup|te?)|(?:hou|xo|yea)r|i(?:fNull|n(?:c|dexOf(?:Array|Bytes|CP)|tegral)?|s(?:Array|Number|o(?:DayOfWeek|Week(?:Year)?)))|jsonSchema|l(?:astN?|et|i(?:ke|(?:nearFil|tera)l)|n|o(?:cf|g(?:10)?)|t(?:e|rim)?)|m(?:a(?:p|xN?)|e(?:dian|rgeObjects|ta)|i(?:llisecond|n(?:N|ute)?)|o(?:d|nth)|ul(?:tiply)?)|n(?:atural|e|in|o[rt])|o(?:bjectToArray|r)|p(?:ercentile|o(?:[pw]|sition)|roject|u(?:ll(?:All)?|sh))|r(?:a(?:diansToDegrees|n(?:[dk]|ge))|e(?:(?:duc|nam)e|gex(?:Find(?:All)?|Match)?|place(?:All|One)|verseArray)|ound|trim)|s(?:(?:ampleRat|lic)e|e(?:cond|t(?:Difference|(?:Equal|WindowField)s|Field|I(?:ntersection|sSubset)|OnInsert|Union)?)|(?:hif|pli|qr)t|i(?:nh?|ze)|ort(?:Array)?|t(?:dDev(?:Po|Sam)p|r(?:Len(?:Bytes|CP)|casecmp))|u(?:b(?:str(?:Bytes|CP)?|tract)|m)|witch)|t(?:anh?|ext|o(?:Bool|D(?:(?:at|oubl)e|ecimal)|HashedIndexKey|Int|Lo(?:ng|wer)|ObjectId|String|U(?:UID|pper)|pN?)|r(?:im|unc)|s(?:Increment|Second)|ype)|unset|w(?:eek|here)|zip)\\b\\]?", "none,urlDecodeUni", "1", "5", "0", "403", "", "Finds basic MongoDB SQL injection attempts"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942320", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)create[\\s\\x0b]+(?:function|procedure)[\\s\\x0b]*?[0-9A-Z_a-z]+[\\s\\x0b]*?\\([\\s\\x0b]*?\\)[\\s\\x0b]*?-|d(?:eclare[^0-9A-Z_a-z]+[#@][\\s\\x0b]*?[0-9A-Z_a-z]+|iv[\\s\\x0b]*?\\([\\+\\-]*[\\s\\x0b\\.0-9]+,[\\+\\-]*[\\s\\x0b\\.0-9]+\\))|exec[\\s\\x0b]*?\\([\\s\\x0b]*?@|(?:lo_(?:impor|ge)t|procedure[\\s\\x0b]+analyse)[\\s\\x0b]*?\\(|;[\\s\\x0b]*?(?:declare|open)[\\s\\x0b]+[\\-0-9A-Z_a-z]+|::(?:b(?:igint|ool)|double[\\s\\x0b]+precision|int(?:eger)?|numeric|oid|real|(?:tex|smallin)t)", "none,urlDecodeUni", "1", "5", "0", "403", "", "Detects MySQL and PostgreSQL stored procedure/function injections"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942350", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)create[\\s\\x0b]+function[\\s\\x0b].+[\\s\\x0b]returns|;[\\s\\x0b]*?(?:alter|(?:(?:cre|trunc|upd)at|re(?:nam|plac))e|d(?:e(?:lete|sc)|rop)|(?:inser|selec)t|load)\\b[\\s\\x0b]*?[\\(\\[]?[0-9A-Z_a-z]{2,}", "none,urlDecodeUni,replaceComments", "1", "5", "0", "403", "", "Detects MySQL UDF injection and other data/structure manipulation attempts"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942360", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)\\b(?:(?:alter|(?:(?:cre|trunc|upd)at|renam)e|de(?:lete|sc)|(?:inser|selec)t|load)[\\s\\x0b]+(?:char|group_concat|load_file)\\b[\\s\\x0b]*\\(?|end[\\s\\x0b]*?\\);)|[\\s\\x0b\\(]load_file[\\s\\x0b]*?\\(|[\\\"'`][\\s\\x0b]+regexp[^0-9A-Z_a-z]|[\\\"'0-9A-Z_-z][\\s\\x0b]+as\\b[\\s\\x0b]*[\\\"'0-9A-Z_-z]+[\\s\\x0b]*\\bfrom|^(?:json\\.)?[^A-Z_a-z]+[\\s\\x0b]*?(?:(?:(?:(?:cre|trunc)at|renam)e|d(?:e(?:lete|sc)|rop)|(?:inser|selec)t|load)[\\s\\x0b]+[0-9A-Z_a-z]+|u(?:pdate[\\s\\x0b]+[0-9A-Z_a-z]+|nion[\\s\\x0b]*(?:all|(?:sele|distin)ct)\\b)|alter[\\s\\x0b]*(?:a(?:(?:ggregat|pplication[\\s\\x0b]*rol)e|s(?:sembl|ymmetric[\\s\\x0b]*ke)y|u(?:dit|thorization)|vailability[\\s\\x0b]*group)|b(?:roker[\\s\\x0b]*priority|ufferpool)|c(?:ertificate|luster|o(?:l(?:latio|um)|nversio)n|r(?:edential|yptographic[\\s\\x0b]*provider))|d(?:atabase|efault|i(?:mension|skgroup)|omain)|e(?:(?:ndpoi|ve)nt|xte(?:nsion|rnal))|f(?:lashback|oreign|u(?:lltext|nction))|hi(?:erarchy|stogram)|group|in(?:dex(?:type)?|memory|stance)|java|l(?:a(?:ngua|r)ge|ibrary|o(?:ckdown|g(?:file[\\s\\x0b]*group|in)))|m(?:a(?:s(?:k|ter[\\s\\x0b]*key)|terialized)|e(?:ssage[\\s\\x0b]*type|thod)|odule)|(?:nicknam|queu)e|o(?:perator|utline)|p(?:a(?:ckage|rtition)|ermission|ro(?:cedur|fil)e)|r(?:e(?:mot|sourc)e|o(?:l(?:e|lback)|ute))|s(?:chema|e(?:arch|curity|rv(?:er|ice)|quence|ssion)|y(?:mmetric[\\s\\x0b]*key|nonym)|togroup)|t(?:able(?:space)?|ext|hreshold|r(?:igger|usted)|ype)|us(?:age|er)|view|w(?:ork(?:load)?|rapper)|x(?:ml[\\s\\x0b]*schema|srobject))\\b)", "none,urlDecodeUni", "1", "5", "0", "403", "", "Detects concatenated basic SQL injection and SQLLFI attempts"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942500", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)/\\*[\\s\\x0b]*?[!\\+](?:[\\s\\x0b\\(\\)\\-0-9=A-Z_a-z]+)?\\*/", "none,urlDecodeUni", "1", "5", "0", "403", "", "MySQL in-line comment detected"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942540", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "^(?:[^']*'|[^\\\"]*\\\"|[^`]*`)[\\s\\x0b]*;", "none,urlDecodeUni,replaceComments", "1", "5", "0", "403", "", "SQL Authentication bypass (split query)"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942560", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)1\\.e(?:[\\(\\),]|\\.[\\$0-9A-Z_a-z])", "none,urlDecodeUni,replaceComments", "1", "5", "0", "403", "", "MySQL Scientific Notation payload detected"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942550", "2", "0", "0", "REQUEST_FILENAME|REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)[\\\"'`][\\[\\{][^#\\]\\}]*[\\]\\}]+[\\\"'`]|(?:[\\-@]>?|<@|@[\\?@]|\\?(?:(?:)|&|\\|#>)|#(?:>>|-)|->>|[<>])[\\\"'`](?:[\\[\\{][^#\\]\\}]*[\\]\\}]+[\\\"'`]|\\$[\\.\\[])|\\bjson_extract\\b[^\\(]*\\([^\\)]*\\)", "none,urlDecodeUni,removeWhitespace", "1", "5", "0", "403", "", "JSON-Based SQL Injection"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942013", "1", "0", "0", "TX:DETECTION_PARANOIA_LEVEL", "@lt", "2", "", "0", "0", "0", "403", "END-REQUEST-942-APPLICATION-ATTACK-SQLI", ""]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942014", "2", "0", "0", "TX:DETECTION_PARANOIA_LEVEL", "@lt", "2", "", "0", "0", "0", "403", "END-REQUEST-942-APPLICATION-ATTACK-SQLI", ""]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942120", "2", "0", "0", "ARGS_NAMES|ARGS|REQUEST_FILENAME|XML:/*|XML://@*", "@rx", "(?i)[!=]=|&&|\\|\\||->|>[=>]|<(?:[<=]|>(?:[\\s\\x0b]+binary)?)|\\b(?:(?:xor|r(?:egexp|like)|i(?:snull|like)|notnull)\\b|collate(?:[^0-9A-Z_a-z]*?(?:U&)?[\\\"'`]|[^0-9A-Z_a-z]+(?:(?:binary|nocase|rtrim)\\b|[0-9A-Z_a-z]*?_))|(?:likel(?:ihood|y)|unlikely)[\\s\\x0b]*\\()|r(?:egexp|like)[\\s\\x0b]+binary|not[\\s\\x0b]+between[\\s\\x0b]+(?:0[\\s\\x0b]+and|(?:'[^']*'|\\\"[^\\\"]*\\\")[\\s\\x0b]+and[\\s\\x0b]+(?:'[^']*'|\\\"[^\\\"]*\\\"))|is[\\s\\x0b]+null|like[\\s\\x0b]+(?:null|[0-9A-Z_a-z]+[\\s\\x0b]+escape\\b)|(?:^|[^0-9A-Z_a-z])in[\\s\\x0b\\+]*\\([\\s\\x0b\\\"0-9]+[^\\(\\)]*\\)|[!<->][\\s\\x0b]*all\\b", "none,utf8toUnicode,urlDecodeUni", "2", "5", "0", "403", "", "SQL Injection Attack: SQL Operator Detected"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942130", "2", "0", "1", "ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)[\\s\\x0b\\\"'-\\)`]*?\\b([0-9A-Z_a-z]+)\\b[\\s\\x0b\\\"'-\\)`]*?(?:=|<=>|(?:sounds[\\s\\x0b]+)?like|glob|r(?:like|egexp))[\\s\\x0b\\\"'-\\)`]*?\\b([0-9A-Z_a-z]+)\\b", "none,urlDecodeUni,replaceComments", "2", "5", "0", "403", "", "SQL Injection Attack: SQL Boolean-based attack detected"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942130", "0", "1", "0", "TX:1", "@streq", "%{TX.2}", "none", "0", "0", "0", "403", "", ""]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942131", "2", "0", "1", "ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)[\\s\\x0b\\\"'-\\)`]*?\\b([0-9A-Z_a-z]+)\\b[\\s\\x0b\\\"'-\\)`]*?(?:![<->]|<[=>]?|>=?|\\^|is[\\s\\x0b]+not|not[\\s\\x0b]+(?:like|r(?:like|egexp)))[\\s\\x0b\\\"'-\\)`]*?\\b([0-9A-Z_a-z]+)\\b", "none,urlDecodeUni,replaceComments", "2", "5", "0", "403", "", "SQL Injection Attack: SQL Boolean-based attack detected"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942131", "0", "1", "0", "TX:1", "!@streq", "%{TX.2}", "none", "0", "0", "0", "403", "", ""]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942150", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)\\b(?:json(?:_[0-9A-Z_a-z]+)?|a(?:bs|(?:cos|sin)h?|tan[2h]?|vg)|c(?:eil(?:ing)?|h(?:a(?:nges|r(?:set)?)|r)|o(?:alesce|sh?|unt)|ast)|d(?:e(?:grees|fault)|a(?:te|y))|exp|f(?:loor(?:avg)?|ormat|ield)|g(?:lob|roup_concat)|h(?:ex|our)|i(?:f(?:null)?|if|n(?:str)?)|l(?:ast(?:_insert_rowid)?|ength|ike(?:l(?:ihood|y))?|n|o(?:ad_extension|g(?:10|2)?|wer(?:pi)?|cal)|trim)|m(?:ax|in(?:ute)?|o(?:d|nth))|n(?:ullif|ow)|p(?:i|ow(?:er)?|rintf|assword)|quote|r(?:a(?:dians|ndom(?:blob)?)|e(?:p(?:lace|eat)|verse)|ound|trim|ight)|s(?:i(?:gn|nh?)|oundex|q(?:lite_(?:compileoption_(?:get|used)|offset|source_id|version)|rt)|u(?:bstr(?:ing)?|m)|econd|leep)|t(?:anh?|otal(?:_changes)?|r(?:im|unc)|ypeof|ime)|u(?:n(?:icode|likely)|(?:pp|s)er)|zeroblob|bin|v(?:alues|ersion)|week|year)[^0-9A-Z_a-z]*\\(", "none,urlDecodeUni", "2", "5", "0", "403", "", "SQL Injection Attack: SQL function name detected"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942180", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)(?:/\\*)+[\\\"'`]+[\\s\\x0b]?(?:--|[#\\{]|/\\*)?|[\\\"'`](?:[\\s\\x0b]*(?:(?:x?or|and|div|like|between)[\\s\\x0b\\-0-9A-Z_a-z]+[\\(\\)\\+-\\-<->][\\s\\x0b]*[\\\"'0-9`]|[!=\\|](?:[\\s\\x0b!\\+\\-0-9=]+[^\\[]*[\\\"'\\(`].*|[\\s\\x0b!0-9=]+[^0-9]*[0-9]+)$|(?:like|print)[^0-9A-Z_a-z]+[\\\"'\\(0-9A-Z_-z]|;)|(?:[<>~]+|[\\s\\x0b]*[^\\s\\x0b0-9A-Z_a-z]?=[\\s\\x0b]*|[^0-9A-Z_a-z]*?[\\+=]+[^0-9A-Z_a-z]*?)[\\\"'`])|[0-9][\\\"'`][\\s\\x0b]+[\\\"'`][\\s\\x0b]+[0-9]|^(?:json\\.)?admin[\\s\\x0b]*?[\\\"'`]|[\\s\\x0b\\\"'\\(`][\\s\\x0b]*?glob[^0-9A-Z_a-z]+[\\\"'\\(0-9A-Z_-z]|[\\s\\x0b]is[\\s\\x0b]*?0[^0-9A-Z_a-z]|where[\\s\\x0b][\\s\\x0b,-\\.0-9A-Z_a-z]+[\\s\\x0b]=", "none,urlDecodeUni", "2", "5", "0", "403", "", "Detects basic SQL authentication bypass attempts 1/3"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942200", "2", "0", "1", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|REQUEST_HEADERS:User-Agent|REQUEST_HEADERS:Referer|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)(?:,[^\\)]*?(?:[0-9a-f]+|\\([0-9a-f]+\\))|\\([^,]+(?:,[\\s\\x0b]*[0-9a-f]+)+\\))(?:$|[\\\"'`](?:$|[^\\\"'`]+[\\\"'`])|(?:\\r?\\n)?\\z)|,[^\\)]*?[\\\"'`][^\\\"'`]+[\\\"'`]|[^0-9A-Z_a-z]select.+[^0-9A-Z_a-z]*?from|(?:alter|(?:(?:cre|trunc|upd)at|renam)e|d(?:e(?:lete|sc)|rop)|(?:inser|selec)t|load)[\\s\\x0b]*?\\([\\s\\x0b]*?space[\\s\\x0b]*?\\(", "none,urlDecodeUni", "2", "5", "0", "403", "", "Detects MySQL comment-/space-obfuscated injections and backtick termination"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942200", "0", "1", "0", "MATCHED_VARS", "!@rx", "^[,\\-0-9=A-Z_a-z]+$", "none", "0", "0", "0", "403", "", ""]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942210", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)(?:&&|\\|\\||and|between|div|like|n(?:and|ot)|(?:xx?)?or)[\\s\\x0b\\(]+[0-9A-Z_a-z]+[\\s\\x0b\\)]*?[!\\+=]+[\\s\\x0b0-9]*?[\\\"'-\\)=`]|[0-9](?:[\\s\\x0b]*?(?:and|between|div|like|x?or)[\\s\\x0b]*?[0-9]+[\\s\\x0b]*?[\\+\\-]|[\\s\\x0b]+group[\\s\\x0b]+by.+\\()|/[0-9A-Z_a-z]+;?[\\s\\x0b]+(?:and|between|div|having|like|x?or|select)[^0-9A-Z_a-z]|(?:[#;]|--)[\\s\\x0b]*?(?:alter|drop|(?:insert|update)[\\s\\x0b]*?[0-9A-Z_a-z]{2,})|@.+=[\\s\\x0b]*?\\([\\s\\x0b]*?select|[^0-9A-Z_a-z]SET[\\s\\x0b]*?@[0-9A-Z_a-z]+", "none,urlDecodeUni", "2", "5", "0", "403", "", "Detects chained SQL injection attempts 1/2"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942260", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)[\\\"'`][\\s\\x0b]*?(?:(?:and|n(?:and|ot)|(?:xx?)?or|div|like|between|\\|\\||&&)[\\s\\x0b]+[\\s\\x0b0-9A-Z_a-z]+=[\\s\\x0b]*?[0-9A-Z_a-z]+[\\s\\x0b]*?having[\\s\\x0b]+|like[^0-9A-Z_a-z]*?[\\\"'0-9`])|[0-9A-Z_a-z][\\s\\x0b]+like[\\s\\x0b]+[\\\"'`]|like[\\s\\x0b]*?[\\\"'`]%|select[\\s\\x0b]+?[\\s\\x0b\\\"'-\\),-\\.0-9A-\\[\\]_-z]+from[\\s\\x0b]+", "none,urlDecodeUni", "2", "5", "0", "403", "", "Detects basic SQL authentication bypass attempts 2/3"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942300", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)\\)[\\s\\x0b]*?when[\\s\\x0b]*?[0-9]+[\\s\\x0b]*?then|[\\\"'`][\\s\\x0b]*?(?:[#\\{]|--)|/\\*![\\s\\x0b]?[0-9]+|\\b(?:(?:binary|cha?r)[\\s\\x0b]*?\\([\\s\\x0b]*?[0-9]|(?:and|n(?:and|ot)|(?:xx?)?or|div|like|between|r(?:egexp|like))[\\s\\x0b]+[0-9A-Z_a-z]+\\()|(?:\\|\\||&&)[\\s\\x0b]*?[0-9A-Z_a-z]+\\(", "none,urlDecodeUni", "2", "5", "0", "403", "", "Detects MySQL comments, conditions and ch(a)r injections"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942310", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)(?:\\([\\s\\x0b]*?select[\\s\\x0b]*?[0-9A-Z_a-z]+|coalesce|order[\\s\\x0b]+by[\\s\\x0b]+if[0-9A-Z_a-z]*?)[\\s\\x0b]*?\\(|\\*/from|\\+[\\s\\x0b]*?[0-9]+[\\s\\x0b]*?\\+[\\s\\x0b]*?@|[0-9A-Z_a-z][\\\"'`][\\s\\x0b]*?(?:(?:[\\+\\-=@\\|]+[\\s\\x0b]+?)+|[\\+\\-=@\\|]+)[\\(0-9]|@@[0-9A-Z_a-z]+[\\s\\x0b]*?[^\\s\\x0b0-9A-Z_a-z]|[^0-9A-Z_a-z]!+[\\\"'`][0-9A-Z_a-z]|[\\\"'`](?:;[\\s\\x0b]*?(?:if|while|begin)|[\\s\\x0b0-9]+=[\\s\\x0b]*?[0-9])|[\\s\\x0b\\(]+case[0-9]*?[^0-9A-Z_a-z].+[tw]hen[\\s\\x0b\\(]", "none,urlDecodeUni", "2", "5", "0", "403", "", "Detects chained SQL injection attempts 2/2"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942330", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)[\\\"'`][\\s\\x0b]*?\\b(?:x?or|div|like|between|and)\\b[\\s\\x0b]*?[\\\"'`]?[0-9]|\\x5cx(?:2[37]|3d)|^(?:.?[\\\"'`]$|[\\\"'\\x5c`]*?(?:[\\\"'0-9`]+|[^\\\"'`]+[\\\"'`])[\\s\\x0b]*?\\b(?:and|n(?:and|ot)|(?:xx?)?or|div|like|between|\\|\\||&&)\\b[\\s\\x0b]*?[\\\"'0-9A-Z_-z][!&\\(\\)\\+-\\.@])|[^\\s\\x0b0-9A-Z_a-z][0-9A-Z_a-z]+[\\s\\x0b]*?[\\-\\|][\\s\\x0b]*?[\\\"'`][\\s\\x0b]*?[0-9A-Z_a-z]|@(?:[0-9A-Z_a-z]+[\\s\\x0b]+(?:and|x?or|div|like|between)\\b[\\s\\x0b]*?[\\\"'0-9`]+|[\\-0-9A-Z_a-z]+[\\s\\x0b](?:and|x?or|div|like|between)\\b[\\s\\x0b]*?[^\\s\\x0b0-9A-Z_a-z])|[^\\s\\x0b0-:A-Z_a-z][\\s\\x0b]*?[0-9][^0-9A-Z_a-z]+[^\\s\\x0b0-9A-Z_a-z][\\s\\x0b]*?[\\\"'`].|[^0-9A-Z_a-z]information_schema|table_name[^0-9A-Z_a-z]", "none,urlDecodeUni", "2", "5", "0", "403", "", "Detects classic SQL injection probings 1/3"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942340", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)in[\\s\\x0b]*?\\(+[\\s\\x0b]*?select|(?:(?:and|n(?:and|ot)|(?:xx?)?or|div|like|between)[\\s\\x0b]+|(?:\\|\\||&&)[\\s\\x0b]*?)[\\s\\x0b\\+0-9A-Z_a-z]+(?:regexp[\\s\\x0b]*?\\(|sounds[\\s\\x0b]+like[\\s\\x0b]*?[\\\"'`]|[0-9=]+x)|[\\\"'`](?:[\\s\\x0b]*?(?:(?:[0-9]+[\\s\\x0b]*?(?:--|#)|is[\\s\\x0b]*?(?:[0-9][^\\\"'`]+[\\\"'`]?[0-9A-Z_a-z]|[\\.0-9]+[\\s\\x0b]*?[^0-9A-Z_a-z][^\\\"'`]*[\\\"'`])|(?:and|n(?:and|ot)|(?:xx?)?or|div|like|between)[\\s\\x0b]+|(?:\\|\\||&&)[\\s\\x0b]*?)(?:array[\\s\\x0b]*?\\[|(?:tru|fals)e\\b|[0-9A-Z_a-z]+(?:[\\s\\x0b]*?!?~|[\\s\\x0b]+(?:not[\\s\\x0b]+)?similar[\\s\\x0b]+to[\\s\\x0b]+))|[%&<->\\^]+[0-9]+[\\s\\x0b]*?(?:and|n(?:and|ot)|(?:xx?)?or|div|like|between)=)|(?:[^0-9A-Z_a-z]+[\\+\\-0-9A-Z_a-z]+[\\s\\x0b]*?=[\\s\\x0b]*?[0-9][^0-9A-Z_a-z]+|\\|?[\\-0-9A-Z_a-z]{3,}[^\\s\\x0b,\\.0-9A-Z_a-z]+)[\\\"'`])|\\bexcept[\\s\\x0b]+(?:select\\b|values[\\s\\x0b]*?\\()", "none,urlDecodeUni", "2", "5", "0", "403", "", "Detects basic SQL authentication bypass attempts 3/3"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942361", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i:^(?:json\\.)?[\\W\\d]+\\s*?(?:alter|union)\\b)", "none,urlDecodeUni", "2", "5", "0", "403", "", "Detects basic SQL injection based on keyword alter or union"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942362", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)(?:alter|(?:(?:cre|trunc|upd)at|renam)e|de(?:lete|sc)|(?:inser|selec)t|load)[\\s\\x0b]+(?:char|group_concat|load_file)[\\s\\x0b]?\\(?|end[\\s\\x0b]*?\\);|[\\s\\x0b\\(]load_file[\\s\\x0b]*?\\(|[\\\"'`][\\s\\x0b]+regexp[^0-9A-Z_a-z]|[^A-Z_a-z][\\s\\x0b]+as\\b[\\s\\x0b]*[\\\"'0-9A-Z_-z]+[\\s\\x0b]*\\bfrom|^(?:json\\.)?[^A-Z_a-z]+[\\s\\x0b]*?(?:create[\\s\\x0b]+[0-9A-Z_a-z]+|(?:d(?:e(?:lete|sc)|rop)|(?:inser|selec)t|load|(?:renam|truncat)e|u(?:pdate|nion[\\s\\x0b]*(?:all|(?:sele|distin)ct))|alter[\\s\\x0b]*(?:a(?:(?:ggregat|pplication[\\s\\x0b]*rol)e|s(?:sembl|ymmetric[\\s\\x0b]*ke)y|u(?:dit|thorization)|vailability[\\s\\x0b]*group)|b(?:roker[\\s\\x0b]*priority|ufferpool)|c(?:ertificate|luster|o(?:l(?:latio|um)|nversio)n|r(?:edential|yptographic[\\s\\x0b]*provider))|d(?:atabase|efault|i(?:mension|skgroup)|omain)|e(?:(?:ndpoi|ve)nt|xte(?:nsion|rnal))|f(?:lashback|oreign|u(?:lltext|nction))|hi(?:erarchy|stogram)|group|in(?:dex(?:type)?|memory|stance)|java|l(?:a(?:ngua|r)ge|ibrary|o(?:ckdown|g(?:file[\\s\\x0b]*group|in)))|m(?:a(?:s(?:k|ter[\\s\\x0b]*key)|terialized)|e(?:ssage[\\s\\x0b]*type|thod)|odule)|(?:nicknam|queu)e|o(?:perator|utline)|p(?:a(?:ckage|rtition)|ermission|ro(?:cedur|fil)e)|r(?:e(?:mot|sourc)e|o(?:l(?:e|lback)|ute))|s(?:chema|e(?:arch|curity|rv(?:er|ice)|quence|ssion)|y(?:mmetric[\\s\\x0b]*key|nonym)|togroup)|t(?:able(?:space)?|ext|hreshold|r(?:igger|usted)|ype)|us(?:age|er)|view|w(?:ork(?:load)?|rapper)|x(?:ml[\\s\\x0b]*schema|srobject)))\\b)", "none,urlDecodeUni", "2", "5", "0", "403", "", "Detects concatenated basic SQL injection and SQLLFI attempts"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942370", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|REQUEST_HEADERS:Referer|REQUEST_HEADERS:User-Agent|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)[\\\"'`](?:[\\s\\x0b]*?(?:(?:\\*.+(?:x?or|div|like|between|(?:an|i)d)[^0-9A-Z_a-z]*?[\\\"'`]|(?:x?or|div|like|between|and)[\\s\\x0b][^0-9]+[\\-0-9A-Z_a-z]+[^0-9]*)[0-9]|[^\\s\\x0b0-9\\?A-Z_a-z]+[\\s\\x0b]*?[^\\s\\x0b0-9A-Z_a-z]+[\\s\\x0b]*?[\\\"'`]|[^\\s\\x0b0-9A-Z_a-z]+[\\s\\x0b]*?[^A-Z_a-z](?:[^#]*#|.*?--))|[^\\*]*\\*[\\s\\x0b]*?[0-9])|\\^[\\\"'`]|[%\\(-\\+\\-<>][\\-0-9A-Z_a-z]+[^\\s\\x0b0-9A-Z_a-z]+[\\\"'`][^,]", "none,urlDecodeUni", "2", "5", "0", "403", "", "Detects classic SQL injection probings 2/3"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942380", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)\\b(?:having\\b(?:[\\s\\x0b]+(?:[0-9]{1,10}|'[^=]{1,10}')[\\s\\x0b]*?[<->]| ?(?:[0-9]{1,10} ?[<->]+|[\\\"'][^=]{1,10}[ \\\"'<-\\?\\[]+))|ex(?:ecute(?:\\(|[\\s\\x0b]{1,5}[\\$\\.0-9A-Z_a-z]{1,5}[\\s\\x0b]{0,3})|ists[\\s\\x0b]*?\\([\\s\\x0b]*?select\\b)|(?:create[\\s\\x0b]+?table.{0,20}?|like[^0-9A-Z_a-z]*?char[^0-9A-Z_a-z]*?)\\()|select.*?case|from.*?limit|order[\\s\\x0b]by|exists[\\s\\x0b](?:[\\s\\x0b]select|s(?:elect[^\\s\\x0b](?:if(?:null)?[\\s\\x0b]\\(|top|concat)|ystem[\\s\\x0b]\\()|\\bhaving\\b[\\s\\x0b]+[0-9]{1,10}|'[^=]{1,10}')", "none,urlDecodeUni", "2", "5", "0", "403", "", "SQL Injection Attack"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942390", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)\\bx?or\\b(?:[\\s\\x0b]+[0-9]{1,10}(?:[\\s\\x0b]*[<->])?|[\\s\\x0b]*[\\\"'][^=]{1,10}[\\\"'])|[\\\"'][\\s\\x0b]+\\bx?or\\b[\\s\\x0b]+[^!\\+\\-<->]{1,20}[!\\+\\-<->]", "none,urlDecodeUni", "2", "5", "0", "403", "", "SQL Injection Attack using (X)OR"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942400", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)\\band\\b(?:[\\s\\x0b]+(?:[0-9]{1,10}[\\s\\x0b]*?[<->]|'[^=]{1,10}')| ?(?:[0-9]{1,10}|[\\\"'][^=]{1,10}[\\\"']) ?[<->]+)", "none,urlDecodeUni", "2", "5", "0", "403", "", "SQL Injection Attack"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942410", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)\\b(?:a(?:(?:b|co)s|vg)|bin|c(?:(?:as|o(?:nver|un))t|h(?:ar(?:set)?|r))|d(?:a(?:te|y)|e(?:fault|grees))|elt|f(?:ield|loor|ormat)|(?:hou|quarte|yea)r|i[fns]|l(?:ast|e(?:ft|ngth)|n|ikelihood|o(?:cal|g|wer))|m(?:ax|in(?:ute)?|o(?:d|nth))|now|p(?:assword|i|o(?:sition|wer))|r(?:awtonhex(?:toraw)?|e(?:p(?:eat|lace)|verse)|ight|ound)|s(?:econd|ign|leep|pace|tddev|um)|t(?:an|ime|o_(?:n?char|(?:day|second)s))|u(?:nlikely|(?:pp|s)er)|v(?:alues|ersion)|week)[^0-9A-Z_a-z]*?\\(", "none,urlDecodeUni", "2", "5", "0", "403", "", "SQL Injection Attack"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942470", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)autonomous_transaction|(?:current_use|n?varcha|tbcreato)r|db(?:a_users|ms_java)|open(?:owa_util|query|rowset)|s(?:p_(?:(?:addextendedpro|sqlexe)c|execute(?:sql)?|help|is_srvrolemember|makewebtask|oacreate|p(?:assword|repare)|replwritetovarbin)|ql_(?:longvarchar|variant))|utl_(?:file|http)|xp_(?:availablemedia|(?:cmdshel|servicecontro)l|dirtree|e(?:numdsn|xecresultset)|filelist|loginconfig|makecab|ntsec(?:_enumdomains)?|reg(?:addmultistring|delete(?:key|value)|enum(?:key|value)s|re(?:ad|movemultistring)|write)|terminate(?:_process)?)", "none,urlDecodeUni", "2", "5", "0", "403", "", "SQL Injection Attack"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942480", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|REQUEST_HEADERS|!REQUEST_HEADERS:Cookie|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)\\b(?:(?:d(?:bms_[0-9A-Z_a-z]+\\.|elete\\b[^0-9A-Z_a-z]*?\\bfrom)|(?:group\\b.*?\\bby\\b.{1,100}?\\bhav|overlay\\b[^0-9A-Z_a-z]*?\\(.*?\\b[^0-9A-Z_a-z]*?plac)ing|in(?:ner\\b[^0-9A-Z_a-z]*?\\bjoin|sert\\b[^0-9A-Z_a-z]*?\\binto|to\\b[^0-9A-Z_a-z]*?\\b(?:dump|out)file)|load\\b[^0-9A-Z_a-z]*?\\bdata\\b.*?\\binfile|s(?:elect\\b.{1,100}?\\b(?:(?:.*?\\bdump\\b.*|(?:count|length)\\b.{1,100}?)\\bfrom|(?:data_typ|from\\b.{1,100}?\\bwher)e|instr|to(?:_(?:cha|numbe)r|p\\b.{1,100}?\\bfrom))|ys_context)|u(?:nion\\b.{1,100}?\\bselect|tl_inaddr))\\b|print\\b[^0-9A-Z_a-z]*?@@)|(?:collation[^0-9A-Z_a-z]*?\\(a|@@version|;[^0-9A-Z_a-z]*?\\b(?:drop|shutdown))\\b|'(?:dbo|msdasql|s(?:a|qloledb))'", "none,urlDecodeUni", "2", "5", "0", "403", "", "SQL Injection Attack"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942430", "2", "0", "0", "ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "((?:(?:[!-\\+\\-:->@\\[\\]\\^`\\{-~]|\\x{c2}\\x{b4}|\\x{e2}\\x80[\\x98\\x99])[^!-\\+\\-:->@\\[\\]\\^`\\{-~]*?){12})", "none,urlDecodeUni", "2", "3", "0", "403", "", "Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942440", "2", "0", "1", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "/\\*!?|\\*/|[';]--|--(?:[\\s\\x0b]|[^\\-]*?-)|[^&\\-]#.*?[\\s\\x0b]|;?\\x00", "none,urlDecodeUni", "2", "5", "0", "403", "", "SQL Comment Sequence Detected"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942440", "0", "1", "0", "MATCHED_VARS", "!@rx", "^(?:ey[\\-0-9A-Z_a-z]+\\.ey[\\-0-9A-Z_a-z]+\\.)?[\\-0-9A-Z_a-z]+$", "none", "0", "0", "0", "403", "", ""]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942450", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)\\b0x[0-9a-f]{3,}|(?:x'[0-9a-f]{3,}|b'[01]{10,})'", "none,urlDecodeUni", "2", "5", "0", "403", "", "SQL Bin or Hex Encoding Identified"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942510", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "`(?:[\\s\\x0b\\(\\)\\+\\-0-9<=@-Z_a-\\{\\}]{2,29}|(?:[\\+/-9A-Za-z]{4})+(?:(?:[\\+/-9A-Za-z]{2}=|[\\+/-9A-Za-z]{3})=)?)`", "none,urlDecodeUni", "2", "5", "0", "403", "", "SQLi bypass attempt by ticks or backticks detected"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942520", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)[\\\"'`][\\s\\x0b]*?(?:(?:is[\\s\\x0b]+not|not[\\s\\x0b]+(?:like|glob|(?:betwee|i)n|null|regexp|match)|mod|div|sounds[\\s\\x0b]+like)\\b|[%&\\*\\+\\-/<->\\^\\|]{1,3})", "none,urlDecodeUni", "2", "5", "0", "403", "", "Detects basic SQL authentication bypass attempts 4.0/4"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942521", "2", "0", "1", "REQUEST_HEADERS:User-Agent|REQUEST_HEADERS:Referer|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)^(?:[^']*?(?:'[^']*?'[^']*?)*?'|[^\\\"]*?(?:\\\"[^\\\"]*?\\\"[^\\\"]*?)*?\\\"|[^`]*?(?:`[^`]*?`[^`]*?)*?`)[\\s\\x0b]*([0-9A-Z_a-z]+)\\b", "none,urlDecodeUni", "2", "5", "0", "403", "", "Detects basic SQL authentication bypass attempts 4.1/4"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942521", "0", "1", "0", "TX:1", "@rx", "^(?:and|or)$", "none", "0", "0", "0", "403", "", ""]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942522", "2", "0", "0", "ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "\\x5c['\\\"`](?:.*?['\\\"`])?\\s*(?:and|or)\\b", "none,urlDecodeUni", "2", "5", "0", "403", "", "Detects basic SQL authentication bypass attempts 4.1/4"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942101", "1", "0", "0", "REQUEST_BASENAME|REQUEST_FILENAME", "@detectSQLi", "", "none,utf8toUnicode,urlDecodeUni,removeNulls", "2", "5", "0", "403", "", "SQL Injection Attack Detected via libinjection"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942152", "1", "0", "0", "REQUEST_HEADERS:Referer|REQUEST_HEADERS:User-Agent", "@rx", "(?i)\\b(?:a(?:dd(?:dat|tim)e|es_(?:de|en)crypt|s(?:cii(?:str)?|in)|tan2?)|b(?:enchmark|i(?:n_to_num|t_(?:and|count|length|x?or)))|c(?:har(?:acter)?_length|eil(?:ing)?|o(?:alesce|ercibility|llation|(?:mpres)?s|n(?:cat(?:_ws)?|nection_id|v(?:ert(?:_tz)?)?)|t)|rc32|ur(?:(?:dat|tim)e|rent_(?:date|setting|time(?:stamp)?|user)))|d(?:a(?:t(?:abase(?:_to_xml)?|e(?:_(?:add|format|sub)|diff))|y(?:name|of(?:month|week|year)))|count|e(?:code|grees|s_(?:de|en)crypt)|ump)|e(?:lt|n(?:c(?:ode|rypt)|ds_?with)|x(?:p(?:ort_set)?|tract(?:value)?))|f(?:i(?:el|n)d_in_set|ound_rows|rom_(?:base64|days|unixtime))|g(?:e(?:ometrycollection|t(?:_(?:format|lock)|pgusername))|(?:r(?:eates|oup_conca)|tid_subse)t)|hex(?:toraw)?|i(?:fnull|n(?:et6?_(?:aton|ntoa)|s(?:ert|tr)|terval)|s(?:_(?:(?:free|used)_lock|ipv(?:4(?:_(?:compat|mapped))?|6)|n(?:ot(?:_null)?|ull)|superuser)|null))|json(?:_(?:a(?:gg|rray(?:_(?:elements(?:_text)?|length))?)|build_(?:array|object)|e(?:ac|xtract_pat)h(?:_text)?|object(?:_(?:agg|keys))?|populate_record(?:set)?|strip_nulls|t(?:o_record(?:set)?|ypeof))|b(?:_(?:array(?:_(?:elements(?:_text)?|length))?|build_(?:array|object)|object(?:_(?:agg|keys))?|e(?:ac|xtract_pat)h(?:_text)?|insert|p(?:ath_(?:(?:exists|match)(?:_tz)?|query(?:_(?:(?:array|first)(?:_tz)?|tz))?)|opulate_record(?:set)?|retty)|s(?:et(?:_lax)?|trip_nulls)|t(?:o_record(?:set)?|ypeof)))?|path)?|l(?:ast_(?:day|insert_id)|case|e(?:as|f)t|i(?:kel(?:ihood|y)|nestring)|o(?:_(?:from_bytea|put)|ad_file|ca(?:ltimestamp|te)|g(?:10|2)|wer)|pad|trim)|m(?:a(?:ke(?:_set|date)|ster_pos_wait)|d5|i(?:crosecon)?d|onthname|ulti(?:linestring|po(?:int|lygon)))|n(?:ame_const|ot_in|ullif)|o(?:ct(?:et_length)?|(?:ld_passwo)?rd)|p(?:eriod_(?:add|diff)|g_(?:client_encoding|(?:databas|read_fil)e|l(?:argeobject|s_dir)|sleep|user)|o(?:(?:lyg|siti)on|w)|rocedure_analyse)|qu(?:arter|ery_to_xml|ote)|r(?:a(?:dians|nd|wtohex)|elease_lock|ow_(?:count|to_json)|pad|trim)|s(?:chema|e(?:c_to_time|ssion_user)|ha[12]?|in|oundex|pace|q(?:lite_(?:compileoption_(?:get|used)|source_id)|rt)|t(?:arts_?with|d(?:dev_(?:po|sam)p)?|r(?:_to_date|cmp))|ub(?:(?:dat|tim)e|str(?:ing(?:_index)?)?)|ys(?:date|tem_user))|t(?:ime(?:_(?:format|to_sec)|diff|stamp(?:add|diff)?)|o(?:_(?:base64|jsonb?)|n?char|(?:day|second)s)|r(?:im|uncate))|u(?:case|n(?:compress(?:ed_length)?|hex|i(?:str|x_timestamp)|likely)|(?:pdatexm|se_json_nul)l|tc_(?:date|time(?:stamp)?)|uid(?:_short)?)|var(?:_(?:po|sam)p|iance)|we(?:ek(?:day|ofyear)|ight_string)|xmltype|yearweek)[^0-9A-Z_a-z]*\\(", "none,urlDecodeUni", "2", "5", "0", "403", "", "SQL Injection Attack: SQL function name detected"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942321", "1", "0", "0", "REQUEST_HEADERS:Referer|REQUEST_HEADERS:User-Agent", "@rx", "(?i)create[\\s\\x0b]+(?:function|procedure)[\\s\\x0b]*?[0-9A-Z_a-z]+[\\s\\x0b]*?\\([\\s\\x0b]*?\\)[\\s\\x0b]*?-|d(?:eclare[^0-9A-Z_a-z]+[#@][\\s\\x0b]*?[0-9A-Z_a-z]+|iv[\\s\\x0b]*?\\([\\+\\-]*[\\s\\x0b\\.0-9]+,[\\+\\-]*[\\s\\x0b\\.0-9]+\\))|exec[\\s\\x0b]*?\\([\\s\\x0b]*?@|(?:lo_(?:impor|ge)t|procedure[\\s\\x0b]+analyse)[\\s\\x0b]*?\\(|;[\\s\\x0b]*?(?:declare|open)[\\s\\x0b]+[\\-0-9A-Z_a-z]+|::(?:b(?:igint|ool)|double[\\s\\x0b]+precision|int(?:eger)?|numeric|oid|real|(?:tex|smallin)t)", "none,urlDecodeUni", "2", "5", "0", "403", "", "Detects MySQL and PostgreSQL stored procedure/function injections"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942015", "1", "0", "0", "TX:DETECTION_PARANOIA_LEVEL", "@lt", "3", "", "0", "0", "0", "403", "END-REQUEST-942-APPLICATION-ATTACK-SQLI", ""]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942016", "2", "0", "0", "TX:DETECTION_PARANOIA_LEVEL", "@lt", "3", "", "0", "0", "0", "403", "END-REQUEST-942-APPLICATION-ATTACK-SQLI", ""]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942251", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "(?i)\\W+\\d*?\\s*?\\bhaving\\b\\s*?[^\\s\\-]", "none,urlDecodeUni", "3", "5", "0", "403", "", "Detects HAVING injections"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942490", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "[\\\"'`][\\s\\d]*?[^\\w\\s]\\W*?\\d\\W*?.*?[\\\"'`\\d]", "none,urlDecodeUni", "3", "5", "0", "403", "", "Detects classic SQL injection probings 3/3"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942420", "1", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES", "@rx", "((?:(?:[!-\\+\\-:->@\\[\\]\\^`\\{-~]|\\x{c2}\\x{b4}|\\x{e2}\\x80[\\x98\\x99])[^!-\\+\\-:->@\\[\\]\\^`\\{-~]*?){8})", "none,urlDecodeUni", "3", "3", "0", "403", "", "Restricted SQL Character Anomaly Detection (cookies): # of special characters exceeded (8)"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942431", "2", "0", "0", "ARGS_NAMES|!ARGS_NAMES:/^[\\w]+\\[[\\w\\-]+\\]\\[[\\w\\-]*?\\]$/|!ARGS_NAMES:/^[\\w]+\\[[\\w\\-]+\\]\\[[\\w\\-]+\\]\\[[\\w\\-]*?\\]$/|ARGS|XML:/*|XML://@*", "@rx", "((?:(?:[!-\\+\\-:->@\\[\\]\\^`\\{-~]|\\x{c2}\\x{b4}|\\x{e2}\\x80[\\x98\\x99])[^!-\\+\\-:->@\\[\\]\\^`\\{-~]*?){6})", "none,urlDecodeUni", "3", "3", "0", "403", "", "Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942460", "2", "0", "0", "ARGS", "@rx", "\\W{4}", "none", "3", "3", "0", "403", "", "Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942511", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "'(?:[\\s\\x0b\\(\\)\\+\\-0-9<=@-Z_a-\\{\\}]{2,29}|(?:[\\+/-9A-Za-z]{4})+(?:(?:[\\+/-9A-Za-z]{2}=|[\\+/-9A-Za-z]{3})=)?)'", "none,urlDecodeUni", "3", "5", "0", "403", "", "SQLi bypass attempt by ticks detected"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942530", "2", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "';", "none,urlDecodeUni", "3", "5", "0", "403", "", "SQLi query termination detected"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942017", "1", "0", "0", "TX:DETECTION_PARANOIA_LEVEL", "@lt", "4", "", "0", "0", "0", "403", "END-REQUEST-942-APPLICATION-ATTACK-SQLI", ""]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942018", "2", "0", "0", "TX:DETECTION_PARANOIA_LEVEL", "@lt", "4", "", "0", "0", "0", "403", "END-REQUEST-942-APPLICATION-ATTACK-SQLI", ""]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942421", "1", "0", "0", "REQUEST_COOKIES|REQUEST_COOKIES_NAMES", "@rx", "((?:(?:[!-\\+\\-:->@\\[\\]\\^`\\{-~]|\\x{c2}\\x{b4}|\\x{e2}\\x80[\\x98\\x99])[^!-\\+\\-:->@\\[\\]\\^`\\{-~]*?){3})", "none,urlDecodeUni", "4", "3", "0", "403", "", "Restricted SQL Character Anomaly Detection (cookies): # of special characters exceeded (3)"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_rule(next, ["R", "942432", "2", "0", "0", "ARGS_NAMES|ARGS|XML:/*|XML://@*", "@rx", "((?:(?:[!-\\+\\-:->@\\[\\]\\^`\\{-~]|\\x{c2}\\x{b4}|\\x{e2}\\x80[\\x98\\x99])[^!-\\+\\-:->@\\[\\]\\^`\\{-~]*?){2})", "none,urlDecodeUni", "4", "3", "0", "403", "", "Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)"]); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = apply_marker(next, "END-REQUEST-942-APPLICATION-ATTACK-SQLI"); }
+    next
+}
+
+pub fn inspect_request(state: map<string>) -> map<string> {
+    let mut next = state;
+    next = set_phase(next, 1);
+    if category_enabled(&next, "request_911_method_enforcement") { next = evaluate_request_911_method_enforcement(next); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = evaluate_request_942_application_attack_sqli(next); }
+    next = set_phase(next, 2);
+    if category_enabled(&next, "request_911_method_enforcement") { next = evaluate_request_911_method_enforcement(next); }
+    if category_enabled(&next, "request_942_application_attack_sqli") { next = evaluate_request_942_application_attack_sqli(next); }
+    next
+}
+
+pub fn inspect_response(state: map<string>) -> map<string> {
+    let mut next = state;
+    next = set_phase(next, 3);
+    next = set_phase(next, 4);
+    next = set_phase(next, 5);
+    next
+}
+
+pub fn inspect(state: map<string>) -> map<string> {
+    inspect_response(inspect_request(state))
+}

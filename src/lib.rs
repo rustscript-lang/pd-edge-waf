@@ -7,6 +7,7 @@ pub const RULESET_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/rules/rules
 pub struct RulesetManifest {
     pub upstream: String,
     pub version: String,
+    pub enabled_categories: Vec<String>,
     pub category_count: usize,
     pub directive_count: usize,
     pub sec_rule_count: usize,

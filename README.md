@@ -1,71 +1,119 @@
 # pd-edge-waf
 
-`pd-edge-waf` is the OWASP Core Rule Set translated into category-scoped RustScript modules for `pd-edge` and `pd-vm` hosts.
+`pd-edge-waf` converts OWASP Core Rule Set 4.28.0 directives into executable RustScript category functions for `pd-edge`.
 
-The repository is pinned to **OWASP CRS 4.28.0**. Its generated RustScript set contains:
+The request path does **not** parse ModSecurity configuration. Conversion happens ahead of time in `tools/convert_crs.py`; the generated RSS functions evaluate enabled categories directly, update transaction state, accumulate anomaly scores, and return allow/block decisions.
 
-- 27 source categories, kept in separate `.rss` files;
+## Generated coverage
+
+The repository tracks all active directives from the pinned minimal CRS release:
+
+- 27 source categories;
 - 695 `SecRule` directives;
 - 7 `SecAction` directives;
 - 30 `SecMarker` directives;
 - 55 `SecRuleUpdateTargetById` directives;
 - 1 `SecComponentSignature` directive;
-- 788 active directives in total;
-- 21 associated CRS data files.
+- 788 directives total;
+- 21 CRS data files.
 
-## Layout
+`rules/manifest.json` and `rules/directives.json` provide machine-readable coverage details.
 
-- `rules/ruleset.rss` loads every category and checks the total directive count.
-- `rules/request_*.rss` and `rules/response_*.rss` mirror the original CRS category boundaries.
-- `rules/data/` retains the phrase and signature lists used by `@pmFromFile` and related operators.
-- `rules/manifest.json` records per-category and aggregate coverage.
-- `rules/directives.json` is a machine-readable audit index of every translated directive.
-- `tools/convert_crs.py` performs the deterministic ModSecurity-to-RustScript conversion.
-- `tests/smoke.rs` compiles the complete ruleset, binds the WAF descriptor ABI, executes it in `pd-vm`, and verifies representative rule IDs and exact totals.
+## Enabled ruleset
 
-## RustScript WAF ABI
+The standard VM bytecode format has 256 local slots. The converter therefore builds `rules/ruleset.rss` from an explicit set of enabled category modules instead of modifying the VM or compiling every CRS category into one program.
 
-Every translated category is executable RustScript. It emits structured calls instead of embedding all ModSecurity text in one source file:
+The committed entrypoint enables:
 
-```rust
-waf::rule(
-    source_category,
-    source_line,
-    rule_id,
-    phase,
-    chain_index,
-    targets,
-    operator,
-    pattern,
-    actions,
-    message,
-);
-```
+- `request_911_method_enforcement`
+- `request_942_application_attack_sqli`
 
-`SecAction`, `SecMarker`, `SecRuleUpdateTargetById`, and `SecComponentSignature` map to `waf::action(...)`, `waf::marker(...)`, `waf::update_target(...)`, and `waf::component_signature(...)`. Chained rules retain their parent ID and chain position. Targets, operator, pattern, actions, message, source category, and source line remain independently available to the host.
-
-A `pd-edge` host using these modules must register the five `waf::*` imports and implement the desired ModSecurity-compatible operators, transformations, transaction variables, anomaly scoring, skip markers, and disruptive actions. The smoke test supplies a strict descriptor host and proves that the complete translated ruleset compiles, binds, and runs through the VM.
-
-## Verification
-
-Run the local suite against an already downloaded CRS tree:
+Build another enabled set by repeating `--enable`:
 
 ```bash
-CRS_SOURCE_DIR=/path/to/coreruleset-4.28.0/rules bash tools/smoke.sh
+python3 tools/convert_crs.py \
+  --source-dir /path/to/coreruleset-4.28.0/rules \
+  --output-dir rules \
+  --version 4.28.0 \
+  --enable request_911_method_enforcement \
+  --enable request_930_application_attack_lfi \
+  --enable request_941_application_attack_xss \
+  --enable request_942_application_attack_sqli
+
+python3 tools/bundle_engine.py
 ```
 
-With no `CRS_SOURCE_DIR`, the script downloads the pinned upstream release, verifies its SHA-256 digest, regenerates the full ruleset in a temporary directory, compares it byte-for-byte with the committed output, then runs Rust formatting and tests:
+The selected set is recorded in `rules/manifest.json`. `rules/ruleset.rss` contains direct RSS expressions for those categories; `rules/pd_edge_waf.rss` is the standalone pd-edge entrypoint.
+
+At request time, `x-waf-enabled-ruleset` can narrow the compiled set further. Its value is a space-separated list of category module names. If the header is absent, every category compiled into the entrypoint is active.
+
+## Run with pd-edge
+
+Start the real pd-edge HTTP runtime:
+
+```bash
+cargo run --release \
+  --manifest-path ../pd-edge/Cargo.toml \
+  --bin pd-edge-http-proxy
+```
+
+Compile and upload the standalone RSS entrypoint using pd-edge's standard uploader:
+
+```bash
+cargo run --release \
+  --manifest-path ../pd-edge/Cargo.toml \
+  --example build_sample_program -- \
+  "$PWD/rules/pd_edge_waf.rss"
+```
+
+Send a request through the data plane. The entrypoint forwards allowed traffic to the upstream selected by `x-waf-upstream-host` and `x-waf-upstream-port`:
+
+```bash
+curl -i 'http://127.0.0.1:8080/search?id=1%27%20OR%201%3D1--' \
+  -H 'x-waf-enabled-ruleset: request_942_application_attack_sqli' \
+  -H 'x-waf-upstream-host: 127.0.0.1' \
+  -H 'x-waf-upstream-port: 18080'
+```
+
+Blocked responses return HTTP 403 with:
+
+- `x-waf-blocked: 1`
+- `x-waf-score`
+- `x-waf-matched-ids`
+
+Allowed traffic is forwarded and carries `x-waf-blocked: 0` plus its current score.
+
+## Tests
+
+Run the VM and real HTTP end-to-end tests:
+
+```bash
+cargo test --release --test smoke
+cargo test --release --test e2e
+```
+
+`tests/e2e.rs` starts actual pd-edge data/admin listeners and an upstream fixture, compiles and uploads `rules/pd_edge_waf.rss`, then verifies:
+
+- benign traffic reaches the upstream;
+- a disallowed HTTP method returns 403;
+- SQL injection receives anomaly score 5 and returns 403;
+- blocked traffic never reaches the upstream.
+
+For deterministic regeneration against the pinned CRS archive:
 
 ```bash
 bash tools/smoke.sh
 ```
 
-## Updating CRS
+## Layout
 
-1. Update `CRS_VERSION`, release URL, and SHA-256 in `tools/smoke.sh`.
-2. Run `tools/convert_crs.py` against the new release's `rules/` directory.
-3. Update the version and expected counts in `src/lib.rs`, `tests/smoke.rs`, and this README.
-4. Run `bash tools/smoke.sh`.
+- `rules/pd_edge_waf.rss`: standalone pd-edge entrypoint.
+- `rules/ruleset.rss`: direct evaluator for the configured enabled categories.
+- `rules/request_*.rss`, `rules/response_*.rss`: generated category functions.
+- `rules/engine*.rss`: RSS target, transform, operator, chain, score, and transaction-state implementation.
+- `tools/convert_crs.py`: build-time CRS-to-RSS converter.
+- `tools/bundle_engine.py`: standalone RSS entrypoint builder.
+- `tests/e2e.rs`: real pd-edge HTTP E2E.
 
 ## License and attribution
 

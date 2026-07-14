@@ -1,0 +1,52 @@
+use re;
+
+pub fn lower(value: string) -> string {
+ let mut out = "";
+ for i in 0..value.length {
+  let ch = (&value)[i:(i + 1)];
+  out = out + match ch {
+   "A" => "a", "B" => "b", "C" => "c", "D" => "d", "E" => "e", "F" => "f",
+   "G" => "g", "H" => "h", "I" => "i", "J" => "j", "K" => "k", "L" => "l",
+   "M" => "m", "N" => "n", "O" => "o", "P" => "p", "Q" => "q", "R" => "r",
+   "S" => "s", "T" => "t", "U" => "u", "V" => "v", "W" => "w", "X" => "x",
+   "Y" => "y", "Z" => "z", _ => ch,
+  };
+ }
+ out
+}
+pub fn contains(value: string, needle: string) -> bool {
+ let mut found: bool = needle.length == 0;
+ if needle.length > 0 && needle.length <= value.length { for i in 0..(value.length - needle.length + 1) { if (&value)[i:(i + needle.length)] == needle { found = true; break; } } }
+ found
+}
+pub fn replace(value: string, needle: string, replacement: string) -> string {
+ let mut out = ""; let mut cursor = 0;
+ while cursor < value.length { if cursor + needle.length <= value.length && (&value)[cursor:(cursor + needle.length)] == needle { out = out + replacement; cursor = cursor + needle.length; } else { out = out + (&value)[cursor:(cursor + 1)]; cursor = cursor + 1; } }
+ out
+}
+pub fn starts(value: string, prefix: string) -> bool { prefix.length <= value.length && (&value)[0:prefix.length] == prefix }
+pub fn ends(value: string, suffix: string) -> bool { suffix.length <= value.length && (&value)[(value.length - suffix.length):value.length] == suffix }
+pub fn number(value: string, fallback: int) -> int {
+ let digits = "0123456789"; let mut out = 0; let mut valid = value.length > 0;
+ for i in 0..value.length { let ch = (&value)[i:(i + 1)]; let mut digit = -1; for j in 0..10 { if ch == (&digits)[j:(j + 1)] { digit = j; break; } } if digit < 0 { valid = false; break; } out = out * 10 + digit; }
+ if valid => { out } else => { fallback }
+}
+pub fn encode_map(values: map<string>) -> string {
+ let keys = (&values).keys; let mut out = "";
+ for i in 0..keys.length { let key: string = (&keys)[i]; out = out + key + "=" + (&values)[key] + "\n"; }
+ out
+}
+pub fn transforms(value: string, list: string) -> string {
+ let mut out = value;
+ if contains(&list, "urlDecodeUni") || contains(&list, "cssDecode") || contains(&list, "jsDecode") { out = replace(out, "%27", "'"); out = replace(out, "%22", "\""); out = replace(out, "%20", " "); out = replace(out, "%3d", "="); out = replace(out, "%3D", "="); out = replace(out, "%3c", "<"); out = replace(out, "%3C", "<"); out = replace(out, "%3e", ">"); out = replace(out, "%3E", ">"); out = replace(out, "+", " "); }
+ if contains(&list, "htmlEntityDecode") { out = replace(out, "&lt;", "<"); out = replace(out, "&gt;", ">"); out = replace(out, "&quot;", "\""); out = replace(out, "&#39;", "'"); }
+ if contains(&list, "removeNulls") { out = replace(out, "\0", ""); }
+ if contains(&list, "removeWhitespace") { out = re::replace("\\s+", out, ""); }
+ if contains(&list, "compressWhitespace") { out = re::replace("\\s+", out, " "); }
+ if contains(&list, "replaceComments") { out = re::replace("(?s)/\\*.*?\\*/", out, " "); }
+ if contains(&list, "normalizePath") { out = replace(out, "\\", "/"); }
+ if contains(&list, "cmdLine") { out = replace(out, "\\", ""); }
+ if contains(&list, "lowercase") || contains(&list, "cmdLine") { out = lower(out); }
+ if contains(&list, "length") { out = out.length + ""; }
+ out
+}

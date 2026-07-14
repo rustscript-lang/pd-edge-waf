@@ -1,12 +1,13 @@
 // Generated from OWASP CRS 4.28.0: REQUEST-905-COMMON-EXCEPTIONS.conf
-// Do not edit by hand; run tools/convert_crs.py.
-use waf;
+// Executable RustScript; do not edit by hand.
+use engine_bundle;
 
-pub fn load_request_905_common_exceptions() -> int {
-    waf::rule("REQUEST-905-COMMON-EXCEPTIONS.conf", 17, 905100, 1, 0, "REQUEST_LINE", "@streq", "GET /", "id:905100, phase:1, pass, t:none, nolog, tag:'application-multi', tag:'language-multi', tag:'platform-apache', tag:'attack-generic', tag:'OWASP_CRS', ver:'OWASP_CRS/4.28.0', chain", "");
-    waf::rule("REQUEST-905-COMMON-EXCEPTIONS.conf", 30, 905100, 0, 1, "REMOTE_ADDR", "@ipMatch", "127.0.0.1,::1", "t:none, ctl:ruleRemoveByTag=OWASP_CRS, ctl:auditEngine=Off", "");
-    waf::rule("REQUEST-905-COMMON-EXCEPTIONS.conf", 38, 905110, 1, 0, "REMOTE_ADDR", "@ipMatch", "127.0.0.1,::1", "id:905110, phase:1, pass, t:none, nolog, tag:'application-multi', tag:'language-multi', tag:'platform-apache', tag:'attack-generic', tag:'OWASP_CRS', ver:'OWASP_CRS/4.28.0', chain", "");
-    waf::rule("REQUEST-905-COMMON-EXCEPTIONS.conf", 51, 905110, 0, 1, "REQUEST_HEADERS:User-Agent", "@endsWith", "(internal dummy connection)", "t:none, chain", "");
-    waf::rule("REQUEST-905-COMMON-EXCEPTIONS.conf", 54, 905110, 0, 2, "REQUEST_LINE", "@rx", "^(?:GET /|OPTIONS \\*) HTTP/[12]\\.[01]$", "t:none, ctl:ruleRemoveByTag=OWASP_CRS, ctl:auditEngine=Off", "");
-    5
+pub fn evaluate_request_905_common_exceptions(state: map<string>) -> map<string> {
+    let mut next = state;
+    next = engine_bundle::apply_rule(next, ["R", "905100", "1", "0", "1", "REQUEST_LINE", "@streq", "GET /", "none", "0", "0", "0", "403", "", ""]);
+    next = engine_bundle::apply_rule(next, ["R", "905100", "0", "1", "0", "REMOTE_ADDR", "@ipMatch", "127.0.0.1,::1", "none", "0", "0", "0", "403", "", ""]);
+    next = engine_bundle::apply_rule(next, ["R", "905110", "1", "0", "1", "REMOTE_ADDR", "@ipMatch", "127.0.0.1,::1", "none", "0", "0", "0", "403", "", ""]);
+    next = engine_bundle::apply_rule(next, ["R", "905110", "0", "1", "1", "REQUEST_HEADERS:User-Agent", "@endsWith", "(internal dummy connection)", "none", "0", "0", "0", "403", "", ""]);
+    next = engine_bundle::apply_rule(next, ["R", "905110", "0", "2", "0", "REQUEST_LINE", "@rx", "^(?:GET /|OPTIONS \\*) HTTP/[12]\\.[01]$", "none", "0", "0", "0", "403", "", ""]);
+    next
 }

@@ -1,0 +1,300 @@
+use re;
+use bytes;
+
+// bundled from engine_text.rss
+
+pub fn lower(value: string) -> string {
+ let mut out = "";
+ for i in 0..value.length {
+  let ch = (&value)[i:(i + 1)];
+  out = out + match ch {
+   "A" => "a", "B" => "b", "C" => "c", "D" => "d", "E" => "e", "F" => "f",
+   "G" => "g", "H" => "h", "I" => "i", "J" => "j", "K" => "k", "L" => "l",
+   "M" => "m", "N" => "n", "O" => "o", "P" => "p", "Q" => "q", "R" => "r",
+   "S" => "s", "T" => "t", "U" => "u", "V" => "v", "W" => "w", "X" => "x",
+   "Y" => "y", "Z" => "z", _ => ch,
+  };
+ }
+ out
+}
+pub fn contains(value: string, needle: string) -> bool {
+ let mut found: bool = needle.length == 0;
+ if needle.length > 0 && needle.length <= value.length { for i in 0..(value.length - needle.length + 1) { if (&value)[i:(i + needle.length)] == needle { found = true; break; } } }
+ found
+}
+pub fn replace(value: string, needle: string, replacement: string) -> string {
+ let mut out = ""; let mut cursor = 0;
+ while cursor < value.length { if cursor + needle.length <= value.length && (&value)[cursor:(cursor + needle.length)] == needle { out = out + replacement; cursor = cursor + needle.length; } else { out = out + (&value)[cursor:(cursor + 1)]; cursor = cursor + 1; } }
+ out
+}
+pub fn starts(value: string, prefix: string) -> bool { prefix.length <= value.length && (&value)[0:prefix.length] == prefix }
+pub fn ends(value: string, suffix: string) -> bool { suffix.length <= value.length && (&value)[(value.length - suffix.length):value.length] == suffix }
+pub fn number(value: string, fallback: int) -> int {
+ let digits = "0123456789"; let mut out = 0; let mut valid = value.length > 0;
+ for i in 0..value.length { let ch = (&value)[i:(i + 1)]; let mut digit = -1; for j in 0..10 { if ch == (&digits)[j:(j + 1)] { digit = j; break; } } if digit < 0 { valid = false; break; } out = out * 10 + digit; }
+ if valid => { out } else => { fallback }
+}
+pub fn encode_map(values: map<string>) -> string {
+ let keys = (&values).keys; let mut out = "";
+ for i in 0..keys.length { let key: string = (&keys)[i]; out = out + key + "=" + (&values)[key] + "\n"; }
+ out
+}
+pub fn transforms(value: string, list: string) -> string {
+ let mut out = value;
+ if contains(&list, "urlDecodeUni") || contains(&list, "cssDecode") || contains(&list, "jsDecode") { out = replace(out, "%27", "'"); out = replace(out, "%22", "\""); out = replace(out, "%20", " "); out = replace(out, "%3d", "="); out = replace(out, "%3D", "="); out = replace(out, "%3c", "<"); out = replace(out, "%3C", "<"); out = replace(out, "%3e", ">"); out = replace(out, "%3E", ">"); out = replace(out, "+", " "); }
+ if contains(&list, "htmlEntityDecode") { out = replace(out, "&lt;", "<"); out = replace(out, "&gt;", ">"); out = replace(out, "&quot;", "\""); out = replace(out, "&#39;", "'"); }
+ if contains(&list, "removeNulls") { out = replace(out, "\0", ""); }
+ if contains(&list, "removeWhitespace") { out = re::replace("\\s+", out, ""); }
+ if contains(&list, "compressWhitespace") { out = re::replace("\\s+", out, " "); }
+ if contains(&list, "replaceComments") { out = re::replace("(?s)/\\*.*?\\*/", out, " "); }
+ if contains(&list, "normalizePath") { out = replace(out, "\\", "/"); }
+ if contains(&list, "cmdLine") { out = replace(out, "\\", ""); }
+ if contains(&list, "lowercase") || contains(&list, "cmdLine") { out = lower(out); }
+ if contains(&list, "length") { out = out.length + ""; }
+ out
+}
+
+// bundled from engine_context.rss
+
+pub fn ctx_get(state: map<string>, key: string) -> string {
+ if (&state).has(&key) => { (&state)[key] } else => { "" }
+}
+pub fn ctx_set_phase(state: map<string>, phase: int) -> map<string> {
+ let mut s = state; s["phase"] = phase + ""; s["skip"] = ""; s["chain_active"] = "0"; s["chain_matched"] = "0"; s
+}
+pub fn pair_values(encoded: string, selector: string, names: bool) -> [string] {
+ let lines: [string] = re::split("\n", encoded); let mut out: [string] = [];
+ for i in 0..lines.length { let line: string = (&lines)[i]; let pieces: [string] = re::split("=", line);
+  if pieces.length > 0 { let key: string = (&pieces)[0]; let selected: bool = selector == "" || lower(&key) == lower(&selector) || (selector.length > 2 && (&selector)[0:1] == "/" && re::match((&selector)[1:(selector.length - 1)], &key)); if selected { out[out.length] = if names => { key } else if pieces.length > 1 => { (&pieces)[1] } else => { "" }; } }
+ }
+ out
+}
+pub fn selector(target: string) -> string { let pieces: [string] = re::split(":", target); if pieces.length > 1 => { (&pieces)[1] } else => { "" } }
+pub fn one(state: map<string>, raw: string) -> [string] {
+ let counted: bool = starts(&raw, "&"); let target: string = if counted => { (&raw)[1:raw.length] } else => { raw };
+ let pieces: [string] = re::split(":", &target); let base: string = (&pieces)[0]; let name: string = selector(&target); let mut out: [string] = [];
+ if base == "REQUEST_METHOD" { out = [ctx_get(&state, "method")]; }
+ else if base == "REQUEST_FILENAME" || base == "REQUEST_URI" || base == "REQUEST_URI_RAW" || base == "REQUEST_BASENAME" { out = [ctx_get(&state, "path")]; }
+ else if base == "QUERY_STRING" { out = [ctx_get(&state, "query")]; }
+ else if base == "REQUEST_BODY" || base == "XML" || base == "FILES" || base == "FILES_NAMES" || base == "MULTIPART_PART_HEADERS" { out = [ctx_get(&state, "request_body")]; }
+ else if base == "REQUEST_BODY_LENGTH" { out = [ctx_get(&state, "request_body").length + ""]; }
+ else if base == "REQUEST_PROTOCOL" { out = [ctx_get(&state, "protocol")]; }
+ else if base == "REQUEST_LINE" { out = [ctx_get(&state, "method") + " " + ctx_get(&state, "path") + (if ctx_get(&state, "query") == "" => { "" } else => { "?" + ctx_get(&state, "query") }) + " " + ctx_get(&state, "protocol")]; }
+ else if base == "REMOTE_ADDR" { out = [ctx_get(&state, "client_ip")]; }
+ else if base == "REQUEST_HEADERS" { out = pair_values(ctx_get(&state, "request_headers"), name, false); }
+ else if base == "REQUEST_HEADERS_NAMES" { out = pair_values(ctx_get(&state, "request_headers"), name, true); }
+ else if base == "REQUEST_COOKIES" { out = pair_values(ctx_get(&state, "cookies"), name, false); }
+ else if base == "REQUEST_COOKIES_NAMES" { out = pair_values(ctx_get(&state, "cookies"), name, true); }
+ else if base == "ARGS" || base == "ARGS_GET" { out = pair_values(ctx_get(&state, "args"), name, false); }
+ else if base == "ARGS_NAMES" || base == "ARGS_GET_NAMES" { out = pair_values(ctx_get(&state, "args"), name, true); }
+ else if base == "RESPONSE_BODY" { out = [ctx_get(&state, "response_body")]; }
+ else if base == "RESPONSE_STATUS" { out = [ctx_get(&state, "response_status")]; }
+ else if base == "RESPONSE_HEADERS" { out = pair_values(ctx_get(&state, "response_headers"), name, false); }
+ else if base == "TX" { let tx_key: string = "tx." + lower(&name); if !starts(&name, "/") && (&state).has(&tx_key) { out = [(&state)[tx_key]]; } }
+ if counted => { [out.length + ""] } else => { out }
+}
+pub fn ctx_targets(state: map<string>, target_list: string, id: int) -> [string] {
+ let specs: [string] = re::split("\\|", target_list); let mut out: [string] = []; let id_text: string = id + ""; let excluded: string = ctx_get(&state, "exclude." + id_text);
+ for i in 0..specs.length { let spec: string = (&specs)[i]; if !starts(&spec, "!") && !contains(&excluded, "\n" + spec + "\n") { let values: [string] = one(&state, spec); for j in 0..values.length { out[out.length] = (&values)[j]; } } }
+ out
+}
+pub fn ctx_update(state: map<string>, id: int, target: string) -> map<string> {
+ let mut s = state; let clean: string = if starts(&target, "!") => { (&target)[1:target.length] } else => { target }; let id_text: string = id + ""; let key: string = "exclude." + id_text; s[key] = ctx_get(&s, &key) + "\n" + clean + "\n"; s
+}
+
+// bundled from engine_operators.rss
+pub fn op_expand(state: map<string>, value: string) -> string { let mut out = value; let keys = (&state).keys; for i in 0..keys.length { let key: string = (&keys)[i]; if starts(&key, "tx.") { out = replace(out, "%{" + key + "}", (&state)[key]); } } out }
+pub fn sqli(value: string) -> bool { let text: string = lower(value); (contains(&text, " union ") && contains(&text, "select")) || contains(&text, "' or '") || contains(&text, "'or 1=1") || contains(&text, " or 1=1") || contains(&text, "sleep(") || contains(&text, "benchmark(") || contains(&text, "information_schema") }
+pub fn xss(value: string) -> bool { let text: string = lower(value); contains(&text, "<script") || contains(&text, "javascript:") || contains(&text, "onerror=") || contains(&text, "onload=") || (contains(&text, "<svg") && contains(&text, "on")) }
+pub fn phrase(pattern: string, value: string) -> bool { let phrases: [string] = if contains(&pattern, "\n") => { re::split("\n", &pattern) } else => { re::split(" ", &pattern) }; let haystack: string = lower(value); let mut found = false; for i in 0..phrases.length { let item: string = lower((&phrases)[i]); if item != "" && contains(&haystack, item) { found = true; break; } } found }
+pub fn op_matches(state: map<string>, operator: string, argument: string, value: string) -> bool {
+ let negated: bool = starts(&operator, "!"); let name: string = if negated => { (&operator)[1:operator.length] } else => { operator }; let expected: string = op_expand(&state, argument); let mut raw: bool = false;
+ if name == "@rx" { raw = re::match(&expected, &value); }
+ else if name == "@pm" || name == "@pmFromFile" { raw = phrase(&expected, &value); }
+ else if name == "@detectSQLi" { raw = sqli(&value); }
+ else if name == "@detectXSS" { raw = xss(&value); }
+ else if name == "@contains" { raw = contains(&value, &expected); }
+ else if name == "@beginsWith" { raw = starts(&value, &expected); }
+ else if name == "@endsWith" { raw = ends(&value, &expected); }
+ else if name == "@streq" { raw = value == expected; }
+ else if name == "@within" { raw = contains(" " + expected + " ", " " + value + " "); }
+ else if name == "@eq" { raw = number(&value, 0) == number(&expected, 0); }
+ else if name == "@lt" { raw = number(&value, 0) < number(&expected, 0); }
+ else if name == "@ge" { raw = number(&value, 0) >= number(&expected, 0); }
+ else if name == "@gt" { raw = number(&value, 0) > number(&expected, 0); }
+ else if name == "@validateUrlEncoding" { raw = !re::match("%(?:[^0-9A-Fa-f]|.[^0-9A-Fa-f]|$)", &value); }
+ else if name == "@validateUtf8Encoding" || name == "@validateByteRange" { raw = false; }
+ else if name == "@unconditionalMatch" { raw = true; }
+ else if name == "@ipMatch" { raw = phrase(replace(&expected, ",", "\n"), &value); }
+ if negated => { !raw } else => { raw }
+}
+
+// bundled from engine.rss
+
+pub fn new_state(method: string, path: string, query: string, protocol: string, client_ip: string, headers: map<string>, args: map<string>, body: string) -> map<string> {
+    let mut state: map<string> = {};
+    state["method"] = method;
+    state["path"] = path;
+    state["query"] = query;
+    state["protocol"] = if starts(&protocol, "HTTP/") => { protocol } else => { "HTTP/" + protocol };
+    state["client_ip"] = client_ip;
+    state["request_headers"] = encode_map(headers);
+    state["args"] = encode_map(args);
+    state["request_body"] = body;
+    state["response_status"] = "0";
+    state["response_headers"] = "";
+    state["response_body"] = "";
+    state["phase"] = "1";
+    state["paranoia"] = "1";
+    state["score"] = "0";
+    state["outbound_score"] = "0";
+    state["blocked"] = "0";
+    state["status"] = "403";
+    state["skip"] = "";
+    state["chain_active"] = "0";
+    state["chain_matched"] = "0";
+    state["matched_ids"] = "";
+    state["messages"] = "";
+    state["enabled_ruleset"] = "";
+    state["tx.crs_setup_version"] = "428";
+    state["tx.inbound_anomaly_score_threshold"] = "5";
+    state["tx.outbound_anomaly_score_threshold"] = "4";
+    state["tx.reporting_level"] = "4";
+    state["tx.early_blocking"] = "0";
+    state["tx.blocking_paranoia_level"] = "1";
+    state["tx.detection_paranoia_level"] = "1";
+    state["tx.sampling_percentage"] = "100";
+    state["tx.critical_anomaly_score"] = "5";
+    state["tx.error_anomaly_score"] = "4";
+    state["tx.warning_anomaly_score"] = "3";
+    state["tx.notice_anomaly_score"] = "2";
+    state["tx.allowed_methods"] = "GET HEAD POST OPTIONS";
+    state["tx.allowed_request_content_type"] = "|application/x-www-form-urlencoded| |multipart/form-data| |text/xml| |application/xml| |application/soap+xml| |application/json|";
+    state["tx.allowed_request_content_type_charset"] = "|utf-8| |iso-8859-1| |iso-8859-15| |windows-1252|";
+    state["tx.allowed_http_versions"] = "HTTP/1.0 HTTP/1.1 HTTP/2 HTTP/2.0 HTTP/3 HTTP/3.0";
+    state["tx.restricted_extensions"] = ".asa .asax .ascx .bak .bat .cfg .cmd .config .conf .db .dll .ini .key .log .pem .sh .sql .sqlite .swp .tmp";
+    state["tx.restricted_headers_basic"] = "content-encoding proxy lock-token content-range if x-http-method-override x-http-method x-method-override x-middleware-subrequest expect";
+    state["tx.restricted_headers_extended"] = "accept-charset";
+    state["tx.allow_method_override_parameter"] = "0";
+    state["tx.enforce_bodyproc_urlencoded"] = "0";
+    state["tx.crs_validate_utf8_encoding"] = "1";
+    state["tx.crs_skip_response_analysis"] = "0";
+    state["tx.enable_default_collections"] = "0";
+    state["tx.inbound_anomaly_score"] = "0";
+    state["tx.outbound_anomaly_score"] = "0";
+    state
+}
+
+pub fn set_phase(state: map<string>, phase: int) -> map<string> {
+    ctx_set_phase(state, phase)
+}
+
+pub fn apply_action(state: map<string>, phase: int) -> map<string> {
+    state
+}
+
+pub fn apply_marker(state: map<string>, marker: string) -> map<string> {
+    let mut s = state;
+    if ctx_get(&s, "skip") == marker {
+        s["skip"] = "";
+    }
+    s
+}
+
+pub fn update_target(state: map<string>, id: int, target: string) -> map<string> {
+    ctx_update(state, id, target)
+}
+
+pub fn component_signature(state: map<string>, signature: string) -> map<string> {
+    let mut s = state;
+    s["tx.component_signature"] = signature;
+    s
+}
+
+// Match fields: id, score, disruptive, status, skip-after, message.
+fn record(state: map<string>, matched: [string]) -> map<string> {
+    let mut s = state;
+    let phase = number(ctx_get(&s, "phase"), 1);
+    if number((&matched)[0], -1) >= 0 {
+        let existing = ctx_get(&s, "matched_ids");
+        s["matched_ids"] = if existing == "" => { (&matched)[0] } else => { existing + "," + (&matched)[0] };
+    }
+    if (&matched)[5] != "" {
+        s["messages"] = ctx_get(&s, "messages") + (&matched)[5] + "\n";
+    }
+    let key = if phase <= 2 => { "score" } else => { "outbound_score" };
+    let total = number(ctx_get(&s, key), 0) + number((&matched)[1], 0);
+    s[key] = total + "";
+    if phase <= 2 {
+        s["tx.inbound_anomaly_score"] = total + "";
+    } else {
+        s["tx.outbound_anomaly_score"] = total + "";
+    }
+    if (&matched)[2] == "1" || (phase <= 2 && total >= 5) || (phase > 2 && total >= 4) {
+        s["blocked"] = "1";
+        s["status"] = (&matched)[3];
+    }
+    if (&matched)[4] != "" {
+        s["skip"] = (&matched)[4];
+    }
+    s
+}
+
+// Rule fields: kind, id, phase, chain index, has-chain, targets, operator,
+// pattern, transforms, paranoia, score, disruptive, status, skip-after, message.
+pub fn apply_rule(state: map<string>, rule: [string]) -> map<string> {
+    let mut s = state;
+    let id = number((&rule)[1], -1);
+    let phase = number((&rule)[2], 0);
+    let chain_index = number((&rule)[3], 0);
+    let current_user = number(ctx_get(&s, "phase"), 1);
+    let skip_state = ctx_get(&s, "skip");
+    if (phase == 0 || phase == current_user) && number((&rule)[9], 0) <= number(ctx_get(&s, "paranoia"), 1) && skip_state == "" {
+    let mut matched = false;
+    if chain_index == 0 || ctx_get(&s, "chain_matched") == "1" {
+        let values: [string] = ctx_targets(&s, (&rule)[5], id);
+        for i in 0..values.length {
+            let transformed: string = transforms((&values)[i], (&rule)[8]);
+            if op_matches(&s, (&rule)[6], (&rule)[7], transformed) {
+                matched = true;
+                break;
+            }
+        }
+    }
+    if chain_index == 0 && (&rule)[4] == "1" {
+        s["chain_active"] = "1";
+        s["chain_matched"] = if matched => { "1" } else => { "0" };
+        s["chain_id"] = id + "";
+        s["chain_score"] = (&rule)[10];
+        s["chain_disruptive"] = (&rule)[11];
+        s["chain_status"] = (&rule)[12];
+        s["chain_skip"] = (&rule)[13];
+        s["chain_message"] = (&rule)[14];
+    } else if chain_index > 0 {
+        let ok = ctx_get(&s, "chain_matched") == "1" && matched;
+        s["chain_matched"] = if ok => { "1" } else => { "0" };
+        if (&rule)[4] != "1" {
+            if ctx_get(&s, "chain_active") == "1" && ok {
+                s = record(s, [
+                    ctx_get(&s, "chain_id"),
+                    ctx_get(&s, "chain_score"),
+                    ctx_get(&s, "chain_disruptive"),
+                    ctx_get(&s, "chain_status"),
+                    ctx_get(&s, "chain_skip"),
+                    ctx_get(&s, "chain_message")
+                ]);
+            }
+            s["chain_active"] = "0";
+            s["chain_matched"] = "0";
+        }
+    } else if matched {
+        s = record(s, [(&rule)[1], (&rule)[10], (&rule)[11], (&rule)[12], (&rule)[13], (&rule)[14]]);
+    }
+    }
+    s
+}
+
+pub fn category_enabled(state: map<string>, category: string) -> bool {
+    let enabled = ctx_get(&state, "enabled_ruleset");
+    ctx_get(&state, "blocked") != "1" && (enabled == "" || contains(" " + enabled + " ", " " + category + " "))
+}

@@ -2,6 +2,10 @@
   "upstream": "coreruleset/coreruleset",
   "version": "4.28.0",
   "source_directory": "rules",
+  "enabled_categories": [
+    "request_911_method_enforcement",
+    "request_942_application_attack_sqli"
+  ],
   "category_count": 27,
   "directive_count": 788,
   "sec_rule_count": 695,

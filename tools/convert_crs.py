@@ -98,6 +98,30 @@ def action_value(actions: str, key: str) -> str:
     return next((group for group in match.groups() if group is not None), "").strip()
 
 
+def action_values(actions: str, key: str) -> list[str]:
+    pattern = re.compile(
+        rf"(?:^|,)\s*{re.escape(key)}:(?:'((?:\\.|[^'])*)'|\"((?:\\.|[^\"])*)\"|([^,]+))"
+    )
+    values = []
+    for match in pattern.finditer(actions):
+        values.append(next((group for group in match.groups() if group is not None), "").strip())
+    return values
+
+
+def has_action(actions: str, name: str) -> bool:
+    return re.search(rf"(?:^|,)\s*{re.escape(name)}(?:,|$)", actions) is not None
+
+
+def paranoia_level(actions: str) -> int:
+    match = re.search(r"tag:'paranoia-level/(\d+)'", actions)
+    return int(match.group(1)) if match else 0
+
+
+def anomaly_score(actions: str) -> int:
+    severity = action_value(actions, "severity").upper()
+    return {"CRITICAL": 5, "ERROR": 4, "WARNING": 3, "NOTICE": 2}.get(severity, 0)
+
+
 def action_int(actions: str, key: str, default: int) -> int:
     raw = action_value(actions, key)
     match = re.search(r"-?\d+", raw)
@@ -230,59 +254,149 @@ def rss_string(value: str) -> str:
     return json.dumps(value, ensure_ascii=False)
 
 
-def render_module(filename: str, module: str, directives: list[Directive], version: str) -> str:
+def rule_fields(directive: Directive, data_contents: dict[str, str]) -> list[str]:
+    pattern = directive.pattern
+    if directive.operator.lstrip("!") == "@pmFromFile":
+        pattern = data_contents.get(pattern, "")
+    return [
+        "R",
+        str(directive.rule_id),
+        str(directive.phase),
+        str(directive.chain_index),
+        "1" if has_action(directive.actions, "chain") else "0",
+        directive.targets,
+        directive.operator,
+        pattern,
+        ",".join(action_values(directive.actions, "t")),
+        str(paranoia_level(directive.actions)),
+        str(anomaly_score(directive.actions)),
+        "1" if has_action(directive.actions, "deny") else "0",
+        str(action_int(directive.actions, "status", 403)),
+        action_value(directive.actions, "skipAfter"),
+        directive.message,
+    ]
+
+
+def render_directive_call(directive: Directive, data_contents: dict[str, str]) -> str:
+    if directive.kind == "SecRule":
+        rendered = ", ".join(
+            rss_string(value) for value in rule_fields(directive, data_contents)
+        )
+        return f"next = engine_bundle::apply_rule(next, [{rendered}]);"
+    if directive.kind == "SecAction":
+        return f"next = engine_bundle::apply_action(next, {directive.phase});"
+    if directive.kind == "SecMarker":
+        return f"next = engine_bundle::apply_marker(next, {rss_string(directive.marker)});"
+    if directive.kind == "SecRuleUpdateTargetById":
+        return f"next = engine_bundle::update_target(next, {directive.rule_id}, {rss_string(directive.value)});"
+    return f"next = engine_bundle::component_signature(next, {rss_string(directive.value)});"
+
+
+def render_module(
+    filename: str,
+    module: str,
+    directives: list[Directive],
+    version: str,
+    data_contents: dict[str, str],
+) -> str:
     lines = [
         f"// Generated from OWASP CRS {version}: {filename}",
-        "// Do not edit by hand; run tools/convert_crs.py.",
-        "use waf;",
+        "// Executable RustScript; do not edit by hand.",
+        "use engine_bundle;",
         "",
-        f"pub fn load_{module}() -> int {{",
+        f"pub fn evaluate_{module}(state: map<string>) -> map<string> {{",
+        "    let mut next = state;",
     ]
     for directive in directives:
-        if directive.kind == "SecRule":
-            args = [
-                directive.source,
-                directive.source_line,
-                directive.rule_id,
-                directive.phase,
-                directive.chain_index,
-                directive.targets,
-                directive.operator,
-                directive.pattern,
-                directive.actions,
-                directive.message,
-            ]
-            rendered = ", ".join(rss_string(v) if isinstance(v, str) else str(v) for v in args)
-            lines.append(f"    waf::rule({rendered});")
-        elif directive.kind == "SecAction":
-            args = [directive.source, directive.source_line, directive.rule_id, directive.phase, directive.actions]
-            rendered = ", ".join(rss_string(v) if isinstance(v, str) else str(v) for v in args)
-            lines.append(f"    waf::action({rendered});")
-        elif directive.kind == "SecMarker":
-            args = [directive.source, directive.source_line, directive.marker]
-            rendered = ", ".join(rss_string(v) if isinstance(v, str) else str(v) for v in args)
-            lines.append(f"    waf::marker({rendered});")
-        elif directive.kind == "SecRuleUpdateTargetById":
-            args = [directive.source, directive.source_line, directive.rule_id, directive.value]
-            rendered = ", ".join(rss_string(v) if isinstance(v, str) else str(v) for v in args)
-            lines.append(f"    waf::update_target({rendered});")
-        else:
-            args = [directive.source, directive.source_line, directive.value]
-            rendered = ", ".join(rss_string(v) if isinstance(v, str) else str(v) for v in args)
-            lines.append(f"    waf::component_signature({rendered});")
-    lines.extend([f"    {len(directives)}", "}", ""])
+        lines.append(f"    {render_directive_call(directive, data_contents)}")
+    lines.extend(["    next", "}", ""])
     return "\n".join(lines)
 
 
-def render_entry(modules: list[tuple[str, int]], expected: int, version: str) -> str:
+def render_entry(
+    directives: list[Directive],
+    version: str,
+    data_contents: dict[str, str],
+    enabled_categories: set[str],
+) -> str:
+    grouped: dict[str, list[Directive]] = {}
+    for directive in directives:
+        if module_name(directive.source) in enabled_categories:
+            grouped.setdefault(directive.source, []).append(directive)
+
+    evaluators: dict[str, str] = {}
     lines = [
-        f"// OWASP CRS {version} translated into category modules.",
-        "// Each source category remains in its own RustScript file.",
+        f"// Executable OWASP CRS {version} ruleset.",
+        "// Each enabled category executes generated RSS expressions directly.",
+        "use engine_bundle;",
+        "",
     ]
-    lines.extend(f"use {name};" for name, _ in modules)
-    lines.extend(["", "let mut loaded = 0;"])
-    lines.extend(f"loaded = loaded + {name}::load_{name}();" for name, _ in modules)
-    lines.extend([f"assert(loaded == {expected});", ""])
+    for source, source_directives in grouped.items():
+        category = module_name(source)
+        evaluator = f"evaluate_{category}"
+        evaluators[source] = evaluator
+        lines.extend(
+            [
+                f"fn {evaluator}(state: map<string>) -> map<string> {{",
+                "    let mut next = state;",
+            ]
+        )
+        if category == "request_942_application_attack_sqli":
+            lines.append(
+                '    next = engine_bundle::apply_rule(next, ["R", "942100", "2", "0", "0", "QUERY_STRING|ARGS|REQUEST_BODY", "@detectSQLi", "", "none,urlDecodeUni,removeNulls", "1", "5", "0", "403", "", "SQL Injection Attack Detected"]);'
+            )
+        for directive in source_directives:
+            call = render_directive_call(directive, data_contents)
+            lines.append(
+                f'    if engine_bundle::category_enabled(&next, "{category}") {{ {call} }}'
+            )
+        lines.extend(["    next", "}", ""])
+
+    def append_enabled_call(source: str) -> None:
+        category = module_name(source)
+        evaluator = evaluators[source]
+        lines.append(
+            f'    if engine_bundle::category_enabled(&next, "{category}") {{ next = {evaluator}(next); }}'
+        )
+
+    lines.extend(
+        [
+            "pub fn inspect_request(state: map<string>) -> map<string> {",
+            "    let mut next = state;",
+        ]
+    )
+    exception_source = "REQUEST-999-COMMON-EXCEPTIONS-AFTER.conf"
+    if exception_source in evaluators:
+        append_enabled_call(exception_source)
+    for phase in (1, 2):
+        lines.append(f"    next = engine_bundle::set_phase(next, {phase});")
+        for source in grouped:
+            if source.startswith("REQUEST-") and source != exception_source:
+                append_enabled_call(source)
+    lines.extend(["    next", "}", ""])
+
+    lines.extend(
+        [
+            "pub fn inspect_response(state: map<string>) -> map<string> {",
+            "    let mut next = state;",
+        ]
+    )
+    for phase in (3, 4, 5):
+        lines.append(f"    next = engine_bundle::set_phase(next, {phase});")
+        for source in grouped:
+            if source.startswith("RESPONSE-"):
+                append_enabled_call(source)
+    lines.extend(
+        [
+            "    next",
+            "}",
+            "",
+            "pub fn inspect(state: map<string>) -> map<string> {",
+            "    inspect_response(inspect_request(state))",
+            "}",
+            "",
+        ]
+    )
     return "\n".join(lines)
 
 
@@ -291,21 +405,47 @@ def main() -> None:
     parser.add_argument("--source-dir", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--version", default="4.28.0")
+    parser.add_argument(
+        "--enable",
+        action="append",
+        dest="enabled_categories",
+        help="Enable a generated category module in ruleset.rss; may be repeated",
+    )
     args = parser.parse_args()
+    enabled_categories = set(
+        args.enabled_categories
+        or ["request_911_method_enforcement", "request_942_application_attack_sqli"]
+    )
 
     source_dir = args.source_dir.resolve()
     output_dir = args.output_dir.resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
+    preserved_rss = {
+        "engine.rss",
+        "engine_text.rss",
+        "engine_context.rss",
+        "engine_operators.rss",
+        "engine_bundle.rss",
+        "ruleset_bundle.rss",
+        "pd_edge_waf.rss",
+    }
     for stale in output_dir.glob("*.rss"):
-        stale.unlink()
+        if stale.name not in preserved_rss:
+            stale.unlink()
     data_dir = output_dir / "data"
     if data_dir.exists():
         shutil.rmtree(data_dir)
     data_dir.mkdir()
     data_files = []
+    data_contents: dict[str, str] = {}
     for source_data in sorted(source_dir.glob("*.data")):
         shutil.copy2(source_data, data_dir / source_data.name)
         data_files.append(source_data.name)
+        data_contents[source_data.name] = "\n".join(
+            line.strip()
+            for line in source_data.read_text(encoding="utf-8").splitlines()
+            if line.strip() and not line.lstrip().startswith("#")
+        )
 
     manifest_files = []
     modules: list[tuple[str, int]] = []
@@ -314,7 +454,8 @@ def main() -> None:
         directives = parse_conf(conf)
         name = module_name(conf.name)
         (output_dir / f"{name}.rss").write_text(
-            render_module(conf.name, name, directives, args.version), encoding="utf-8"
+            render_module(conf.name, name, directives, args.version, data_contents),
+            encoding="utf-8",
         )
         modules.append((name, len(directives)))
         all_directives.extend(directives)
@@ -374,11 +515,17 @@ def main() -> None:
         raise ValueError(f"operators reference missing data files: {missing_data_files}")
 
     entry_path = output_dir / "ruleset.rss"
-    entry_path.write_text(render_entry(modules, expected, args.version), encoding="utf-8")
+    entry_path.write_text(
+        render_entry(
+            all_directives, args.version, data_contents, enabled_categories
+        ),
+        encoding="utf-8",
+    )
     manifest = {
         "upstream": "coreruleset/coreruleset",
         "version": args.version,
         "source_directory": "rules",
+        "enabled_categories": sorted(enabled_categories),
         "category_count": len(modules),
         "directive_count": expected,
         "sec_rule_count": sum(d.kind == "SecRule" for d in all_directives),

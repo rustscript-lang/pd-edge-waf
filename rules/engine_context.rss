@@ -1,0 +1,48 @@
+use re;
+use engine_text;
+
+pub fn ctx_get(state: map<string>, key: string) -> string {
+ if (&state).has(&key) => { (&state)[key] } else => { "" }
+}
+pub fn ctx_set_phase(state: map<string>, phase: int) -> map<string> {
+ let mut s = state; s["phase"] = phase + ""; s["skip"] = ""; s["chain_active"] = "0"; s["chain_matched"] = "0"; s
+}
+pub fn pair_values(encoded: string, selector: string, names: bool) -> [string] {
+ let lines: [string] = re::split("\n", encoded); let mut out: [string] = [];
+ for i in 0..lines.length { let line: string = (&lines)[i]; let pieces: [string] = re::split("=", line);
+  if pieces.length > 0 { let key: string = (&pieces)[0]; let selected: bool = selector == "" || engine_text::lower(&key) == engine_text::lower(&selector) || (selector.length > 2 && (&selector)[0:1] == "/" && re::match((&selector)[1:(selector.length - 1)], &key)); if selected { out[out.length] = if names => { key } else if pieces.length > 1 => { (&pieces)[1] } else => { "" }; } }
+ }
+ out
+}
+pub fn selector(target: string) -> string { let pieces: [string] = re::split(":", target); if pieces.length > 1 => { (&pieces)[1] } else => { "" } }
+pub fn one(state: map<string>, raw: string) -> [string] {
+ let counted: bool = engine_text::starts(&raw, "&"); let target: string = if counted => { (&raw)[1:raw.length] } else => { raw };
+ let pieces: [string] = re::split(":", &target); let base: string = (&pieces)[0]; let name: string = selector(&target); let mut out: [string] = [];
+ if base == "REQUEST_METHOD" { out = [ctx_get(&state, "method")]; }
+ else if base == "REQUEST_FILENAME" || base == "REQUEST_URI" || base == "REQUEST_URI_RAW" || base == "REQUEST_BASENAME" { out = [ctx_get(&state, "path")]; }
+ else if base == "QUERY_STRING" { out = [ctx_get(&state, "query")]; }
+ else if base == "REQUEST_BODY" || base == "XML" || base == "FILES" || base == "FILES_NAMES" || base == "MULTIPART_PART_HEADERS" { out = [ctx_get(&state, "request_body")]; }
+ else if base == "REQUEST_BODY_LENGTH" { out = [ctx_get(&state, "request_body").length + ""]; }
+ else if base == "REQUEST_PROTOCOL" { out = [ctx_get(&state, "protocol")]; }
+ else if base == "REQUEST_LINE" { out = [ctx_get(&state, "method") + " " + ctx_get(&state, "path") + (if ctx_get(&state, "query") == "" => { "" } else => { "?" + ctx_get(&state, "query") }) + " " + ctx_get(&state, "protocol")]; }
+ else if base == "REMOTE_ADDR" { out = [ctx_get(&state, "client_ip")]; }
+ else if base == "REQUEST_HEADERS" { out = pair_values(ctx_get(&state, "request_headers"), name, false); }
+ else if base == "REQUEST_HEADERS_NAMES" { out = pair_values(ctx_get(&state, "request_headers"), name, true); }
+ else if base == "REQUEST_COOKIES" { out = pair_values(ctx_get(&state, "cookies"), name, false); }
+ else if base == "REQUEST_COOKIES_NAMES" { out = pair_values(ctx_get(&state, "cookies"), name, true); }
+ else if base == "ARGS" || base == "ARGS_GET" { out = pair_values(ctx_get(&state, "args"), name, false); }
+ else if base == "ARGS_NAMES" || base == "ARGS_GET_NAMES" { out = pair_values(ctx_get(&state, "args"), name, true); }
+ else if base == "RESPONSE_BODY" { out = [ctx_get(&state, "response_body")]; }
+ else if base == "RESPONSE_STATUS" { out = [ctx_get(&state, "response_status")]; }
+ else if base == "RESPONSE_HEADERS" { out = pair_values(ctx_get(&state, "response_headers"), name, false); }
+ else if base == "TX" { let tx_key: string = "tx." + engine_text::lower(&name); if !engine_text::starts(&name, "/") && (&state).has(&tx_key) { out = [(&state)[tx_key]]; } }
+ if counted => { [out.length + ""] } else => { out }
+}
+pub fn ctx_targets(state: map<string>, target_list: string, id: int) -> [string] {
+ let specs: [string] = re::split("\\|", target_list); let mut out: [string] = []; let id_text: string = id + ""; let excluded: string = ctx_get(&state, "exclude." + id_text);
+ for i in 0..specs.length { let spec: string = (&specs)[i]; if !engine_text::starts(&spec, "!") && !engine_text::contains(&excluded, "\n" + spec + "\n") { let values: [string] = one(&state, spec); for j in 0..values.length { out[out.length] = (&values)[j]; } } }
+ out
+}
+pub fn ctx_update(state: map<string>, id: int, target: string) -> map<string> {
+ let mut s = state; let clean: string = if engine_text::starts(&target, "!") => { (&target)[1:target.length] } else => { target }; let id_text: string = id + ""; let key: string = "exclude." + id_text; s[key] = ctx_get(&s, &key) + "\n" + clean + "\n"; s
+}

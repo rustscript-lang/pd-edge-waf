@@ -24,7 +24,13 @@ python3 "$ROOT/tools/convert_crs.py" \
   --output-dir "$TMP/rules" \
   --version "$CRS_VERSION"
 
-diff -ru "$ROOT/rules" "$TMP/rules"
-python3 -m py_compile "$ROOT/tools/convert_crs.py"
+diff -ru \
+  --exclude='engine.rss' \
+  --exclude='engine_*.rss' \
+  --exclude='ruleset_bundle.rss' \
+  --exclude='pd_edge_waf.rss' \
+  "$ROOT/rules" "$TMP/rules"
+python3 "$ROOT/tools/bundle_engine.py"
+python3 -m py_compile "$ROOT/tools/convert_crs.py" "$ROOT/tools/bundle_engine.py"
 cargo fmt --all --manifest-path "$ROOT/Cargo.toml" -- --check
-cargo test --manifest-path "$ROOT/Cargo.toml" --all-targets
+cargo test --release --manifest-path "$ROOT/Cargo.toml" --all-targets

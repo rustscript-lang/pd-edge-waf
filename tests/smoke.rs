@@ -51,12 +51,30 @@ fn generated_rules_and_runtime_use_typed_rule_abi() {
     let generated = std::fs::read_to_string(rules.join("request_911_method_enforcement.rss"))
         .expect("generated rule module should be readable");
     assert!(generated.contains(
-        "apply_rule(next, 911100, 1, 0, false, [\"REQUEST_METHOD\", \"!@within\", \"%{tx.allowed_methods}\", \"\", \"\", \"Method is not allowed by policy\"], 1, 5, false, 403)"
+        "apply_rule(next, 911100, 1, 0, false, [\"REQUEST_METHOD\", \"!@within\", \"%{tx.allowed_methods}\", \"\", \"Method is not allowed by policy\"], 0, 1, 5, false, 403)"
+    ));
+    let transformed =
+        std::fs::read_to_string(rules.join("request_944_application_attack_java.rss"))
+            .expect("generated transformed rule module should be readable");
+    assert!(transformed.contains(
+        "apply_rule(next, 944250, 2, 0, false, [\"ARGS|ARGS_NAMES|REQUEST_COOKIES|REQUEST_COOKIES_NAMES|REQUEST_BODY|REQUEST_HEADERS|!REQUEST_HEADERS:Cookie|XML:/*|XML://@*\", \"@rx\", \"java\\\\b.+(?:runtime|processbuilder)\", \"\", \"Remote Command Execution: Suspicious Java method detected\"], 10, 2, 5, false, 403)"
+    ));
+    assert!(!transformed.contains(
+        "\"lowercase\", \"\", \"Remote Command Execution: Suspicious Java method detected\""
     ));
 
     let engine = std::fs::read_to_string(rules.join("engine.rss"))
         .expect("engine source should be readable");
     assert!(!engine.contains("(&rule)["));
+}
+
+#[test]
+fn runtime_rule_abi_consumes_typed_transform_plan() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let engine = std::fs::read_to_string(root.join("rules/engine.rss"))
+        .expect("engine source should be readable");
+    assert!(engine.contains("text: [string], transform_plan: int, paranoia: int"));
+    assert!(engine.contains("engine_text::transforms((&values)[i], transform_plan)"));
 }
 
 #[test]

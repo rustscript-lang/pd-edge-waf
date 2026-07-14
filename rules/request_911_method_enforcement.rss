@@ -4,15 +4,15 @@ use engine_bundle;
 
 pub fn evaluate_request_911_method_enforcement(state: map<string>) -> map<string> {
     let mut next = state;
-    next = engine_bundle::apply_rule(next, 911011, 1, 0, false, ["TX:DETECTION_PARANOIA_LEVEL", "@lt", "1", "", "END-REQUEST-911-METHOD-ENFORCEMENT", ""], 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 911012, 2, 0, false, ["TX:DETECTION_PARANOIA_LEVEL", "@lt", "1", "", "END-REQUEST-911-METHOD-ENFORCEMENT", ""], 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 911100, 1, 0, false, ["REQUEST_METHOD", "!@within", "%{tx.allowed_methods}", "", "", "Method is not allowed by policy"], 1, 5, false, 403);
-    next = engine_bundle::apply_rule(next, 911013, 1, 0, false, ["TX:DETECTION_PARANOIA_LEVEL", "@lt", "2", "", "END-REQUEST-911-METHOD-ENFORCEMENT", ""], 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 911014, 2, 0, false, ["TX:DETECTION_PARANOIA_LEVEL", "@lt", "2", "", "END-REQUEST-911-METHOD-ENFORCEMENT", ""], 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 911015, 1, 0, false, ["TX:DETECTION_PARANOIA_LEVEL", "@lt", "3", "", "END-REQUEST-911-METHOD-ENFORCEMENT", ""], 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 911016, 2, 0, false, ["TX:DETECTION_PARANOIA_LEVEL", "@lt", "3", "", "END-REQUEST-911-METHOD-ENFORCEMENT", ""], 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 911017, 1, 0, false, ["TX:DETECTION_PARANOIA_LEVEL", "@lt", "4", "", "END-REQUEST-911-METHOD-ENFORCEMENT", ""], 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 911018, 2, 0, false, ["TX:DETECTION_PARANOIA_LEVEL", "@lt", "4", "", "END-REQUEST-911-METHOD-ENFORCEMENT", ""], 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 911011, 1, 0, false, ["TX:DETECTION_PARANOIA_LEVEL", "@lt", "1", "END-REQUEST-911-METHOD-ENFORCEMENT", ""], 0, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 911012, 2, 0, false, ["TX:DETECTION_PARANOIA_LEVEL", "@lt", "1", "END-REQUEST-911-METHOD-ENFORCEMENT", ""], 0, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 911100, 1, 0, false, ["REQUEST_METHOD", "!@within", "%{tx.allowed_methods}", "", "Method is not allowed by policy"], 0, 1, 5, false, 403);
+    next = engine_bundle::apply_rule(next, 911013, 1, 0, false, ["TX:DETECTION_PARANOIA_LEVEL", "@lt", "2", "END-REQUEST-911-METHOD-ENFORCEMENT", ""], 0, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 911014, 2, 0, false, ["TX:DETECTION_PARANOIA_LEVEL", "@lt", "2", "END-REQUEST-911-METHOD-ENFORCEMENT", ""], 0, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 911015, 1, 0, false, ["TX:DETECTION_PARANOIA_LEVEL", "@lt", "3", "END-REQUEST-911-METHOD-ENFORCEMENT", ""], 0, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 911016, 2, 0, false, ["TX:DETECTION_PARANOIA_LEVEL", "@lt", "3", "END-REQUEST-911-METHOD-ENFORCEMENT", ""], 0, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 911017, 1, 0, false, ["TX:DETECTION_PARANOIA_LEVEL", "@lt", "4", "END-REQUEST-911-METHOD-ENFORCEMENT", ""], 0, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 911018, 2, 0, false, ["TX:DETECTION_PARANOIA_LEVEL", "@lt", "4", "END-REQUEST-911-METHOD-ENFORCEMENT", ""], 0, 0, 0, false, 403);
     next = engine_bundle::apply_marker(next, "END-REQUEST-911-METHOD-ENFORCEMENT");
     next
 }

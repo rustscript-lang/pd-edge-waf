@@ -18,6 +18,42 @@ DIRECTIVES = (
     "SecComponentSignature",
 )
 
+TRANSFORM_OPCODES = {
+    "base64Decode": 1,
+    "cmdLine": 2,
+    "compressWhitespace": 3,
+    "cssDecode": 4,
+    "escapeSeqDecode": 5,
+    "hexEncode": 6,
+    "htmlEntityDecode": 7,
+    "jsDecode": 8,
+    "length": 9,
+    "lowercase": 10,
+    "none": 11,
+    "normalizePath": 12,
+    "normalizePathWin": 13,
+    "removeCommentsChar": 14,
+    "removeNulls": 15,
+    "removeWhitespace": 16,
+    "replaceComments": 17,
+    "sha1": 18,
+    "urlDecodeUni": 19,
+    "utf8toUnicode": 20,
+}
+
+
+def encode_transform_plan(transforms: list[str]) -> int:
+    if len(transforms) > 8:
+        raise ValueError("transform plan supports at most 8 transformations")
+    plan = 0
+    for index, name in enumerate(transforms):
+        try:
+            opcode = TRANSFORM_OPCODES[name]
+        except KeyError as error:
+            raise ValueError(f"unknown transformation: {name}") from error
+        plan |= opcode << (index * 5)
+    return plan
+
 
 @dataclass
 class Directive:
@@ -258,11 +294,11 @@ def rule_arguments(directive: Directive, data_contents: dict[str, str]) -> list[
     pattern = directive.pattern
     if directive.operator.lstrip("!") == "@pmFromFile":
         pattern = data_contents.get(pattern, "")
+    transforms = action_values(directive.actions, "t")
     text = [
         rss_string(directive.targets),
         rss_string(directive.operator),
         rss_string(pattern),
-        rss_string(",".join(action_values(directive.actions, "t"))),
         rss_string(action_value(directive.actions, "skipAfter")),
         rss_string(directive.message),
     ]
@@ -272,6 +308,7 @@ def rule_arguments(directive: Directive, data_contents: dict[str, str]) -> list[
         str(directive.chain_index),
         "true" if has_action(directive.actions, "chain") else "false",
         f"[{', '.join(text)}]",
+        str(encode_transform_plan(transforms)),
         str(paranoia_level(directive.actions)),
         str(anomaly_score(directive.actions)),
         "true" if has_action(directive.actions, "deny") else "false",
@@ -343,7 +380,7 @@ def render_entry(
         )
         if category == "request_942_application_attack_sqli":
             lines.append(
-                '    next = engine_bundle::apply_rule(next, 942100, 2, 0, false, ["QUERY_STRING|ARGS|REQUEST_BODY", "@detectSQLi", "", "none,urlDecodeUni,removeNulls", "", "SQL Injection Attack Detected"], 1, 5, false, 403);'
+                '    next = engine_bundle::apply_rule(next, 942100, 2, 0, false, ["QUERY_STRING|ARGS|REQUEST_BODY", "@detectSQLi", "", "", "SQL Injection Attack Detected"], 15979, 1, 5, false, 403);'
             )
         for directive in source_directives:
             call = render_directive_call(directive, data_contents)

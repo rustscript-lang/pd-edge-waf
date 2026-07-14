@@ -39,18 +39,24 @@ pub fn encode_map(values: map<string>) -> string {
  for i in 0..keys.length { let key: string = (&keys)[i]; out = out + key + "=" + (&values)[key] + "\n"; }
  out
 }
-pub fn transforms(value: string, list: string) -> string {
+pub fn transforms(value: string, encoded: int) -> string {
  let mut out = value;
- if contains(&list, "urlDecodeUni") || contains(&list, "cssDecode") || contains(&list, "jsDecode") { out = replace(out, "%27", "'"); out = replace(out, "%22", "\""); out = replace(out, "%20", " "); out = replace(out, "%3d", "="); out = replace(out, "%3D", "="); out = replace(out, "%3c", "<"); out = replace(out, "%3C", "<"); out = replace(out, "%3e", ">"); out = replace(out, "%3E", ">"); out = replace(out, "+", " "); }
- if contains(&list, "htmlEntityDecode") { out = replace(out, "&lt;", "<"); out = replace(out, "&gt;", ">"); out = replace(out, "&quot;", "\""); out = replace(out, "&#39;", "'"); }
- if contains(&list, "removeNulls") { out = replace(out, "\0", ""); }
- if contains(&list, "removeWhitespace") { out = re::replace("\\s+", out, ""); }
- if contains(&list, "compressWhitespace") { out = re::replace("\\s+", out, " "); }
- if contains(&list, "replaceComments") { out = re::replace("(?s)/\\*.*?\\*/", out, " "); }
- if contains(&list, "normalizePath") { out = replace(out, "\\", "/"); }
- if contains(&list, "cmdLine") { out = replace(out, "\\", ""); }
- if contains(&list, "lowercase") || contains(&list, "cmdLine") { out = lower(out); }
- if contains(&list, "length") { out = out.length + ""; }
+ let mut plan = encoded;
+ while plan > 0 {
+  let op = plan % 32;
+  plan = plan / 32;
+  if op == 4 || op == 8 || op == 19 { out = replace(out, "%27", "'"); out = replace(out, "%22", "\""); out = replace(out, "%20", " "); out = replace(out, "%3d", "="); out = replace(out, "%3D", "="); out = replace(out, "%3c", "<"); out = replace(out, "%3C", "<"); out = replace(out, "%3e", ">"); out = replace(out, "%3E", ">"); out = replace(out, "+", " "); }
+  else if op == 7 { out = replace(out, "&lt;", "<"); out = replace(out, "&gt;", ">"); out = replace(out, "&quot;", "\""); out = replace(out, "&#39;", "'"); }
+  else if op == 15 { out = replace(out, "\0", ""); }
+  else if op == 16 { out = re::replace("\\s+", out, ""); }
+  else if op == 3 { out = re::replace("\\s+", out, " "); }
+  else if op == 17 { out = re::replace("(?s)/\\*.*?\\*/", out, " "); }
+  else if op == 12 || op == 13 { out = replace(out, "\\", "/"); }
+  else if op == 2 { out = replace(out, "\\", ""); out = lower(out); }
+  else if op == 10 { out = lower(out); }
+  else if op == 9 { out = out.length + ""; }
+  else if op == 1 || op == 5 || op == 6 || op == 11 || op == 14 || op == 18 || op == 20 { out = out; }
+ }
  out
 }
 
@@ -240,7 +246,7 @@ fn record(state: map<string>, matched: [string]) -> map<string> {
     s
 }
 
-pub fn apply_rule(state: map<string>, id: int, phase: int, chain_index: int, has_chain: bool, text: [string], paranoia: int, score: int, disruptive: bool, status: int) -> map<string> {
+pub fn apply_rule(state: map<string>, id: int, phase: int, chain_index: int, has_chain: bool, text: [string], transform_plan: int, paranoia: int, score: int, disruptive: bool, status: int) -> map<string> {
     let mut s = state;
     let current_user = number(ctx_get(&s, "phase"), 1);
     let skip_state = ctx_get(&s, "skip");
@@ -249,7 +255,7 @@ pub fn apply_rule(state: map<string>, id: int, phase: int, chain_index: int, has
     if chain_index == 0 || ctx_get(&s, "chain_matched") == "1" {
         let values: [string] = ctx_targets(&s, &(&text)[0], id);
         for i in 0..values.length {
-            let transformed: string = transforms((&values)[i], &(&text)[3]);
+            let transformed: string = transforms((&values)[i], transform_plan);
             if op_matches(&s, &(&text)[1], &(&text)[2], transformed) {
                 matched = true;
                 break;
@@ -263,8 +269,8 @@ pub fn apply_rule(state: map<string>, id: int, phase: int, chain_index: int, has
         s["chain_score"] = score + "";
         s["chain_disruptive"] = if disruptive => { "1" } else => { "0" };
         s["chain_status"] = status + "";
-        s["chain_skip"] = (&text)[4];
-        s["chain_message"] = (&text)[5];
+        s["chain_skip"] = (&text)[3];
+        s["chain_message"] = (&text)[4];
     } else if chain_index > 0 {
         let ok = ctx_get(&s, "chain_matched") == "1" && matched;
         s["chain_matched"] = if ok => { "1" } else => { "0" };
@@ -283,7 +289,7 @@ pub fn apply_rule(state: map<string>, id: int, phase: int, chain_index: int, has
             s["chain_matched"] = "0";
         }
     } else if matched {
-        s = record(s, [id + "", score + "", if disruptive => { "1" } else => { "0" }, status + "", (&text)[4], (&text)[5]]);
+        s = record(s, [id + "", score + "", if disruptive => { "1" } else => { "0" }, status + "", (&text)[3], (&text)[4]]);
     }
     }
     s

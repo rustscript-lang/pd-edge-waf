@@ -30,7 +30,14 @@ diff -ru \
   --exclude='ruleset_bundle.rss' \
   --exclude='pd_edge_waf.rss' \
   "$ROOT/rules" "$TMP/rules"
+for bundle in engine_bundle.rss ruleset_bundle.rss pd_edge_waf.rss; do
+  cp "$ROOT/rules/$bundle" "$TMP/$bundle"
+done
 python3 "$ROOT/tools/bundle_engine.py"
+for bundle in engine_bundle.rss ruleset_bundle.rss pd_edge_waf.rss; do
+  diff -u "$TMP/$bundle" "$ROOT/rules/$bundle"
+done
 python3 -m py_compile "$ROOT/tools/convert_crs.py" "$ROOT/tools/bundle_engine.py"
+python3 "$ROOT/tools/test_convert_crs.py"
 cargo fmt --all --manifest-path "$ROOT/Cargo.toml" -- --check
 cargo test --release --manifest-path "$ROOT/Cargo.toml" --all-targets

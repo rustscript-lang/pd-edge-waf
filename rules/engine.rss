@@ -111,7 +111,7 @@ fn record(state: map<string>, matched: [string]) -> map<string> {
     s
 }
 
-pub fn apply_rule(state: map<string>, id: int, phase: int, chain_index: int, has_chain: bool, text: [string], paranoia: int, score: int, disruptive: bool, status: int) -> map<string> {
+pub fn apply_rule(state: map<string>, id: int, phase: int, chain_index: int, has_chain: bool, text: [string], transform_plan: int, paranoia: int, score: int, disruptive: bool, status: int) -> map<string> {
     let mut s = state;
     let current_user = engine_text::number(engine_context::ctx_get(&s, "phase"), 1);
     let skip_state = engine_context::ctx_get(&s, "skip");
@@ -120,7 +120,7 @@ pub fn apply_rule(state: map<string>, id: int, phase: int, chain_index: int, has
     if chain_index == 0 || engine_context::ctx_get(&s, "chain_matched") == "1" {
         let values: [string] = engine_context::ctx_targets(&s, &(&text)[0], id);
         for i in 0..values.length {
-            let transformed: string = engine_text::transforms((&values)[i], &(&text)[3]);
+            let transformed: string = engine_text::transforms((&values)[i], transform_plan);
             if engine_operators::op_matches(&s, &(&text)[1], &(&text)[2], transformed) {
                 matched = true;
                 break;
@@ -134,8 +134,8 @@ pub fn apply_rule(state: map<string>, id: int, phase: int, chain_index: int, has
         s["chain_score"] = score + "";
         s["chain_disruptive"] = if disruptive => { "1" } else => { "0" };
         s["chain_status"] = status + "";
-        s["chain_skip"] = (&text)[4];
-        s["chain_message"] = (&text)[5];
+        s["chain_skip"] = (&text)[3];
+        s["chain_message"] = (&text)[4];
     } else if chain_index > 0 {
         let ok = engine_context::ctx_get(&s, "chain_matched") == "1" && matched;
         s["chain_matched"] = if ok => { "1" } else => { "0" };
@@ -154,7 +154,7 @@ pub fn apply_rule(state: map<string>, id: int, phase: int, chain_index: int, has
             s["chain_matched"] = "0";
         }
     } else if matched {
-        s = record(s, [id + "", score + "", if disruptive => { "1" } else => { "0" }, status + "", (&text)[4], (&text)[5]]);
+        s = record(s, [id + "", score + "", if disruptive => { "1" } else => { "0" }, status + "", (&text)[3], (&text)[4]]);
     }
     }
     s

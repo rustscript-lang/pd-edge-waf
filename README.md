@@ -85,7 +85,7 @@ Allowed traffic is forwarded and carries `x-waf-blocked: 0` plus its current sco
 
 ## Performance test
 
-The pd-vm performance test compiles the standalone default ruleset once, outside the timed region, then evaluates a fixed benign request context repeatedly in interpreter mode. It runs warmup traffic first and reports the average across multiple measured batches:
+The pd-vm performance test compiles the standalone default ruleset once, outside the timed region, then evaluates a fixed benign request context repeatedly using pd-vm's default execution configuration (trace JIT on supported native targets, interpreter elsewhere). It runs warmup traffic first, reports the selected mode, and calculates the average across multiple measured batches:
 
 ```bash
 cargo test --release --test perf -- --ignored --nocapture

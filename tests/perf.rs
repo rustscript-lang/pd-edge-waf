@@ -3,7 +3,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use vm::{JitConfig, Value, Vm, VmStatus};
+use vm::{Value, Vm, VmStatus};
 
 const DEFAULT_WARMUP_BATCHES: usize = 1;
 const DEFAULT_MEASURED_BATCHES: usize = 5;
@@ -74,8 +74,9 @@ fn run_and_verify(vm: &mut Vm, expected: &Value) {
             .debug_info()
             .and_then(|info| info.line_for_offset(vm.ip()));
         panic!(
-            "default ruleset perf request failed at ip {}, line {line:?}: {error:?}",
-            vm.ip()
+            "default ruleset perf request failed at ip {}, line {line:?}, stack_depth={}: {error:?}",
+            vm.ip(),
+            vm.stack().len(),
         );
     });
     assert_eq!(status, VmStatus::Halted);
@@ -104,13 +105,12 @@ fn run_default_ruleset_perf() {
     let config = PerfConfig::from_env();
     let program = default_request_program();
     let expected = Value::string("allow");
-    let mut vm = Vm::new_with_jit_config(
-        program,
-        JitConfig {
-            enabled: false,
-            ..JitConfig::default()
-        },
-    );
+    let mut vm = Vm::new(program);
+    let execution_mode = if vm.jit_config().enabled {
+        "trace_jit"
+    } else {
+        "interpreter"
+    };
 
     for _ in 0..config.warmup_batches {
         for _ in 0..config.batch_size {
@@ -141,7 +141,8 @@ fn run_default_ruleset_perf() {
         .div_f64(config.batch_size as f64);
 
     println!(
-        "default_ruleset_perf mode=interpreter batches={} batch_size={} requests={} average_us={:.3} min_batch_average_us={:.3} max_batch_average_us={:.3}",
+        "default_ruleset_perf mode={} batches={} batch_size={} requests={} average_us={:.3} min_batch_average_us={:.3} max_batch_average_us={:.3}",
+        execution_mode,
         config.measured_batches,
         config.batch_size,
         total_requests,

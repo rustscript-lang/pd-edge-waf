@@ -106,7 +106,11 @@ pub fn ctx_update(state: map<string>, id: int, raw_base: string, selector: strin
 }
 
 // bundled from engine_operators.rss
-pub fn op_expand(state: map<string>, value: string) -> string { let mut out = value; let keys = (&state).keys; for i in 0..keys.length { let key: string = (&keys)[i]; if starts(&key, "tx.") { out = replace(out, "%{" + key + "}", (&state)[key]); } } out }
+pub fn op_expand(state: map<string>, value: string) -> string {
+ let mut out: string = value;
+ if contains(&out, "%{") { let keys: [string] = (&state).keys; for i in 0..keys.length { let key: string = (&keys)[i]; if starts(&key, "tx.") { out = replace(out, "%{" + key + "}", (&state)[key]); } } }
+ out
+}
 pub fn sqli(value: string) -> bool { let text: string = lower(value); (contains(&text, " union ") && contains(&text, "select")) || contains(&text, "' or '") || contains(&text, "'or 1=1") || contains(&text, " or 1=1") || contains(&text, "sleep(") || contains(&text, "benchmark(") || contains(&text, "information_schema") }
 pub fn xss(value: string) -> bool { let text: string = lower(value); contains(&text, "<script") || contains(&text, "javascript:") || contains(&text, "onerror=") || contains(&text, "onload=") || (contains(&text, "<svg") && contains(&text, "on")) }
 pub fn phrase(pattern: string, value: string) -> bool { let phrases: [string] = if contains(&pattern, "\n") => { string_split_literal(pattern, "\n") } else => { string_split_literal(pattern, " ") }; let haystack: string = lower(value); let mut found = false; for i in 0..phrases.length { let item: string = lower((&phrases)[i]); if item != "" && contains(&haystack, item) { found = true; break; } } found }

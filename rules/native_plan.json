@@ -1,0 +1,4760 @@
+{
+  "schema_version": 1,
+  "crs_version": "4.28.0",
+  "categories": [
+    {
+      "name": "request_911_method_enforcement",
+      "entries": [
+        {
+          "kind": "rule",
+          "source": "REQUEST-911-METHOD-ENFORCEMENT.conf",
+          "source_line": 17,
+          "id": 911011,
+          "phase": 1,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@lt",
+          "pattern": "1",
+          "transforms": [],
+          "paranoia_level": 0,
+          "anomaly_score": 0,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "END-REQUEST-911-METHOD-ENFORCEMENT",
+          "message": "",
+          "targets": [
+            {
+              "base": "TX",
+              "selector": "DETECTION_PARANOIA_LEVEL",
+              "canonical": "TX:DETECTION_PARANOIA_LEVEL",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-911-METHOD-ENFORCEMENT.conf",
+          "source_line": 18,
+          "id": 911012,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@lt",
+          "pattern": "1",
+          "transforms": [],
+          "paranoia_level": 0,
+          "anomaly_score": 0,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "END-REQUEST-911-METHOD-ENFORCEMENT",
+          "message": "",
+          "targets": [
+            {
+              "base": "TX",
+              "selector": "DETECTION_PARANOIA_LEVEL",
+              "canonical": "TX:DETECTION_PARANOIA_LEVEL",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-911-METHOD-ENFORCEMENT.conf",
+          "source_line": 28,
+          "id": 911100,
+          "phase": 1,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "!@within",
+          "pattern": "%{tx.allowed_methods}",
+          "transforms": [],
+          "paranoia_level": 1,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "Method is not allowed by policy",
+          "targets": [
+            {
+              "base": "REQUEST_METHOD",
+              "selector": "",
+              "canonical": "REQUEST_METHOD",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-911-METHOD-ENFORCEMENT.conf",
+          "source_line": 49,
+          "id": 911013,
+          "phase": 1,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@lt",
+          "pattern": "2",
+          "transforms": [],
+          "paranoia_level": 0,
+          "anomaly_score": 0,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "END-REQUEST-911-METHOD-ENFORCEMENT",
+          "message": "",
+          "targets": [
+            {
+              "base": "TX",
+              "selector": "DETECTION_PARANOIA_LEVEL",
+              "canonical": "TX:DETECTION_PARANOIA_LEVEL",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-911-METHOD-ENFORCEMENT.conf",
+          "source_line": 50,
+          "id": 911014,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@lt",
+          "pattern": "2",
+          "transforms": [],
+          "paranoia_level": 0,
+          "anomaly_score": 0,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "END-REQUEST-911-METHOD-ENFORCEMENT",
+          "message": "",
+          "targets": [
+            {
+              "base": "TX",
+              "selector": "DETECTION_PARANOIA_LEVEL",
+              "canonical": "TX:DETECTION_PARANOIA_LEVEL",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-911-METHOD-ENFORCEMENT.conf",
+          "source_line": 57,
+          "id": 911015,
+          "phase": 1,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@lt",
+          "pattern": "3",
+          "transforms": [],
+          "paranoia_level": 0,
+          "anomaly_score": 0,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "END-REQUEST-911-METHOD-ENFORCEMENT",
+          "message": "",
+          "targets": [
+            {
+              "base": "TX",
+              "selector": "DETECTION_PARANOIA_LEVEL",
+              "canonical": "TX:DETECTION_PARANOIA_LEVEL",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-911-METHOD-ENFORCEMENT.conf",
+          "source_line": 58,
+          "id": 911016,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@lt",
+          "pattern": "3",
+          "transforms": [],
+          "paranoia_level": 0,
+          "anomaly_score": 0,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "END-REQUEST-911-METHOD-ENFORCEMENT",
+          "message": "",
+          "targets": [
+            {
+              "base": "TX",
+              "selector": "DETECTION_PARANOIA_LEVEL",
+              "canonical": "TX:DETECTION_PARANOIA_LEVEL",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-911-METHOD-ENFORCEMENT.conf",
+          "source_line": 65,
+          "id": 911017,
+          "phase": 1,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@lt",
+          "pattern": "4",
+          "transforms": [],
+          "paranoia_level": 0,
+          "anomaly_score": 0,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "END-REQUEST-911-METHOD-ENFORCEMENT",
+          "message": "",
+          "targets": [
+            {
+              "base": "TX",
+              "selector": "DETECTION_PARANOIA_LEVEL",
+              "canonical": "TX:DETECTION_PARANOIA_LEVEL",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-911-METHOD-ENFORCEMENT.conf",
+          "source_line": 66,
+          "id": 911018,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@lt",
+          "pattern": "4",
+          "transforms": [],
+          "paranoia_level": 0,
+          "anomaly_score": 0,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "END-REQUEST-911-METHOD-ENFORCEMENT",
+          "message": "",
+          "targets": [
+            {
+              "base": "TX",
+              "selector": "DETECTION_PARANOIA_LEVEL",
+              "canonical": "TX:DETECTION_PARANOIA_LEVEL",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "marker",
+          "name": "END-REQUEST-911-METHOD-ENFORCEMENT"
+        }
+      ]
+    },
+    {
+      "name": "request_942_application_attack_sqli",
+      "entries": [
+        {
+          "kind": "rule",
+          "source": "generated",
+          "source_line": 0,
+          "id": 942100,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@detectSQLi",
+          "pattern": "",
+          "transforms": [
+            "none",
+            "urlDecodeUni",
+            "removeNulls"
+          ],
+          "paranoia_level": 1,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "SQL Injection Attack Detected",
+          "targets": [
+            {
+              "base": "QUERY_STRING",
+              "selector": "",
+              "canonical": "QUERY_STRING",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_BODY",
+              "selector": "",
+              "canonical": "REQUEST_BODY",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 17,
+          "id": 942011,
+          "phase": 1,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@lt",
+          "pattern": "1",
+          "transforms": [],
+          "paranoia_level": 0,
+          "anomaly_score": 0,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "END-REQUEST-942-APPLICATION-ATTACK-SQLI",
+          "message": "",
+          "targets": [
+            {
+              "base": "TX",
+              "selector": "DETECTION_PARANOIA_LEVEL",
+              "canonical": "TX:DETECTION_PARANOIA_LEVEL",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 18,
+          "id": 942012,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@lt",
+          "pattern": "1",
+          "transforms": [],
+          "paranoia_level": 0,
+          "anomaly_score": 0,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "END-REQUEST-942-APPLICATION-ATTACK-SQLI",
+          "message": "",
+          "targets": [
+            {
+              "base": "TX",
+              "selector": "DETECTION_PARANOIA_LEVEL",
+              "canonical": "TX:DETECTION_PARANOIA_LEVEL",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 46,
+          "id": 942100,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@detectSQLi",
+          "pattern": "",
+          "transforms": [
+            "none",
+            "utf8toUnicode",
+            "urlDecodeUni",
+            "removeNulls"
+          ],
+          "paranoia_level": 1,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "SQL Injection Attack Detected via libinjection",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_HEADERS",
+              "selector": "User-Agent",
+              "canonical": "REQUEST_HEADERS:User-Agent",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_HEADERS",
+              "selector": "Referer",
+              "canonical": "REQUEST_HEADERS:Referer",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 77,
+          "id": 942140,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)\\b(?:d(?:atabas|b_nam)e[^0-9A-Z_a-z]*\\(|(?:information_schema|m(?:aster\\.\\.sysdatabases|s(?:db|ys(?:ac(?:cess(?:objects|storage|xml)|es)|modules2?|(?:object|querie|relationship)s))|ysql\\.db)|northwind|pg_(?:catalog|toast)|tempdb)\\b|s(?:chema(?:_name\\b|[^0-9A-Z_a-z]*\\()|(?:qlite_(?:temp_)?master|ys(?:aux|\\.database_name))\\b))",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 1,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "SQL Injection Attack: Common DB Names Detected",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 110,
+          "id": 942151,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)\\b(?:a(?:dd(?:dat|tim)e|es_(?:de|en)crypt|s(?:cii(?:str)?|in)|tan2?)|b(?:enchmark|i(?:n_to_num|t_(?:and|count|length|x?or)))|c(?:har(?:acter)?_length|eil(?:ing)?|o(?:alesce|ercibility|llation|(?:mpres)?s|n(?:cat(?:_ws)?|nection_id|v(?:ert_tz)?)|t)|rc32|ur(?:(?:dat|tim)e|rent_(?:date|setting|time(?:stamp)?|user)))|d(?:a(?:t(?:abase(?:_to_xml)?|e(?:_(?:add|format|sub)|diff))|y(?:name|of(?:month|week|year)))|count|e(?:code|s_(?:de|en)crypt)|ump)|e(?:n(?:c(?:ode|rypt)|ds_?with)|x(?:p(?:ort_set)?|tract(?:value)?))|f(?:i(?:el|n)d_in_set|ound_rows|rom_(?:base64|days|unixtime))|g(?:e(?:ometrycollection|t(?:_(?:format|lock)|pgusername))|(?:r(?:eates|oup_conca)|tid_subse)t)|hex(?:toraw)?|i(?:fnull|n(?:et6?_(?:aton|ntoa)|s(?:ert|tr)|terval)|s(?:_(?:(?:free|used)_lock|ipv(?:4(?:_(?:compat|mapped))?|6)|n(?:ot(?:_null)?|ull)|superuser)|null))|json(?:_(?:a(?:gg|rray(?:_(?:elements(?:_text)?|length))?)|build_(?:array|object)|e(?:ac|xtract_pat)h(?:_text)?|object(?:_(?:agg|keys))?|populate_record(?:set)?|strip_nulls|t(?:o_record(?:set)?|ypeof))|b(?:_(?:array(?:_(?:elements(?:_text)?|length))?|build_(?:array|object)|e(?:ac|xtract_pat)h(?:_text)?|insert|object(?:_(?:agg|keys))?|p(?:ath_(?:(?:exists|match)(?:_tz)?|query(?:_(?:(?:array|first)(?:_tz)?|tz))?)|opulate_record(?:set)?|retty)|s(?:et(?:_lax)?|trip_nulls)|t(?:o_record(?:set)?|ypeof)))?|path)?|l(?:ast_(?:day|insert_id)|case|east|i(?:kely|nestring)|o(?:_(?:from_bytea|put)|ad_file|ca(?:ltimestamp|te)|g(?:10|2))|pad|trim)|m(?:a(?:ke(?:_set|date)|ster_pos_wait)|d5|i(?:crosecon)?d|onthname|ulti(?:linestring|po(?:int|lygon)))|n(?:ame_const|ot_in|ullif)|o(?:ct(?:et_length)?|(?:ld_passwo)?rd)|p(?:eriod_(?:add|diff)|g_(?:client_encoding|(?:databas|read_fil)e|l(?:argeobject|s_dir)|sleep|user)|o(?:lygon|w)|rocedure_analyse)|qu(?:ery_to_xml|ote)|r(?:a(?:dians|nd|wtohex)|elease_lock|ow_(?:count|to_json)|pad|trim)|s(?:chema|e(?:c_to_time|ssion_user)|ha[12]?|in|oundex|q(?:lite_(?:compileoption_(?:get|used)|source_id)|rt)|t(?:arts_?with|d(?:dev_(?:po|sam)p)?|r(?:_to_date|cmp))|ub(?:(?:dat|tim)e|str(?:ing(?:_index)?)?)|ys(?:date|tem_user))|t(?:ime(?:_(?:format|to_sec)|diff|stamp(?:add|diff)?)|o(?:_(?:base64|jsonb?)|n?char|(?:day|second)s)|r(?:im|uncate))|u(?:case|n(?:compress(?:ed_length)?|hex|i(?:str|x_timestamp))|(?:pdatexm|se_json_nul)l|tc_(?:date|time(?:stamp)?)|uid(?:_short)?)|var(?:_(?:po|sam)p|iance)|we(?:ek(?:day|ofyear)|ight_string)|xmltype|yearweek)[^0-9A-Z_a-z]*\\(",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 1,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "SQL Injection Attack: SQL function name detected",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 154,
+          "id": 942160,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i:sleep\\s*?\\(.*?\\)|benchmark\\s*?\\(.*?\\,.*?\\))",
+          "transforms": [
+            "none",
+            "urlDecodeUni",
+            "replaceComments"
+          ],
+          "paranoia_level": 1,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "Detects blind sqli tests using sleep() or benchmark()",
+          "targets": [
+            {
+              "base": "REQUEST_FILENAME",
+              "selector": "",
+              "canonical": "REQUEST_FILENAME",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 180,
+          "id": 942170,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)(?:select|;)[\\s\\x0b]+(?:benchmark|if|sleep)[\\s\\x0b]*?\\([\\s\\x0b]*?\\(?[\\s\\x0b]*?[0-9A-Z_a-z]+",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 1,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "Detects SQL benchmark and sleep injection attempts including conditional queries",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 206,
+          "id": 942190,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)[\\\"'`](?:[\\s\\x0b]*![\\s\\x0b]*[\\\"'0-9A-Z_-z]|;?[\\s\\x0b]*(?:having|select|union\\b[\\s\\x0b]*(?:all|(?:distin|sele)ct))\\b[\\s\\x0b]*[^\\s\\x0b])|\\b(?:(?:(?:c(?:onnection_id|urrent_user)|database|schema|user)[\\s\\x0b]*?|select.*?[0-9A-Z_a-z]?user)\\(|exec(?:ute)?[\\s\\x0b]+master\\.|from[^0-9A-Z_a-z]+information_schema[^0-9A-Z_a-z]|into[\\s\\x0b\\+]+(?:dump|out)file[\\s\\x0b]*?[\\\"'`]|union(?:[\\s\\x0b]select[\\s\\x0b]@|[\\s\\x0b\\(0-9A-Z_a-z]*?select))|[\\s\\x0b]*?exec(?:ute)?.*?[^0-9A-Z_a-z]xp_cmdshell|[^0-9A-Z_a-z]iif[\\s\\x0b]*?\\(",
+          "transforms": [
+            "none",
+            "urlDecodeUni",
+            "removeCommentsChar"
+          ],
+          "paranoia_level": 1,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "Detects MSSQL code execution and information gathering attempts",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 235,
+          "id": 942220,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)^(?:json\\.)?(?:429496729[56]|2(?:14748364[78]|.22507385850720(?:07|11)e-308)|-(?:214748364[89]|0000023456)|00000(?:12345|23456)|1e309)$",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 1,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "Looking for integer overflow attacks, these are taken from skipfish, except 2.2.2250738585072011e-308 is the \\\"magic number\\\" crash",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 261,
+          "id": 942230,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)[\\s\\x0b\\(\\)]case[\\s\\x0b]+when.*?then|\\)[\\s\\x0b]*?like[\\s\\x0b]*?\\(|select.*?having[\\s\\x0b]*?[^\\s\\x0b]+[\\s\\x0b]*?[^\\s\\x0b0-9A-Z_a-z]|if[\\s\\x0b]?\\([0-9A-Z_a-z]+[\\s\\x0b]*?[<->~]",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 1,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "Detects conditional SQL injection attempts",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 287,
+          "id": 942240,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)alter[\\s\\x0b]*?[0-9A-Z_a-z]+.*?char(?:acter)?[\\s\\x0b]+set[\\s\\x0b]+[0-9A-Z_a-z]+|[\\\"'`](?:;*?[\\s\\x0b]*?waitfor[\\s\\x0b]+(?:time|delay)[\\s\\x0b]+[\\\"'`]|;.*?:[\\s\\x0b]*?goto)",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 1,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "Detects MySQL charset switch and MSSQL DoS attempts",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 313,
+          "id": 942250,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)m(?:erge.*?using|atch[\\s\\x0b]*?[\\(\\)\\+-\\-0-9A-Z_a-z]+[\\s\\x0b]*?against)[\\s\\x0b]*?\\(|execute[\\s\\x0b]*?immediate[\\s\\x0b]*?[\\\"'`]",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 1,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "Detects MATCH AGAINST, MERGE and EXECUTE IMMEDIATE injections",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 334,
+          "id": 942270,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)union.*?select.*?from",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 1,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "Looking for basic sql injection. Common attack string for mysql, oracle and others",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 360,
+          "id": 942280,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)select[\\s\\x0b]*?pg_sleep|waitfor[\\s\\x0b]*?delay[\\s\\x0b]?[\\\"'`]+[\\s\\x0b]?[0-9]|;[\\s\\x0b]*?shutdown[\\s\\x0b]*?(?:[#;\\{]|/\\*|--)",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 1,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "Detects Postgres pg_sleep injection, waitfor delay attacks and database shutdown attempts",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_HEADERS",
+              "selector": "User-Agent",
+              "canonical": "REQUEST_HEADERS:User-Agent",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_HEADERS",
+              "selector": "Referer",
+              "canonical": "REQUEST_HEADERS:Referer",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 386,
+          "id": 942290,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)\\[?\\$(?:a(?:bs|c(?:cumulator|osh?)|dd(?:ToSet)?|ll(?:ElementsTrue)?|n(?:d|yElementTrue)|rray(?:ElemA|ToObjec)t|sinh?|tan[2h]?|vg)|b(?:etween|i(?:narySize|t(?:And|Not|(?:O|Xo)r)?)|ottomN?|sonSize|ucket(?:Auto)?)|c(?:eil|mp|o(?:n(?:cat(?:Arrays)?|d|vert)|sh?|unt|variance(?:Po|Sam)p)|urrentDate)|d(?:a(?:te(?:Add|Diff|From(?:Parts|String)|Subtract|T(?:o(?:Parts|String)|runc))|yOf(?:Month|Week|Year))|e(?:greesToRadians|nseRank|rivative)|iv(?:ide)?|ocumentNumber)|e(?:(?:a|lemMat)ch|q|x(?:ists|p(?:MovingAvg|r)?))|f(?:i(?:lter|rstN?)|loor|unction)|g(?:etField|roup|te?)|(?:hou|xo|yea)r|i(?:fNull|n(?:c|dexOf(?:Array|Bytes|CP)|tegral)?|s(?:Array|Number|o(?:DayOfWeek|Week(?:Year)?)))|jsonSchema|l(?:astN?|et|i(?:ke|(?:nearFil|tera)l)|n|o(?:cf|g(?:10)?)|t(?:e|rim)?)|m(?:a(?:p|xN?)|e(?:dian|rgeObjects|ta)|i(?:llisecond|n(?:N|ute)?)|o(?:d|nth)|ul(?:tiply)?)|n(?:atural|e|in|o[rt])|o(?:bjectToArray|r)|p(?:ercentile|o(?:[pw]|sition)|roject|u(?:ll(?:All)?|sh))|r(?:a(?:diansToDegrees|n(?:[dk]|ge))|e(?:(?:duc|nam)e|gex(?:Find(?:All)?|Match)?|place(?:All|One)|verseArray)|ound|trim)|s(?:(?:ampleRat|lic)e|e(?:cond|t(?:Difference|(?:Equal|WindowField)s|Field|I(?:ntersection|sSubset)|OnInsert|Union)?)|(?:hif|pli|qr)t|i(?:nh?|ze)|ort(?:Array)?|t(?:dDev(?:Po|Sam)p|r(?:Len(?:Bytes|CP)|casecmp))|u(?:b(?:str(?:Bytes|CP)?|tract)|m)|witch)|t(?:anh?|ext|o(?:Bool|D(?:(?:at|oubl)e|ecimal)|HashedIndexKey|Int|Lo(?:ng|wer)|ObjectId|String|U(?:UID|pper)|pN?)|r(?:im|unc)|s(?:Increment|Second)|ype)|unset|w(?:eek|here)|zip)\\b\\]?",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 1,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "Finds basic MongoDB SQL injection attempts",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "/^_ga(?:_\\w+)?$/",
+              "canonical": "!REQUEST_COOKIES:/^_ga(?:_\\w+)?$/",
+              "negated": true,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "__gads",
+              "canonical": "!REQUEST_COOKIES:__gads",
+              "negated": true,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "FCCDCF",
+              "canonical": "!REQUEST_COOKIES:FCCDCF",
+              "negated": true,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "/^pbjs-\\w+$/",
+              "canonical": "!REQUEST_COOKIES:/^pbjs-\\w+$/",
+              "negated": true,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 415,
+          "id": 942320,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)create[\\s\\x0b]+(?:function|procedure)[\\s\\x0b]*?[0-9A-Z_a-z]+[\\s\\x0b]*?\\([\\s\\x0b]*?\\)[\\s\\x0b]*?-|d(?:eclare[^0-9A-Z_a-z]+[#@][\\s\\x0b]*?[0-9A-Z_a-z]+|iv[\\s\\x0b]*?\\([\\+\\-]*[\\s\\x0b\\.0-9]+,[\\+\\-]*[\\s\\x0b\\.0-9]+\\))|exec[\\s\\x0b]*?\\([\\s\\x0b]*?@|(?:lo_(?:impor|ge)t|procedure[\\s\\x0b]+analyse)[\\s\\x0b]*?\\(|;[\\s\\x0b]*?(?:declare|open)[\\s\\x0b]+[\\-0-9A-Z_a-z]+|::(?:b(?:igint|ool)|double[\\s\\x0b]+precision|int(?:eger)?|numeric|oid|real|(?:tex|smallin)t)",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 1,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "Detects MySQL and PostgreSQL stored procedure/function injections",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 441,
+          "id": 942350,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)create[\\s\\x0b]+function[\\s\\x0b].+[\\s\\x0b]returns|;[\\s\\x0b]*?(?:alter|(?:(?:cre|trunc|upd)at|re(?:nam|plac))e|d(?:e(?:lete|sc)|rop)|(?:inser|selec)t|load)\\b[\\s\\x0b]*?[\\(\\[]?[0-9A-Z_a-z]{2,}",
+          "transforms": [
+            "none",
+            "urlDecodeUni",
+            "replaceComments"
+          ],
+          "paranoia_level": 1,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "Detects MySQL UDF injection and other data/structure manipulation attempts",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 480,
+          "id": 942360,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)\\b(?:(?:alter|(?:(?:cre|trunc|upd)at|renam)e|de(?:lete|sc)|(?:inser|selec)t|load)[\\s\\x0b]+(?:char|group_concat|load_file)\\b[\\s\\x0b]*\\(?|end[\\s\\x0b]*?\\);)|[\\s\\x0b\\(]load_file[\\s\\x0b]*?\\(|[\\\"'`][\\s\\x0b]+regexp[^0-9A-Z_a-z]|[\\\"'0-9A-Z_-z][\\s\\x0b]+as\\b[\\s\\x0b]*[\\\"'0-9A-Z_-z]+[\\s\\x0b]*\\bfrom|^(?:json\\.)?[^A-Z_a-z]+[\\s\\x0b]*?(?:(?:(?:(?:cre|trunc)at|renam)e|d(?:e(?:lete|sc)|rop)|(?:inser|selec)t|load)[\\s\\x0b]+[0-9A-Z_a-z]+|u(?:pdate[\\s\\x0b]+[0-9A-Z_a-z]+|nion[\\s\\x0b]*(?:all|(?:sele|distin)ct)\\b)|alter[\\s\\x0b]*(?:a(?:(?:ggregat|pplication[\\s\\x0b]*rol)e|s(?:sembl|ymmetric[\\s\\x0b]*ke)y|u(?:dit|thorization)|vailability[\\s\\x0b]*group)|b(?:roker[\\s\\x0b]*priority|ufferpool)|c(?:ertificate|luster|o(?:l(?:latio|um)|nversio)n|r(?:edential|yptographic[\\s\\x0b]*provider))|d(?:atabase|efault|i(?:mension|skgroup)|omain)|e(?:(?:ndpoi|ve)nt|xte(?:nsion|rnal))|f(?:lashback|oreign|u(?:lltext|nction))|hi(?:erarchy|stogram)|group|in(?:dex(?:type)?|memory|stance)|java|l(?:a(?:ngua|r)ge|ibrary|o(?:ckdown|g(?:file[\\s\\x0b]*group|in)))|m(?:a(?:s(?:k|ter[\\s\\x0b]*key)|terialized)|e(?:ssage[\\s\\x0b]*type|thod)|odule)|(?:nicknam|queu)e|o(?:perator|utline)|p(?:a(?:ckage|rtition)|ermission|ro(?:cedur|fil)e)|r(?:e(?:mot|sourc)e|o(?:l(?:e|lback)|ute))|s(?:chema|e(?:arch|curity|rv(?:er|ice)|quence|ssion)|y(?:mmetric[\\s\\x0b]*key|nonym)|togroup)|t(?:able(?:space)?|ext|hreshold|r(?:igger|usted)|ype)|us(?:age|er)|view|w(?:ork(?:load)?|rapper)|x(?:ml[\\s\\x0b]*schema|srobject))\\b)",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 1,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "Detects concatenated basic SQL injection and SQLLFI attempts",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 521,
+          "id": 942500,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)/\\*[\\s\\x0b]*?[!\\+](?:[\\s\\x0b\\(\\)\\-0-9=A-Z_a-z]+)?\\*/",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 1,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "MySQL in-line comment detected",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 558,
+          "id": 942540,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "^(?:[^']*'|[^\\\"]*\\\"|[^`]*`)[\\s\\x0b]*;",
+          "transforms": [
+            "none",
+            "urlDecodeUni",
+            "replaceComments"
+          ],
+          "paranoia_level": 1,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "SQL Authentication bypass (split query)",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 588,
+          "id": 942560,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)1\\.e(?:[\\(\\),]|\\.[\\$0-9A-Z_a-z])",
+          "transforms": [
+            "none",
+            "urlDecodeUni",
+            "replaceComments"
+          ],
+          "paranoia_level": 1,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "MySQL Scientific Notation payload detected",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 618,
+          "id": 942550,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)[\\\"'`][\\[\\{][^#\\]\\}]*[\\]\\}]+[\\\"'`]|(?:[\\-@]>?|<@|@[\\?@]|\\?(?:(?:)|&|\\|#>)|#(?:>>|-)|->>|[<>])[\\\"'`](?:[\\[\\{][^#\\]\\}]*[\\]\\}]+[\\\"'`]|\\$[\\.\\[])|\\bjson_extract\\b[^\\(]*\\([^\\)]*\\)",
+          "transforms": [
+            "none",
+            "urlDecodeUni",
+            "removeWhitespace"
+          ],
+          "paranoia_level": 1,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "JSON-Based SQL Injection",
+          "targets": [
+            {
+              "base": "REQUEST_FILENAME",
+              "selector": "",
+              "canonical": "REQUEST_FILENAME",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "/^_ga(?:_\\w+)?$/",
+              "canonical": "!REQUEST_COOKIES:/^_ga(?:_\\w+)?$/",
+              "negated": true,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "__gads",
+              "canonical": "!REQUEST_COOKIES:__gads",
+              "negated": true,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "FCCDCF",
+              "canonical": "!REQUEST_COOKIES:FCCDCF",
+              "negated": true,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "/^pbjs-\\w+$/",
+              "canonical": "!REQUEST_COOKIES:/^pbjs-\\w+$/",
+              "negated": true,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 640,
+          "id": 942013,
+          "phase": 1,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@lt",
+          "pattern": "2",
+          "transforms": [],
+          "paranoia_level": 0,
+          "anomaly_score": 0,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "END-REQUEST-942-APPLICATION-ATTACK-SQLI",
+          "message": "",
+          "targets": [
+            {
+              "base": "TX",
+              "selector": "DETECTION_PARANOIA_LEVEL",
+              "canonical": "TX:DETECTION_PARANOIA_LEVEL",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 641,
+          "id": 942014,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@lt",
+          "pattern": "2",
+          "transforms": [],
+          "paranoia_level": 0,
+          "anomaly_score": 0,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "END-REQUEST-942-APPLICATION-ATTACK-SQLI",
+          "message": "",
+          "targets": [
+            {
+              "base": "TX",
+              "selector": "DETECTION_PARANOIA_LEVEL",
+              "canonical": "TX:DETECTION_PARANOIA_LEVEL",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 658,
+          "id": 942120,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)[!=]=|&&|\\|\\||->|>[=>]|<(?:[<=]|>(?:[\\s\\x0b]+binary)?)|\\b(?:(?:xor|r(?:egexp|like)|i(?:snull|like)|notnull)\\b|collate(?:[^0-9A-Z_a-z]*?(?:U&)?[\\\"'`]|[^0-9A-Z_a-z]+(?:(?:binary|nocase|rtrim)\\b|[0-9A-Z_a-z]*?_))|(?:likel(?:ihood|y)|unlikely)[\\s\\x0b]*\\()|r(?:egexp|like)[\\s\\x0b]+binary|not[\\s\\x0b]+between[\\s\\x0b]+(?:0[\\s\\x0b]+and|(?:'[^']*'|\\\"[^\\\"]*\\\")[\\s\\x0b]+and[\\s\\x0b]+(?:'[^']*'|\\\"[^\\\"]*\\\"))|is[\\s\\x0b]+null|like[\\s\\x0b]+(?:null|[0-9A-Z_a-z]+[\\s\\x0b]+escape\\b)|(?:^|[^0-9A-Z_a-z])in[\\s\\x0b\\+]*\\([\\s\\x0b\\\"0-9]+[^\\(\\)]*\\)|[!<->][\\s\\x0b]*all\\b",
+          "transforms": [
+            "none",
+            "utf8toUnicode",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 2,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "SQL Injection Attack: SQL Operator Detected",
+          "targets": [
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_FILENAME",
+              "selector": "",
+              "canonical": "REQUEST_FILENAME",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 699,
+          "id": 942130,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": true,
+          "operator": "@rx",
+          "pattern": "(?i)[\\s\\x0b\\\"'-\\)`]*?\\b([0-9A-Z_a-z]+)\\b[\\s\\x0b\\\"'-\\)`]*?(?:=|<=>|(?:sounds[\\s\\x0b]+)?like|glob|r(?:like|egexp))[\\s\\x0b\\\"'-\\)`]*?\\b([0-9A-Z_a-z]+)\\b",
+          "transforms": [
+            "none",
+            "urlDecodeUni",
+            "replaceComments"
+          ],
+          "paranoia_level": 2,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "SQL Injection Attack: SQL Boolean-based attack detected",
+          "targets": [
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 719,
+          "id": 942130,
+          "phase": 2,
+          "chain_index": 1,
+          "has_chain": false,
+          "operator": "@streq",
+          "pattern": "%{TX.2}",
+          "transforms": [
+            "none"
+          ],
+          "paranoia_level": 0,
+          "anomaly_score": 0,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "",
+          "targets": [
+            {
+              "base": "TX",
+              "selector": "1",
+              "canonical": "TX:1",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 735,
+          "id": 942131,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": true,
+          "operator": "@rx",
+          "pattern": "(?i)[\\s\\x0b\\\"'-\\)`]*?\\b([0-9A-Z_a-z]+)\\b[\\s\\x0b\\\"'-\\)`]*?(?:![<->]|<[=>]?|>=?|\\^|is[\\s\\x0b]+not|not[\\s\\x0b]+(?:like|r(?:like|egexp)))[\\s\\x0b\\\"'-\\)`]*?\\b([0-9A-Z_a-z]+)\\b",
+          "transforms": [
+            "none",
+            "urlDecodeUni",
+            "replaceComments"
+          ],
+          "paranoia_level": 2,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "SQL Injection Attack: SQL Boolean-based attack detected",
+          "targets": [
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 756,
+          "id": 942131,
+          "phase": 2,
+          "chain_index": 1,
+          "has_chain": false,
+          "operator": "!@streq",
+          "pattern": "%{TX.2}",
+          "transforms": [
+            "none"
+          ],
+          "paranoia_level": 0,
+          "anomaly_score": 0,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "",
+          "targets": [
+            {
+              "base": "TX",
+              "selector": "1",
+              "canonical": "TX:1",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 772,
+          "id": 942150,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)\\b(?:json(?:_[0-9A-Z_a-z]+)?|a(?:bs|(?:cos|sin)h?|tan[2h]?|vg)|c(?:eil(?:ing)?|h(?:a(?:nges|r(?:set)?)|r)|o(?:alesce|sh?|unt)|ast)|d(?:e(?:grees|fault)|a(?:te|y))|exp|f(?:loor(?:avg)?|ormat|ield)|g(?:lob|roup_concat)|h(?:ex|our)|i(?:f(?:null)?|if|n(?:str)?)|l(?:ast(?:_insert_rowid)?|ength|ike(?:l(?:ihood|y))?|n|o(?:ad_extension|g(?:10|2)?|wer(?:pi)?|cal)|trim)|m(?:ax|in(?:ute)?|o(?:d|nth))|n(?:ullif|ow)|p(?:i|ow(?:er)?|rintf|assword)|quote|r(?:a(?:dians|ndom(?:blob)?)|e(?:p(?:lace|eat)|verse)|ound|trim|ight)|s(?:i(?:gn|nh?)|oundex|q(?:lite_(?:compileoption_(?:get|used)|offset|source_id|version)|rt)|u(?:bstr(?:ing)?|m)|econd|leep)|t(?:anh?|otal(?:_changes)?|r(?:im|unc)|ypeof|ime)|u(?:n(?:icode|likely)|(?:pp|s)er)|zeroblob|bin|v(?:alues|ersion)|week|year)[^0-9A-Z_a-z]*\\(",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 2,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "SQL Injection Attack: SQL function name detected",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 815,
+          "id": 942180,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)(?:/\\*)+[\\\"'`]+[\\s\\x0b]?(?:--|[#\\{]|/\\*)?|[\\\"'`](?:[\\s\\x0b]*(?:(?:x?or|and|div|like|between)[\\s\\x0b\\-0-9A-Z_a-z]+[\\(\\)\\+-\\-<->][\\s\\x0b]*[\\\"'0-9`]|[!=\\|](?:[\\s\\x0b!\\+\\-0-9=]+[^\\[]*[\\\"'\\(`].*|[\\s\\x0b!0-9=]+[^0-9]*[0-9]+)$|(?:like|print)[^0-9A-Z_a-z]+[\\\"'\\(0-9A-Z_-z]|;)|(?:[<>~]+|[\\s\\x0b]*[^\\s\\x0b0-9A-Z_a-z]?=[\\s\\x0b]*|[^0-9A-Z_a-z]*?[\\+=]+[^0-9A-Z_a-z]*?)[\\\"'`])|[0-9][\\\"'`][\\s\\x0b]+[\\\"'`][\\s\\x0b]+[0-9]|^(?:json\\.)?admin[\\s\\x0b]*?[\\\"'`]|[\\s\\x0b\\\"'\\(`][\\s\\x0b]*?glob[^0-9A-Z_a-z]+[\\\"'\\(0-9A-Z_-z]|[\\s\\x0b]is[\\s\\x0b]*?0[^0-9A-Z_a-z]|where[\\s\\x0b][\\s\\x0b,-\\.0-9A-Z_a-z]+[\\s\\x0b]=",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 2,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "Detects basic SQL authentication bypass attempts 1/3",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 844,
+          "id": 942200,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": true,
+          "operator": "@rx",
+          "pattern": "(?i)(?:,[^\\)]*?(?:[0-9a-f]+|\\([0-9a-f]+\\))|\\([^,]+(?:,[\\s\\x0b]*[0-9a-f]+)+\\))(?:$|[\\\"'`](?:$|[^\\\"'`]+[\\\"'`])|(?:\\r?\\n)?\\z)|,[^\\)]*?[\\\"'`][^\\\"'`]+[\\\"'`]|[^0-9A-Z_a-z]select.+[^0-9A-Z_a-z]*?from|(?:alter|(?:(?:cre|trunc|upd)at|renam)e|d(?:e(?:lete|sc)|rop)|(?:inser|selec)t|load)[\\s\\x0b]*?\\([\\s\\x0b]*?space[\\s\\x0b]*?\\(",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 2,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "Detects MySQL comment-/space-obfuscated injections and backtick termination",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_HEADERS",
+              "selector": "User-Agent",
+              "canonical": "REQUEST_HEADERS:User-Agent",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_HEADERS",
+              "selector": "Referer",
+              "canonical": "REQUEST_HEADERS:Referer",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "FCCDCF",
+              "canonical": "!REQUEST_COOKIES:FCCDCF",
+              "negated": true,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "/^pbjs-\\w+$/",
+              "canonical": "!REQUEST_COOKIES:/^pbjs-\\w+$/",
+              "negated": true,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 863,
+          "id": 942200,
+          "phase": 2,
+          "chain_index": 1,
+          "has_chain": false,
+          "operator": "!@rx",
+          "pattern": "^[,\\-0-9=A-Z_a-z]+$",
+          "transforms": [
+            "none"
+          ],
+          "paranoia_level": 0,
+          "anomaly_score": 0,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "",
+          "targets": [
+            {
+              "base": "MATCHED_VARS",
+              "selector": "",
+              "canonical": "MATCHED_VARS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "FCCDCF",
+              "canonical": "!REQUEST_COOKIES:FCCDCF",
+              "negated": true,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "/^pbjs-\\w+$/",
+              "canonical": "!REQUEST_COOKIES:/^pbjs-\\w+$/",
+              "negated": true,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 876,
+          "id": 942210,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)(?:&&|\\|\\||and|between|div|like|n(?:and|ot)|(?:xx?)?or)[\\s\\x0b\\(]+[0-9A-Z_a-z]+[\\s\\x0b\\)]*?[!\\+=]+[\\s\\x0b0-9]*?[\\\"'-\\)=`]|[0-9](?:[\\s\\x0b]*?(?:and|between|div|like|x?or)[\\s\\x0b]*?[0-9]+[\\s\\x0b]*?[\\+\\-]|[\\s\\x0b]+group[\\s\\x0b]+by.+\\()|/[0-9A-Z_a-z]+;?[\\s\\x0b]+(?:and|between|div|having|like|x?or|select)[^0-9A-Z_a-z]|(?:[#;]|--)[\\s\\x0b]*?(?:alter|drop|(?:insert|update)[\\s\\x0b]*?[0-9A-Z_a-z]{2,})|@.+=[\\s\\x0b]*?\\([\\s\\x0b]*?select|[^0-9A-Z_a-z]SET[\\s\\x0b]*?@[0-9A-Z_a-z]+",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 2,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "Detects chained SQL injection attempts 1/2",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 902,
+          "id": 942260,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)[\\\"'`][\\s\\x0b]*?(?:(?:and|n(?:and|ot)|(?:xx?)?or|div|like|between|\\|\\||&&)[\\s\\x0b]+[\\s\\x0b0-9A-Z_a-z]+=[\\s\\x0b]*?[0-9A-Z_a-z]+[\\s\\x0b]*?having[\\s\\x0b]+|like[^0-9A-Z_a-z]*?[\\\"'0-9`])|[0-9A-Z_a-z][\\s\\x0b]+like[\\s\\x0b]+[\\\"'`]|like[\\s\\x0b]*?[\\\"'`]%|select[\\s\\x0b]+?[\\s\\x0b\\\"'-\\),-\\.0-9A-\\[\\]_-z]+from[\\s\\x0b]+",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 2,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "Detects basic SQL authentication bypass attempts 2/3",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 928,
+          "id": 942300,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)\\)[\\s\\x0b]*?when[\\s\\x0b]*?[0-9]+[\\s\\x0b]*?then|[\\\"'`][\\s\\x0b]*?(?:[#\\{]|--)|/\\*![\\s\\x0b]?[0-9]+|\\b(?:(?:binary|cha?r)[\\s\\x0b]*?\\([\\s\\x0b]*?[0-9]|(?:and|n(?:and|ot)|(?:xx?)?or|div|like|between|r(?:egexp|like))[\\s\\x0b]+[0-9A-Z_a-z]+\\()|(?:\\|\\||&&)[\\s\\x0b]*?[0-9A-Z_a-z]+\\(",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 2,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "Detects MySQL comments, conditions and ch(a)r injections",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 954,
+          "id": 942310,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)(?:\\([\\s\\x0b]*?select[\\s\\x0b]*?[0-9A-Z_a-z]+|coalesce|order[\\s\\x0b]+by[\\s\\x0b]+if[0-9A-Z_a-z]*?)[\\s\\x0b]*?\\(|\\*/from|\\+[\\s\\x0b]*?[0-9]+[\\s\\x0b]*?\\+[\\s\\x0b]*?@|[0-9A-Z_a-z][\\\"'`][\\s\\x0b]*?(?:(?:[\\+\\-=@\\|]+[\\s\\x0b]+?)+|[\\+\\-=@\\|]+)[\\(0-9]|@@[0-9A-Z_a-z]+[\\s\\x0b]*?[^\\s\\x0b0-9A-Z_a-z]|[^0-9A-Z_a-z]!+[\\\"'`][0-9A-Z_a-z]|[\\\"'`](?:;[\\s\\x0b]*?(?:if|while|begin)|[\\s\\x0b0-9]+=[\\s\\x0b]*?[0-9])|[\\s\\x0b\\(]+case[0-9]*?[^0-9A-Z_a-z].+[tw]hen[\\s\\x0b\\(]",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 2,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "Detects chained SQL injection attempts 2/2",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 988,
+          "id": 942330,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)[\\\"'`][\\s\\x0b]*?\\b(?:x?or|div|like|between|and)\\b[\\s\\x0b]*?[\\\"'`]?[0-9]|\\x5cx(?:2[37]|3d)|^(?:.?[\\\"'`]$|[\\\"'\\x5c`]*?(?:[\\\"'0-9`]+|[^\\\"'`]+[\\\"'`])[\\s\\x0b]*?\\b(?:and|n(?:and|ot)|(?:xx?)?or|div|like|between|\\|\\||&&)\\b[\\s\\x0b]*?[\\\"'0-9A-Z_-z][!&\\(\\)\\+-\\.@])|[^\\s\\x0b0-9A-Z_a-z][0-9A-Z_a-z]+[\\s\\x0b]*?[\\-\\|][\\s\\x0b]*?[\\\"'`][\\s\\x0b]*?[0-9A-Z_a-z]|@(?:[0-9A-Z_a-z]+[\\s\\x0b]+(?:and|x?or|div|like|between)\\b[\\s\\x0b]*?[\\\"'0-9`]+|[\\-0-9A-Z_a-z]+[\\s\\x0b](?:and|x?or|div|like|between)\\b[\\s\\x0b]*?[^\\s\\x0b0-9A-Z_a-z])|[^\\s\\x0b0-:A-Z_a-z][\\s\\x0b]*?[0-9][^0-9A-Z_a-z]+[^\\s\\x0b0-9A-Z_a-z][\\s\\x0b]*?[\\\"'`].|[^0-9A-Z_a-z]information_schema|table_name[^0-9A-Z_a-z]",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 2,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "Detects classic SQL injection probings 1/3",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 1017,
+          "id": 942340,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)in[\\s\\x0b]*?\\(+[\\s\\x0b]*?select|(?:(?:and|n(?:and|ot)|(?:xx?)?or|div|like|between)[\\s\\x0b]+|(?:\\|\\||&&)[\\s\\x0b]*?)[\\s\\x0b\\+0-9A-Z_a-z]+(?:regexp[\\s\\x0b]*?\\(|sounds[\\s\\x0b]+like[\\s\\x0b]*?[\\\"'`]|[0-9=]+x)|[\\\"'`](?:[\\s\\x0b]*?(?:(?:[0-9]+[\\s\\x0b]*?(?:--|#)|is[\\s\\x0b]*?(?:[0-9][^\\\"'`]+[\\\"'`]?[0-9A-Z_a-z]|[\\.0-9]+[\\s\\x0b]*?[^0-9A-Z_a-z][^\\\"'`]*[\\\"'`])|(?:and|n(?:and|ot)|(?:xx?)?or|div|like|between)[\\s\\x0b]+|(?:\\|\\||&&)[\\s\\x0b]*?)(?:array[\\s\\x0b]*?\\[|(?:tru|fals)e\\b|[0-9A-Z_a-z]+(?:[\\s\\x0b]*?!?~|[\\s\\x0b]+(?:not[\\s\\x0b]+)?similar[\\s\\x0b]+to[\\s\\x0b]+))|[%&<->\\^]+[0-9]+[\\s\\x0b]*?(?:and|n(?:and|ot)|(?:xx?)?or|div|like|between)=)|(?:[^0-9A-Z_a-z]+[\\+\\-0-9A-Z_a-z]+[\\s\\x0b]*?=[\\s\\x0b]*?[0-9][^0-9A-Z_a-z]+|\\|?[\\-0-9A-Z_a-z]{3,}[^\\s\\x0b,\\.0-9A-Z_a-z]+)[\\\"'`])|\\bexcept[\\s\\x0b]+(?:select\\b|values[\\s\\x0b]*?\\()",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 2,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "Detects basic SQL authentication bypass attempts 3/3",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "FCCDCF",
+              "canonical": "!REQUEST_COOKIES:FCCDCF",
+              "negated": true,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "FCNEC",
+              "canonical": "!REQUEST_COOKIES:FCNEC",
+              "negated": true,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "/^pbjs-\\w+$/",
+              "canonical": "!REQUEST_COOKIES:/^pbjs-\\w+$/",
+              "negated": true,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 1042,
+          "id": 942361,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i:^(?:json\\.)?[\\W\\d]+\\s*?(?:alter|union)\\b)",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 2,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "Detects basic SQL injection based on keyword alter or union",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 1072,
+          "id": 942362,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)(?:alter|(?:(?:cre|trunc|upd)at|renam)e|de(?:lete|sc)|(?:inser|selec)t|load)[\\s\\x0b]+(?:char|group_concat|load_file)[\\s\\x0b]?\\(?|end[\\s\\x0b]*?\\);|[\\s\\x0b\\(]load_file[\\s\\x0b]*?\\(|[\\\"'`][\\s\\x0b]+regexp[^0-9A-Z_a-z]|[^A-Z_a-z][\\s\\x0b]+as\\b[\\s\\x0b]*[\\\"'0-9A-Z_-z]+[\\s\\x0b]*\\bfrom|^(?:json\\.)?[^A-Z_a-z]+[\\s\\x0b]*?(?:create[\\s\\x0b]+[0-9A-Z_a-z]+|(?:d(?:e(?:lete|sc)|rop)|(?:inser|selec)t|load|(?:renam|truncat)e|u(?:pdate|nion[\\s\\x0b]*(?:all|(?:sele|distin)ct))|alter[\\s\\x0b]*(?:a(?:(?:ggregat|pplication[\\s\\x0b]*rol)e|s(?:sembl|ymmetric[\\s\\x0b]*ke)y|u(?:dit|thorization)|vailability[\\s\\x0b]*group)|b(?:roker[\\s\\x0b]*priority|ufferpool)|c(?:ertificate|luster|o(?:l(?:latio|um)|nversio)n|r(?:edential|yptographic[\\s\\x0b]*provider))|d(?:atabase|efault|i(?:mension|skgroup)|omain)|e(?:(?:ndpoi|ve)nt|xte(?:nsion|rnal))|f(?:lashback|oreign|u(?:lltext|nction))|hi(?:erarchy|stogram)|group|in(?:dex(?:type)?|memory|stance)|java|l(?:a(?:ngua|r)ge|ibrary|o(?:ckdown|g(?:file[\\s\\x0b]*group|in)))|m(?:a(?:s(?:k|ter[\\s\\x0b]*key)|terialized)|e(?:ssage[\\s\\x0b]*type|thod)|odule)|(?:nicknam|queu)e|o(?:perator|utline)|p(?:a(?:ckage|rtition)|ermission|ro(?:cedur|fil)e)|r(?:e(?:mot|sourc)e|o(?:l(?:e|lback)|ute))|s(?:chema|e(?:arch|curity|rv(?:er|ice)|quence|ssion)|y(?:mmetric[\\s\\x0b]*key|nonym)|togroup)|t(?:able(?:space)?|ext|hreshold|r(?:igger|usted)|ype)|us(?:age|er)|view|w(?:ork(?:load)?|rapper)|x(?:ml[\\s\\x0b]*schema|srobject)))\\b)",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 2,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "Detects concatenated basic SQL injection and SQLLFI attempts",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 1104,
+          "id": 942370,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)[\\\"'`](?:[\\s\\x0b]*?(?:(?:\\*.+(?:x?or|div|like|between|(?:an|i)d)[^0-9A-Z_a-z]*?[\\\"'`]|(?:x?or|div|like|between|and)[\\s\\x0b][^0-9]+[\\-0-9A-Z_a-z]+[^0-9]*)[0-9]|[^\\s\\x0b0-9\\?A-Z_a-z]+[\\s\\x0b]*?[^\\s\\x0b0-9A-Z_a-z]+[\\s\\x0b]*?[\\\"'`]|[^\\s\\x0b0-9A-Z_a-z]+[\\s\\x0b]*?[^A-Z_a-z](?:[^#]*#|.*?--))|[^\\*]*\\*[\\s\\x0b]*?[0-9])|\\^[\\\"'`]|[%\\(-\\+\\-<>][\\-0-9A-Z_a-z]+[^\\s\\x0b0-9A-Z_a-z]+[\\\"'`][^,]",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 2,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "Detects classic SQL injection probings 2/3",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_HEADERS",
+              "selector": "Referer",
+              "canonical": "REQUEST_HEADERS:Referer",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_HEADERS",
+              "selector": "User-Agent",
+              "canonical": "REQUEST_HEADERS:User-Agent",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "FCCDCF",
+              "canonical": "!REQUEST_COOKIES:FCCDCF",
+              "negated": true,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "FCNEC",
+              "canonical": "!REQUEST_COOKIES:FCNEC",
+              "negated": true,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "/^pbjs-\\w+$/",
+              "canonical": "!REQUEST_COOKIES:/^pbjs-\\w+$/",
+              "negated": true,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "/^_pk_ref/",
+              "canonical": "!REQUEST_COOKIES:/^_pk_ref/",
+              "negated": true,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 1130,
+          "id": 942380,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)\\b(?:having\\b(?:[\\s\\x0b]+(?:[0-9]{1,10}|'[^=]{1,10}')[\\s\\x0b]*?[<->]| ?(?:[0-9]{1,10} ?[<->]+|[\\\"'][^=]{1,10}[ \\\"'<-\\?\\[]+))|ex(?:ecute(?:\\(|[\\s\\x0b]{1,5}[\\$\\.0-9A-Z_a-z]{1,5}[\\s\\x0b]{0,3})|ists[\\s\\x0b]*?\\([\\s\\x0b]*?select\\b)|(?:create[\\s\\x0b]+?table.{0,20}?|like[^0-9A-Z_a-z]*?char[^0-9A-Z_a-z]*?)\\()|select.*?case|from.*?limit|order[\\s\\x0b]by|exists[\\s\\x0b](?:[\\s\\x0b]select|s(?:elect[^\\s\\x0b](?:if(?:null)?[\\s\\x0b]\\(|top|concat)|ystem[\\s\\x0b]\\()|\\bhaving\\b[\\s\\x0b]+[0-9]{1,10}|'[^=]{1,10}')",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 2,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "SQL Injection Attack",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "/^_pk_ref/",
+              "canonical": "!REQUEST_COOKIES:/^_pk_ref/",
+              "negated": true,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 1156,
+          "id": 942390,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)\\bx?or\\b(?:[\\s\\x0b]+[0-9]{1,10}(?:[\\s\\x0b]*[<->])?|[\\s\\x0b]*[\\\"'][^=]{1,10}[\\\"'])|[\\\"'][\\s\\x0b]+\\bx?or\\b[\\s\\x0b]+[^!\\+\\-<->]{1,20}[!\\+\\-<->]",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 2,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "SQL Injection Attack using (X)OR",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "/^_pk_ref/",
+              "canonical": "!REQUEST_COOKIES:/^_pk_ref/",
+              "negated": true,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 1182,
+          "id": 942400,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)\\band\\b(?:[\\s\\x0b]+(?:[0-9]{1,10}[\\s\\x0b]*?[<->]|'[^=]{1,10}')| ?(?:[0-9]{1,10}|[\\\"'][^=]{1,10}[\\\"']) ?[<->]+)",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 2,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "SQL Injection Attack",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "/^_pk_ref/",
+              "canonical": "!REQUEST_COOKIES:/^_pk_ref/",
+              "negated": true,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 1213,
+          "id": 942410,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)\\b(?:a(?:(?:b|co)s|vg)|bin|c(?:(?:as|o(?:nver|un))t|h(?:ar(?:set)?|r))|d(?:a(?:te|y)|e(?:fault|grees))|elt|f(?:ield|loor|ormat)|(?:hou|quarte|yea)r|i[fns]|l(?:ast|e(?:ft|ngth)|n|ikelihood|o(?:cal|g|wer))|m(?:ax|in(?:ute)?|o(?:d|nth))|now|p(?:assword|i|o(?:sition|wer))|r(?:awtonhex(?:toraw)?|e(?:p(?:eat|lace)|verse)|ight|ound)|s(?:econd|ign|leep|pace|tddev|um)|t(?:an|ime|o_(?:n?char|(?:day|second)s))|u(?:nlikely|(?:pp|s)er)|v(?:alues|ersion)|week)[^0-9A-Z_a-z]*?\\(",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 2,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "SQL Injection Attack",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "/^_pk_ref/",
+              "canonical": "!REQUEST_COOKIES:/^_pk_ref/",
+              "negated": true,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 1242,
+          "id": 942470,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)autonomous_transaction|(?:current_use|n?varcha|tbcreato)r|db(?:a_users|ms_java)|open(?:owa_util|query|rowset)|s(?:p_(?:(?:addextendedpro|sqlexe)c|execute(?:sql)?|help|is_srvrolemember|makewebtask|oacreate|p(?:assword|repare)|replwritetovarbin)|ql_(?:longvarchar|variant))|utl_(?:file|http)|xp_(?:availablemedia|(?:cmdshel|servicecontro)l|dirtree|e(?:numdsn|xecresultset)|filelist|loginconfig|makecab|ntsec(?:_enumdomains)?|reg(?:addmultistring|delete(?:key|value)|enum(?:key|value)s|re(?:ad|movemultistring)|write)|terminate(?:_process)?)",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 2,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "SQL Injection Attack",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "/^_pk_ref/",
+              "canonical": "!REQUEST_COOKIES:/^_pk_ref/",
+              "negated": true,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 1271,
+          "id": 942480,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)\\b(?:(?:d(?:bms_[0-9A-Z_a-z]+\\.|elete\\b[^0-9A-Z_a-z]*?\\bfrom)|(?:group\\b.*?\\bby\\b.{1,100}?\\bhav|overlay\\b[^0-9A-Z_a-z]*?\\(.*?\\b[^0-9A-Z_a-z]*?plac)ing|in(?:ner\\b[^0-9A-Z_a-z]*?\\bjoin|sert\\b[^0-9A-Z_a-z]*?\\binto|to\\b[^0-9A-Z_a-z]*?\\b(?:dump|out)file)|load\\b[^0-9A-Z_a-z]*?\\bdata\\b.*?\\binfile|s(?:elect\\b.{1,100}?\\b(?:(?:.*?\\bdump\\b.*|(?:count|length)\\b.{1,100}?)\\bfrom|(?:data_typ|from\\b.{1,100}?\\bwher)e|instr|to(?:_(?:cha|numbe)r|p\\b.{1,100}?\\bfrom))|ys_context)|u(?:nion\\b.{1,100}?\\bselect|tl_inaddr))\\b|print\\b[^0-9A-Z_a-z]*?@@)|(?:collation[^0-9A-Z_a-z]*?\\(a|@@version|;[^0-9A-Z_a-z]*?\\b(?:drop|shutdown))\\b|'(?:dbo|msdasql|s(?:a|qloledb))'",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 2,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "SQL Injection Attack",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_HEADERS",
+              "selector": "",
+              "canonical": "REQUEST_HEADERS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_HEADERS",
+              "selector": "Cookie",
+              "canonical": "!REQUEST_HEADERS:Cookie",
+              "negated": true,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "/^_pk_ref/",
+              "canonical": "!REQUEST_COOKIES:/^_pk_ref/",
+              "negated": true,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 1317,
+          "id": 942430,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "((?:(?:[!-\\+\\-:->@\\[\\]\\^`\\{-~]|\\x{c2}\\x{b4}|\\x{e2}\\x80[\\x98\\x99])[^!-\\+\\-:->@\\[\\]\\^`\\{-~]*?){12})",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 2,
+          "anomaly_score": 3,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)",
+          "targets": [
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 1376,
+          "id": 942440,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": true,
+          "operator": "@rx",
+          "pattern": "/\\*!?|\\*/|[';]--|--(?:[\\s\\x0b]|[^\\-]*?-)|[^&\\-]#.*?[\\s\\x0b]|;?\\x00",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 2,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "SQL Comment Sequence Detected",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "/^_pk_ref/",
+              "canonical": "!REQUEST_COOKIES:/^_pk_ref/",
+              "negated": true,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 1395,
+          "id": 942440,
+          "phase": 2,
+          "chain_index": 1,
+          "has_chain": false,
+          "operator": "!@rx",
+          "pattern": "^(?:ey[\\-0-9A-Z_a-z]+\\.ey[\\-0-9A-Z_a-z]+\\.)?[\\-0-9A-Z_a-z]+$",
+          "transforms": [
+            "none"
+          ],
+          "paranoia_level": 0,
+          "anomaly_score": 0,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "",
+          "targets": [
+            {
+              "base": "MATCHED_VARS",
+              "selector": "",
+              "canonical": "MATCHED_VARS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "/^_pk_ref/",
+              "canonical": "!REQUEST_COOKIES:/^_pk_ref/",
+              "negated": true,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 1412,
+          "id": 942450,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)\\b0x[0-9a-f]{3,}|(?:x'[0-9a-f]{3,}|b'[01]{10,})'",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 2,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "SQL Bin or Hex Encoding Identified",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "/^_pk_ref/",
+              "canonical": "!REQUEST_COOKIES:/^_pk_ref/",
+              "negated": true,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 1464,
+          "id": 942510,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "`(?:[\\s\\x0b\\(\\)\\+\\-0-9<=@-Z_a-\\{\\}]{2,29}|(?:[\\+/-9A-Za-z]{4})+(?:(?:[\\+/-9A-Za-z]{2}=|[\\+/-9A-Za-z]{3})=)?)`",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 2,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "SQLi bypass attempt by ticks or backticks detected",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 1491,
+          "id": 942520,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)[\\\"'`][\\s\\x0b]*?(?:(?:is[\\s\\x0b]+not|not[\\s\\x0b]+(?:like|glob|(?:betwee|i)n|null|regexp|match)|mod|div|sounds[\\s\\x0b]+like)\\b|[%&\\*\\+\\-/<->\\^\\|]{1,3})",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 2,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "Detects basic SQL authentication bypass attempts 4.0/4",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 1524,
+          "id": 942521,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": true,
+          "operator": "@rx",
+          "pattern": "(?i)^(?:[^']*?(?:'[^']*?'[^']*?)*?'|[^\\\"]*?(?:\\\"[^\\\"]*?\\\"[^\\\"]*?)*?\\\"|[^`]*?(?:`[^`]*?`[^`]*?)*?`)[\\s\\x0b]*([0-9A-Z_a-z]+)\\b",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 2,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "Detects basic SQL authentication bypass attempts 4.1/4",
+          "targets": [
+            {
+              "base": "REQUEST_HEADERS",
+              "selector": "User-Agent",
+              "canonical": "REQUEST_HEADERS:User-Agent",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_HEADERS",
+              "selector": "Referer",
+              "canonical": "REQUEST_HEADERS:Referer",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 1544,
+          "id": 942521,
+          "phase": 2,
+          "chain_index": 1,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "^(?:and|or)$",
+          "transforms": [
+            "none"
+          ],
+          "paranoia_level": 0,
+          "anomaly_score": 0,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "",
+          "targets": [
+            {
+              "base": "TX",
+              "selector": "1",
+              "canonical": "TX:1",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 1552,
+          "id": 942522,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "\\x5c['\\\"`](?:.*?['\\\"`])?\\s*(?:and|or)\\b",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 2,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "Detects basic SQL authentication bypass attempts 4.1/4",
+          "targets": [
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 1590,
+          "id": 942101,
+          "phase": 1,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@detectSQLi",
+          "pattern": "",
+          "transforms": [
+            "none",
+            "utf8toUnicode",
+            "urlDecodeUni",
+            "removeNulls"
+          ],
+          "paranoia_level": 2,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "SQL Injection Attack Detected via libinjection",
+          "targets": [
+            {
+              "base": "REQUEST_BASENAME",
+              "selector": "",
+              "canonical": "REQUEST_BASENAME",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_FILENAME",
+              "selector": "",
+              "canonical": "REQUEST_FILENAME",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 1622,
+          "id": 942152,
+          "phase": 1,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)\\b(?:a(?:dd(?:dat|tim)e|es_(?:de|en)crypt|s(?:cii(?:str)?|in)|tan2?)|b(?:enchmark|i(?:n_to_num|t_(?:and|count|length|x?or)))|c(?:har(?:acter)?_length|eil(?:ing)?|o(?:alesce|ercibility|llation|(?:mpres)?s|n(?:cat(?:_ws)?|nection_id|v(?:ert(?:_tz)?)?)|t)|rc32|ur(?:(?:dat|tim)e|rent_(?:date|setting|time(?:stamp)?|user)))|d(?:a(?:t(?:abase(?:_to_xml)?|e(?:_(?:add|format|sub)|diff))|y(?:name|of(?:month|week|year)))|count|e(?:code|grees|s_(?:de|en)crypt)|ump)|e(?:lt|n(?:c(?:ode|rypt)|ds_?with)|x(?:p(?:ort_set)?|tract(?:value)?))|f(?:i(?:el|n)d_in_set|ound_rows|rom_(?:base64|days|unixtime))|g(?:e(?:ometrycollection|t(?:_(?:format|lock)|pgusername))|(?:r(?:eates|oup_conca)|tid_subse)t)|hex(?:toraw)?|i(?:fnull|n(?:et6?_(?:aton|ntoa)|s(?:ert|tr)|terval)|s(?:_(?:(?:free|used)_lock|ipv(?:4(?:_(?:compat|mapped))?|6)|n(?:ot(?:_null)?|ull)|superuser)|null))|json(?:_(?:a(?:gg|rray(?:_(?:elements(?:_text)?|length))?)|build_(?:array|object)|e(?:ac|xtract_pat)h(?:_text)?|object(?:_(?:agg|keys))?|populate_record(?:set)?|strip_nulls|t(?:o_record(?:set)?|ypeof))|b(?:_(?:array(?:_(?:elements(?:_text)?|length))?|build_(?:array|object)|object(?:_(?:agg|keys))?|e(?:ac|xtract_pat)h(?:_text)?|insert|p(?:ath_(?:(?:exists|match)(?:_tz)?|query(?:_(?:(?:array|first)(?:_tz)?|tz))?)|opulate_record(?:set)?|retty)|s(?:et(?:_lax)?|trip_nulls)|t(?:o_record(?:set)?|ypeof)))?|path)?|l(?:ast_(?:day|insert_id)|case|e(?:as|f)t|i(?:kel(?:ihood|y)|nestring)|o(?:_(?:from_bytea|put)|ad_file|ca(?:ltimestamp|te)|g(?:10|2)|wer)|pad|trim)|m(?:a(?:ke(?:_set|date)|ster_pos_wait)|d5|i(?:crosecon)?d|onthname|ulti(?:linestring|po(?:int|lygon)))|n(?:ame_const|ot_in|ullif)|o(?:ct(?:et_length)?|(?:ld_passwo)?rd)|p(?:eriod_(?:add|diff)|g_(?:client_encoding|(?:databas|read_fil)e|l(?:argeobject|s_dir)|sleep|user)|o(?:(?:lyg|siti)on|w)|rocedure_analyse)|qu(?:arter|ery_to_xml|ote)|r(?:a(?:dians|nd|wtohex)|elease_lock|ow_(?:count|to_json)|pad|trim)|s(?:chema|e(?:c_to_time|ssion_user)|ha[12]?|in|oundex|pace|q(?:lite_(?:compileoption_(?:get|used)|source_id)|rt)|t(?:arts_?with|d(?:dev_(?:po|sam)p)?|r(?:_to_date|cmp))|ub(?:(?:dat|tim)e|str(?:ing(?:_index)?)?)|ys(?:date|tem_user))|t(?:ime(?:_(?:format|to_sec)|diff|stamp(?:add|diff)?)|o(?:_(?:base64|jsonb?)|n?char|(?:day|second)s)|r(?:im|uncate))|u(?:case|n(?:compress(?:ed_length)?|hex|i(?:str|x_timestamp)|likely)|(?:pdatexm|se_json_nul)l|tc_(?:date|time(?:stamp)?)|uid(?:_short)?)|var(?:_(?:po|sam)p|iance)|we(?:ek(?:day|ofyear)|ight_string)|xmltype|yearweek)[^0-9A-Z_a-z]*\\(",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 2,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "SQL Injection Attack: SQL function name detected",
+          "targets": [
+            {
+              "base": "REQUEST_HEADERS",
+              "selector": "Referer",
+              "canonical": "REQUEST_HEADERS:Referer",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_HEADERS",
+              "selector": "User-Agent",
+              "canonical": "REQUEST_HEADERS:User-Agent",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 1652,
+          "id": 942321,
+          "phase": 1,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)create[\\s\\x0b]+(?:function|procedure)[\\s\\x0b]*?[0-9A-Z_a-z]+[\\s\\x0b]*?\\([\\s\\x0b]*?\\)[\\s\\x0b]*?-|d(?:eclare[^0-9A-Z_a-z]+[#@][\\s\\x0b]*?[0-9A-Z_a-z]+|iv[\\s\\x0b]*?\\([\\+\\-]*[\\s\\x0b\\.0-9]+,[\\+\\-]*[\\s\\x0b\\.0-9]+\\))|exec[\\s\\x0b]*?\\([\\s\\x0b]*?@|(?:lo_(?:impor|ge)t|procedure[\\s\\x0b]+analyse)[\\s\\x0b]*?\\(|;[\\s\\x0b]*?(?:declare|open)[\\s\\x0b]+[\\-0-9A-Z_a-z]+|::(?:b(?:igint|ool)|double[\\s\\x0b]+precision|int(?:eger)?|numeric|oid|real|(?:tex|smallin)t)",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 2,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "Detects MySQL and PostgreSQL stored procedure/function injections",
+          "targets": [
+            {
+              "base": "REQUEST_HEADERS",
+              "selector": "Referer",
+              "canonical": "REQUEST_HEADERS:Referer",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_HEADERS",
+              "selector": "User-Agent",
+              "canonical": "REQUEST_HEADERS:User-Agent",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 1675,
+          "id": 942015,
+          "phase": 1,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@lt",
+          "pattern": "3",
+          "transforms": [],
+          "paranoia_level": 0,
+          "anomaly_score": 0,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "END-REQUEST-942-APPLICATION-ATTACK-SQLI",
+          "message": "",
+          "targets": [
+            {
+              "base": "TX",
+              "selector": "DETECTION_PARANOIA_LEVEL",
+              "canonical": "TX:DETECTION_PARANOIA_LEVEL",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 1676,
+          "id": 942016,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@lt",
+          "pattern": "3",
+          "transforms": [],
+          "paranoia_level": 0,
+          "anomaly_score": 0,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "END-REQUEST-942-APPLICATION-ATTACK-SQLI",
+          "message": "",
+          "targets": [
+            {
+              "base": "TX",
+              "selector": "DETECTION_PARANOIA_LEVEL",
+              "canonical": "TX:DETECTION_PARANOIA_LEVEL",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 1692,
+          "id": 942251,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "(?i)\\W+\\d*?\\s*?\\bhaving\\b\\s*?[^\\s\\-]",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 3,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "Detects HAVING injections",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 1716,
+          "id": 942490,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "[\\\"'`][\\s\\d]*?[^\\w\\s]\\W*?\\d\\W*?.*?[\\\"'`\\d]",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 3,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "Detects classic SQL injection probings 3/3",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "FCCDCF",
+              "canonical": "!REQUEST_COOKIES:FCCDCF",
+              "negated": true,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "/^pbjs-\\w+$/",
+              "canonical": "!REQUEST_COOKIES:/^pbjs-\\w+$/",
+              "negated": true,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 1761,
+          "id": 942420,
+          "phase": 1,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "((?:(?:[!-\\+\\-:->@\\[\\]\\^`\\{-~]|\\x{c2}\\x{b4}|\\x{e2}\\x80[\\x98\\x99])[^!-\\+\\-:->@\\[\\]\\^`\\{-~]*?){8})",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 3,
+          "anomaly_score": 3,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "Restricted SQL Character Anomaly Detection (cookies): # of special characters exceeded (8)",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "__gads",
+              "canonical": "!REQUEST_COOKIES:__gads",
+              "negated": true,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "__gpi",
+              "canonical": "!REQUEST_COOKIES:__gpi",
+              "negated": true,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "FCCDCF",
+              "canonical": "!REQUEST_COOKIES:FCCDCF",
+              "negated": true,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "__eoi",
+              "canonical": "!REQUEST_COOKIES:__eoi",
+              "negated": true,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "FCNEC",
+              "canonical": "!REQUEST_COOKIES:FCNEC",
+              "negated": true,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "/^pbjs-\\w+$/",
+              "canonical": "!REQUEST_COOKIES:/^pbjs-\\w+$/",
+              "negated": true,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "/^_pk_ref/",
+              "canonical": "!REQUEST_COOKIES:/^_pk_ref/",
+              "negated": true,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 1795,
+          "id": 942431,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "((?:(?:[!-\\+\\-:->@\\[\\]\\^`\\{-~]|\\x{c2}\\x{b4}|\\x{e2}\\x80[\\x98\\x99])[^!-\\+\\-:->@\\[\\]\\^`\\{-~]*?){6})",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 3,
+          "anomaly_score": 3,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)",
+          "targets": [
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "/^[\\w]+\\[[\\w\\-]+\\]\\[[\\w\\-]*?\\]$/",
+              "canonical": "!ARGS_NAMES:/^[\\w]+\\[[\\w\\-]+\\]\\[[\\w\\-]*?\\]$/",
+              "negated": true,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "/^[\\w]+\\[[\\w\\-]+\\]\\[[\\w\\-]+\\]\\[[\\w\\-]*?\\]$/",
+              "canonical": "!ARGS_NAMES:/^[\\w]+\\[[\\w\\-]+\\]\\[[\\w\\-]+\\]\\[[\\w\\-]*?\\]$/",
+              "negated": true,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 1837,
+          "id": 942460,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "\\W{4}",
+          "transforms": [
+            "none"
+          ],
+          "paranoia_level": 3,
+          "anomaly_score": 3,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters",
+          "targets": [
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 1890,
+          "id": 942511,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "'(?:[\\s\\x0b\\(\\)\\+\\-0-9<=@-Z_a-\\{\\}]{2,29}|(?:[\\+/-9A-Za-z]{4})+(?:(?:[\\+/-9A-Za-z]{2}=|[\\+/-9A-Za-z]{3})=)?)'",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 3,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "SQLi bypass attempt by ticks detected",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 1919,
+          "id": 942530,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "';",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 3,
+          "anomaly_score": 5,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "SQLi query termination detected",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 1941,
+          "id": 942017,
+          "phase": 1,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@lt",
+          "pattern": "4",
+          "transforms": [],
+          "paranoia_level": 0,
+          "anomaly_score": 0,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "END-REQUEST-942-APPLICATION-ATTACK-SQLI",
+          "message": "",
+          "targets": [
+            {
+              "base": "TX",
+              "selector": "DETECTION_PARANOIA_LEVEL",
+              "canonical": "TX:DETECTION_PARANOIA_LEVEL",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 1942,
+          "id": 942018,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@lt",
+          "pattern": "4",
+          "transforms": [],
+          "paranoia_level": 0,
+          "anomaly_score": 0,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "END-REQUEST-942-APPLICATION-ATTACK-SQLI",
+          "message": "",
+          "targets": [
+            {
+              "base": "TX",
+              "selector": "DETECTION_PARANOIA_LEVEL",
+              "canonical": "TX:DETECTION_PARANOIA_LEVEL",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 1958,
+          "id": 942421,
+          "phase": 1,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "((?:(?:[!-\\+\\-:->@\\[\\]\\^`\\{-~]|\\x{c2}\\x{b4}|\\x{e2}\\x80[\\x98\\x99])[^!-\\+\\-:->@\\[\\]\\^`\\{-~]*?){3})",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 4,
+          "anomaly_score": 3,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "Restricted SQL Character Anomaly Detection (cookies): # of special characters exceeded (3)",
+          "targets": [
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES_NAMES",
+              "selector": "",
+              "canonical": "REQUEST_COOKIES_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "/^_ga(?:_\\w+)?$/",
+              "canonical": "!REQUEST_COOKIES:/^_ga(?:_\\w+)?$/",
+              "negated": true,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "__gads",
+              "canonical": "!REQUEST_COOKIES:__gads",
+              "negated": true,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "__gpi",
+              "canonical": "!REQUEST_COOKIES:__gpi",
+              "negated": true,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "FCCDCF",
+              "canonical": "!REQUEST_COOKIES:FCCDCF",
+              "negated": true,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "__eoi",
+              "canonical": "!REQUEST_COOKIES:__eoi",
+              "negated": true,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "FCNEC",
+              "canonical": "!REQUEST_COOKIES:FCNEC",
+              "negated": true,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "sharedid",
+              "canonical": "!REQUEST_COOKIES:sharedid",
+              "negated": true,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "_clsk",
+              "canonical": "!REQUEST_COOKIES:_clsk",
+              "negated": true,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "_clck",
+              "canonical": "!REQUEST_COOKIES:_clck",
+              "negated": true,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "_awl",
+              "canonical": "!REQUEST_COOKIES:_awl",
+              "negated": true,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "/^pbjs-\\w+$/",
+              "canonical": "!REQUEST_COOKIES:/^pbjs-\\w+$/",
+              "negated": true,
+              "counted": false
+            },
+            {
+              "base": "REQUEST_COOKIES",
+              "selector": "/^_pk_ref/",
+              "canonical": "!REQUEST_COOKIES:/^_pk_ref/",
+              "negated": true,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "rule",
+          "source": "REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+          "source_line": 1992,
+          "id": 942432,
+          "phase": 2,
+          "chain_index": 0,
+          "has_chain": false,
+          "operator": "@rx",
+          "pattern": "((?:(?:[!-\\+\\-:->@\\[\\]\\^`\\{-~]|\\x{c2}\\x{b4}|\\x{e2}\\x80[\\x98\\x99])[^!-\\+\\-:->@\\[\\]\\^`\\{-~]*?){2})",
+          "transforms": [
+            "none",
+            "urlDecodeUni"
+          ],
+          "paranoia_level": 4,
+          "anomaly_score": 3,
+          "disruptive": false,
+          "status": 403,
+          "skip_after": "",
+          "message": "Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)",
+          "targets": [
+            {
+              "base": "ARGS_NAMES",
+              "selector": "",
+              "canonical": "ARGS_NAMES",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "ARGS",
+              "selector": "",
+              "canonical": "ARGS",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "/*",
+              "canonical": "XML:/*",
+              "negated": false,
+              "counted": false
+            },
+            {
+              "base": "XML",
+              "selector": "//@*",
+              "canonical": "XML://@*",
+              "negated": false,
+              "counted": false
+            }
+          ]
+        },
+        {
+          "kind": "marker",
+          "name": "END-REQUEST-942-APPLICATION-ATTACK-SQLI"
+        }
+      ]
+    }
+  ]
+}

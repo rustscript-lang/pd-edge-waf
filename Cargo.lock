@@ -1189,6 +1189,7 @@ dependencies = [
  "axum",
  "pd-edge",
  "pd-vm",
+ "regex",
  "reqwest",
  "serde",
  "serde_json",

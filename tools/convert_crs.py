@@ -499,6 +499,121 @@ def render_entry(
     return "\n".join(lines)
 
 
+def native_target_descriptor(raw_base: str, selector: str, canonical: str) -> dict[str, object]:
+    positive = raw_base[1:] if raw_base.startswith("!") else raw_base
+    counted = positive.startswith("&")
+    base = positive[1:] if counted else positive
+    return {
+        "base": base,
+        "selector": selector,
+        "canonical": canonical,
+        "negated": raw_base.startswith("!"),
+        "counted": counted,
+    }
+
+
+def native_rule(
+    directive: Directive,
+    effective_phase: int,
+    data_contents: dict[str, str],
+    target_updates: dict[int, list[str]],
+) -> dict[str, object]:
+    pattern = directive.pattern
+    if directive.operator.lstrip("!") == "@pmFromFile":
+        pattern = data_contents.get(pattern, "")
+    descriptors = target_descriptors(directive.targets)
+    descriptors.extend(target_updates.get(directive.rule_id, []))
+    return {
+        "kind": "rule",
+        "source": directive.source,
+        "source_line": directive.source_line,
+        "id": directive.rule_id,
+        "phase": effective_phase,
+        "chain_index": directive.chain_index,
+        "has_chain": has_action(directive.actions, "chain"),
+        "operator": directive.operator,
+        "pattern": pattern,
+        "transforms": action_values(directive.actions, "t"),
+        "paranoia_level": paranoia_level(directive.actions),
+        "anomaly_score": anomaly_score(directive.actions),
+        "disruptive": has_action(directive.actions, "deny"),
+        "status": action_int(directive.actions, "status", 403),
+        "skip_after": action_value(directive.actions, "skipAfter"),
+        "message": directive.message,
+        "targets": [
+            native_target_descriptor(*descriptors[index : index + 3])
+            for index in range(0, len(descriptors), 3)
+        ],
+    }
+
+
+def native_plan(
+    directives: list[Directive],
+    version: str,
+    data_contents: dict[str, str],
+    enabled_categories: set[str],
+) -> dict[str, object]:
+    target_updates = collect_target_updates(directives)
+    grouped: dict[str, list[Directive]] = {}
+    for directive in directives:
+        category = module_name(directive.source)
+        if category in enabled_categories:
+            grouped.setdefault(directive.source, []).append(directive)
+
+    categories = []
+    for source, source_directives in grouped.items():
+        category = module_name(source)
+        entries: list[dict[str, object]] = []
+        if category == "request_942_application_attack_sqli":
+            entries.append(
+                {
+                    "kind": "rule",
+                    "source": "generated",
+                    "source_line": 0,
+                    "id": 942100,
+                    "phase": 2,
+                    "chain_index": 0,
+                    "has_chain": False,
+                    "operator": "@detectSQLi",
+                    "pattern": "",
+                    "transforms": ["none", "urlDecodeUni", "removeNulls"],
+                    "paranoia_level": 1,
+                    "anomaly_score": 5,
+                    "disruptive": False,
+                    "status": 403,
+                    "skip_after": "",
+                    "message": "SQL Injection Attack Detected",
+                    "targets": [
+                        native_target_descriptor("QUERY_STRING", "", "QUERY_STRING"),
+                        native_target_descriptor("ARGS", "", "ARGS"),
+                        native_target_descriptor("REQUEST_BODY", "", "REQUEST_BODY"),
+                    ],
+                }
+            )
+        chain_phase = 0
+        for directive in source_directives:
+            if directive.kind == "SecRule":
+                if directive.chain_index == 0:
+                    chain_phase = directive.phase
+                effective_phase = directive.phase or chain_phase
+                entries.append(
+                    native_rule(
+                        directive,
+                        effective_phase,
+                        data_contents,
+                        target_updates,
+                    )
+                )
+            elif directive.kind == "SecMarker":
+                entries.append({"kind": "marker", "name": directive.marker})
+        categories.append({"name": category, "entries": entries})
+    return {
+        "schema_version": 1,
+        "crs_version": version,
+        "categories": categories,
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--source-dir", type=Path, required=True)
@@ -690,6 +805,20 @@ def main() -> None:
     )
     (output_dir / "directives.json").write_text(
         json.dumps([asdict(d) for d in all_directives], indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    (output_dir / "native_plan.json").write_text(
+        json.dumps(
+            native_plan(
+                all_directives,
+                args.version,
+                data_contents,
+                enabled_categories,
+            ),
+            indent=2,
+            ensure_ascii=False,
+        )
+        + "\n",
         encoding="utf-8",
     )
     print(

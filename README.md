@@ -119,6 +119,17 @@ cargo test --release --test perf -- --ignored --nocapture
 
 Compilation latency is excluded. Both cases rebuild the simulated request context inside RSS for every measured request.
 
+### Native plan spike
+
+The experimental native executor loads `rules/native_plan.json`, compiles the 911/942 static regex assets once, and evaluates requests through typed Rust transaction state. Its differential tests compare block status, score, response status, and matched rule IDs with the RSS evaluator.
+
+```bash
+cargo test --release --test native_plan -- --nocapture
+cargo test --release --test native_perf -- --ignored --nocapture
+```
+
+The native perf output reports request count, average latency, rules evaluated, plan rule count, and precompiled regex asset count. The spike is not wired into the pd-edge request path yet.
+
 ## Tests
 
 Run the VM and real HTTP end-to-end tests:

@@ -395,6 +395,22 @@ fn measure_case(
             "{label} compiled new JIT traces inside the measured region"
         );
         TraceShapeStats::capture(&vm).print(label);
+        println!(
+            "jit_bridge_stats label={label} hits={:?}",
+            vm.jit_native_bridge_stats_snapshot()
+        );
+        let mut traces = vm.jit_snapshot().traces;
+        traces.sort_by_key(|trace| std::cmp::Reverse(trace.executions));
+        for trace in traces.into_iter().take(15) {
+            println!(
+                "jit_hot_trace label={label} root_ip={} line={:?} executions={} ops={:?} ssa={}",
+                trace.root_ip,
+                trace.start_line,
+                trace.executions,
+                trace.op_names,
+                trace.ssa_text().replace('\n', " | ")
+            );
+        }
     }
 
     let total_duration: Duration = batches.iter().copied().sum();
@@ -465,9 +481,11 @@ fn run_default_ruleset_perf() {
         &config,
         &expected,
     );
+    let mut jit_vm = Vm::new(default_ruleset_program);
+    jit_vm.set_jit_native_bridge_stats_enabled(true);
     let jit = measure_case(
         "default_ruleset_jit_perf",
-        Vm::new(default_ruleset_program),
+        jit_vm,
         WarmupPolicy::JitUntilStable,
         &config,
         &expected,

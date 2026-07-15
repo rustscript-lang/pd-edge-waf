@@ -1,12 +1,5 @@
 use serde::Deserialize;
 
-mod native;
-
-pub use native::{
-    NativeCategory, NativeDecision, NativeEntry, NativePlan, NativePlanError, NativeRequest,
-    NativeRule, NativeTarget, native_plan,
-};
-
 pub const CRS_VERSION: &str = "4.28.0";
 pub const RULESET_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/rules/ruleset.rss");
 

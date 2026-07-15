@@ -24,15 +24,15 @@ pub fn transforms(value: string, encoded: int) -> string {
  while plan > 0 {
   let op = plan % 32;
   plan = plan / 32;
-  if op == 4 || op == 8 || op == 19 { out = replace(out, "%27", "'"); out = replace(out, "%22", "\""); out = replace(out, "%20", " "); out = replace(out, "%3d", "="); out = replace(out, "%3D", "="); out = replace(out, "%3c", "<"); out = replace(out, "%3C", "<"); out = replace(out, "%3e", ">"); out = replace(out, "%3E", ">"); out = replace(out, "+", " "); }
-  else if op == 7 { out = replace(out, "&lt;", "<"); out = replace(out, "&gt;", ">"); out = replace(out, "&quot;", "\""); out = replace(out, "&#39;", "'"); }
-  else if op == 15 { out = replace(out, "\0", ""); }
+  if op == 4 || op == 8 || op == 19 { out = string_replace_literal(out, "%27", "'"); out = string_replace_literal(out, "%22", "\""); out = string_replace_literal(out, "%20", " "); out = string_replace_literal(out, "%3d", "="); out = string_replace_literal(out, "%3D", "="); out = string_replace_literal(out, "%3c", "<"); out = string_replace_literal(out, "%3C", "<"); out = string_replace_literal(out, "%3e", ">"); out = string_replace_literal(out, "%3E", ">"); out = string_replace_literal(out, "+", " "); }
+  else if op == 7 { out = string_replace_literal(out, "&lt;", "<"); out = string_replace_literal(out, "&gt;", ">"); out = string_replace_literal(out, "&quot;", "\""); out = string_replace_literal(out, "&#39;", "'"); }
+  else if op == 15 { out = string_replace_literal(out, "\0", ""); }
   else if op == 16 { out = re::replace("\\s+", out, ""); }
   else if op == 3 { out = re::replace("\\s+", out, " "); }
   else if op == 17 { out = re::replace("(?s)/\\*.*?\\*/", out, " "); }
-  else if op == 12 || op == 13 { out = replace(out, "\\", "/"); }
-  else if op == 2 { out = replace(out, "\\", ""); out = lower(out); }
-  else if op == 10 { out = lower(out); }
+  else if op == 12 || op == 13 { out = string_replace_literal(out, "\\", "/"); }
+  else if op == 2 { out = string_replace_literal(out, "\\", ""); out = string_lower_ascii(out); }
+  else if op == 10 { out = string_lower_ascii(out); }
   else if op == 9 { out = out.length + ""; }
   else if op == 1 || op == 5 || op == 6 || op == 11 || op == 14 || op == 18 || op == 20 { out = out; }
  }
@@ -52,7 +52,7 @@ pub fn normalized_target_base(raw: string) -> string {
  if starts(&positive, "&") => { (&positive)[1:positive.length] } else => { positive }
 }
 pub fn selector_matches(selector: string, name: string) -> bool {
- selector == "" || lower(&name) == lower(&selector) || (selector.length > 2 && (&selector)[0:1] == "/" && re::match((&selector)[1:(selector.length - 1)], &name))
+ selector == "" || string_lower_ascii(&name) == string_lower_ascii(&selector) || (selector.length > 2 && (&selector)[0:1] == "/" && re::match((&selector)[1:(selector.length - 1)], &name))
 }
 pub fn descriptor_excludes(text: [string], target_count: int, base: string, name: string) -> bool {
  let mut excluded: bool = false; let mut i: int = 0;
@@ -90,7 +90,7 @@ pub fn one(state: map<string>, raw_base: string, name: string, text: [string], t
  else if base == "RESPONSE_BODY" { out = [ctx_get(&state, "response_body")]; }
  else if base == "RESPONSE_STATUS" { out = [ctx_get(&state, "response_status")]; }
  else if base == "RESPONSE_HEADERS" { out = pair_values(ctx_get(&state, "response_headers"), name, false, &text, target_count, &base, &dynamic_bases, &dynamic_selectors); }
- else if base == "TX" { let tx_key: string = "tx." + lower(&name); if !starts(&name, "/") && (&state).has(&tx_key) { out = [(&state)[tx_key]]; } }
+ else if base == "TX" { let tx_key: string = "tx." + string_lower_ascii(&name); if !starts(&name, "/") && (&state).has(&tx_key) { out = [(&state)[tx_key]]; } }
  if counted => { [out.length + ""] } else => { out }
 }
 pub fn ctx_targets(state: map<string>, text: [string], target_count: int, id: int) -> [string] {
@@ -108,23 +108,23 @@ pub fn ctx_update(state: map<string>, id: int, raw_base: string, selector: strin
 // bundled from engine_operators.rss
 pub fn op_expand(state: map<string>, value: string) -> string {
  let mut out: string = value;
- if contains(&out, "%{") { let keys: [string] = (&state).keys; for i in 0..keys.length { let key: string = (&keys)[i]; if starts(&key, "tx.") { out = replace(out, "%{" + key + "}", (&state)[key]); } } }
+ if string_contains(&out, "%{") { let keys: [string] = (&state).keys; for i in 0..keys.length { let key: string = (&keys)[i]; if starts(&key, "tx.") { out = string_replace_literal(out, "%{" + key + "}", (&state)[key]); } } }
  out
 }
-pub fn sqli(value: string) -> bool { let text: string = lower(value); (contains(&text, " union ") && contains(&text, "select")) || contains(&text, "' or '") || contains(&text, "'or 1=1") || contains(&text, " or 1=1") || contains(&text, "sleep(") || contains(&text, "benchmark(") || contains(&text, "information_schema") }
-pub fn xss(value: string) -> bool { let text: string = lower(value); contains(&text, "<script") || contains(&text, "javascript:") || contains(&text, "onerror=") || contains(&text, "onload=") || (contains(&text, "<svg") && contains(&text, "on")) }
-pub fn phrase(pattern: string, value: string) -> bool { let phrases: [string] = if contains(&pattern, "\n") => { string_split_literal(pattern, "\n") } else => { string_split_literal(pattern, " ") }; let haystack: string = lower(value); let mut found = false; for i in 0..phrases.length { let item: string = lower((&phrases)[i]); if item != "" && contains(&haystack, item) { found = true; break; } } found }
+pub fn sqli(value: string) -> bool { let text: string = string_lower_ascii(value); (string_contains(&text, " union ") && string_contains(&text, "select")) || string_contains(&text, "' or '") || string_contains(&text, "'or 1=1") || string_contains(&text, " or 1=1") || string_contains(&text, "sleep(") || string_contains(&text, "benchmark(") || string_contains(&text, "information_schema") }
+pub fn xss(value: string) -> bool { let text: string = string_lower_ascii(value); string_contains(&text, "<script") || string_contains(&text, "javascript:") || string_contains(&text, "onerror=") || string_contains(&text, "onload=") || (string_contains(&text, "<svg") && string_contains(&text, "on")) }
+pub fn phrase(pattern: string, value: string) -> bool { let phrases: [string] = if string_contains(&pattern, "\n") => { string_split_literal(pattern, "\n") } else => { string_split_literal(pattern, " ") }; let haystack: string = string_lower_ascii(value); let mut found = false; for i in 0..phrases.length { let item: string = string_lower_ascii((&phrases)[i]); if item != "" && string_contains(&haystack, item) { found = true; break; } } found }
 pub fn op_matches(state: map<string>, operator: string, argument: string, value: string) -> bool {
  let negated: bool = starts(&operator, "!"); let name: string = if negated => { (&operator)[1:operator.length] } else => { operator }; let expected: string = op_expand(&state, argument); let mut raw: bool = false;
  if name == "@rx" { raw = re::match(&expected, &value); }
  else if name == "@pm" || name == "@pmFromFile" { raw = phrase(&expected, &value); }
  else if name == "@detectSQLi" { raw = sqli(&value); }
  else if name == "@detectXSS" { raw = xss(&value); }
- else if name == "@contains" { raw = contains(&value, &expected); }
+ else if name == "@contains" { raw = string_contains(&value, &expected); }
  else if name == "@beginsWith" { raw = starts(&value, &expected); }
  else if name == "@endsWith" { raw = ends(&value, &expected); }
  else if name == "@streq" { raw = value == expected; }
- else if name == "@within" { raw = contains(" " + expected + " ", " " + value + " "); }
+ else if name == "@within" { raw = string_contains(" " + expected + " ", " " + value + " "); }
  else if name == "@eq" { raw = number(&value, 0) == number(&expected, 0); }
  else if name == "@lt" { raw = number(&value, 0) < number(&expected, 0); }
  else if name == "@ge" { raw = number(&value, 0) >= number(&expected, 0); }
@@ -132,7 +132,7 @@ pub fn op_matches(state: map<string>, operator: string, argument: string, value:
  else if name == "@validateUrlEncoding" { raw = !re::match("%(?:[^0-9A-Fa-f]|.[^0-9A-Fa-f]|$)", &value); }
  else if name == "@validateUtf8Encoding" || name == "@validateByteRange" { raw = false; }
  else if name == "@unconditionalMatch" { raw = true; }
- else if name == "@ipMatch" { raw = phrase(replace(&expected, ",", "\n"), &value); }
+ else if name == "@ipMatch" { raw = phrase(string_replace_literal(&expected, ",", "\n"), &value); }
  if negated => { !raw } else => { raw }
 }
 
@@ -298,7 +298,7 @@ pub fn apply_rule(state: map<string>, id: int, phase: int, chain_index: int, has
 
 pub fn category_enabled(state: map<string>, category: string) -> bool {
     let enabled = ctx_get(&state, "enabled_ruleset");
-    ctx_get(&state, "blocked") != "1" && (enabled == "" || contains(" " + enabled + " ", " " + category + " "))
+    ctx_get(&state, "blocked") != "1" && (enabled == "" || string_contains(" " + enabled + " ", " " + category + " "))
 }
 
 // bundled from ruleset.rss

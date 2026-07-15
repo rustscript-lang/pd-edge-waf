@@ -21,15 +21,15 @@ pub fn transforms(value: string, encoded: int) -> string {
  while plan > 0 {
   let op = plan % 32;
   plan = plan / 32;
-  if op == 4 || op == 8 || op == 19 { out = replace(out, "%27", "'"); out = replace(out, "%22", "\""); out = replace(out, "%20", " "); out = replace(out, "%3d", "="); out = replace(out, "%3D", "="); out = replace(out, "%3c", "<"); out = replace(out, "%3C", "<"); out = replace(out, "%3e", ">"); out = replace(out, "%3E", ">"); out = replace(out, "+", " "); }
-  else if op == 7 { out = replace(out, "&lt;", "<"); out = replace(out, "&gt;", ">"); out = replace(out, "&quot;", "\""); out = replace(out, "&#39;", "'"); }
-  else if op == 15 { out = replace(out, "\0", ""); }
+  if op == 4 || op == 8 || op == 19 { out = string_replace_literal(out, "%27", "'"); out = string_replace_literal(out, "%22", "\""); out = string_replace_literal(out, "%20", " "); out = string_replace_literal(out, "%3d", "="); out = string_replace_literal(out, "%3D", "="); out = string_replace_literal(out, "%3c", "<"); out = string_replace_literal(out, "%3C", "<"); out = string_replace_literal(out, "%3e", ">"); out = string_replace_literal(out, "%3E", ">"); out = string_replace_literal(out, "+", " "); }
+  else if op == 7 { out = string_replace_literal(out, "&lt;", "<"); out = string_replace_literal(out, "&gt;", ">"); out = string_replace_literal(out, "&quot;", "\""); out = string_replace_literal(out, "&#39;", "'"); }
+  else if op == 15 { out = string_replace_literal(out, "\0", ""); }
   else if op == 16 { out = re::replace("\\s+", out, ""); }
   else if op == 3 { out = re::replace("\\s+", out, " "); }
   else if op == 17 { out = re::replace("(?s)/\\*.*?\\*/", out, " "); }
-  else if op == 12 || op == 13 { out = replace(out, "\\", "/"); }
-  else if op == 2 { out = replace(out, "\\", ""); out = lower(out); }
-  else if op == 10 { out = lower(out); }
+  else if op == 12 || op == 13 { out = string_replace_literal(out, "\\", "/"); }
+  else if op == 2 { out = string_replace_literal(out, "\\", ""); out = string_lower_ascii(out); }
+  else if op == 10 { out = string_lower_ascii(out); }
   else if op == 9 { out = out.length + ""; }
   else if op == 1 || op == 5 || op == 6 || op == 11 || op == 14 || op == 18 || op == 20 { out = out; }
  }

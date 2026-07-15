@@ -162,5 +162,5 @@ pub fn apply_rule(state: map<string>, id: int, phase: int, chain_index: int, has
 
 pub fn category_enabled(state: map<string>, category: string) -> bool {
     let enabled = engine_context::ctx_get(&state, "enabled_ruleset");
-    engine_context::ctx_get(&state, "blocked") != "1" && (enabled == "" || engine_text::contains(" " + enabled + " ", " " + category + " "))
+    engine_context::ctx_get(&state, "blocked") != "1" && (enabled == "" || string_contains(" " + enabled + " ", " " + category + " "))
 }

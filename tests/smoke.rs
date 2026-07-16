@@ -72,7 +72,7 @@ fn generated_rules_preserve_all_crs_regex_operators() {
                 .next()?
                 .parse::<usize>()
                 .ok()
-                .map(|target_spec| target_spec / 64)
+                .map(|target_spec| (target_spec % 16384) / 64)
         });
         for operator_code in operator_codes {
             if operator_code == 1 {

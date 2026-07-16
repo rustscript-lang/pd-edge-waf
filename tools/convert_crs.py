@@ -64,6 +64,7 @@ OPERATOR_OPCODES = {
 }
 OPERATOR_NEGATED_BIT = 32
 TARGET_COUNT_RADIX = 64
+TARGET_STATIC_EXCLUSIONS_BIT = 1 << 14
 
 
 def encode_transform_plan(transforms: list[str]) -> int:
@@ -87,6 +88,19 @@ def encode_operator(operator: str) -> int:
     except KeyError as error:
         raise ValueError(f"unknown operator: {operator}") from error
     return opcode + (OPERATOR_NEGATED_BIT if negated else 0)
+
+
+def encode_target_spec(operator_code: int, descriptors: list[str]) -> int:
+    target_count = len(descriptors) // 2
+    has_static_exclusions = any(
+        descriptors[index].startswith("!")
+        for index in range(0, len(descriptors), 2)
+    )
+    return (
+        operator_code * TARGET_COUNT_RADIX
+        + target_count
+        + (TARGET_STATIC_EXCLUSIONS_BIT if has_static_exclusions else 0)
+    )
 
 
 @dataclass
@@ -389,8 +403,7 @@ def rule_arguments(
         rss_string(directive.message),
         *(rss_string(value) for value in descriptors),
     ]
-    target_count = len(descriptors) // 2
-    target_spec = operator_code * TARGET_COUNT_RADIX + target_count
+    target_spec = encode_target_spec(operator_code, descriptors)
     return [
         str(directive.rule_id),
         str(directive.chain_index),
@@ -496,7 +509,7 @@ def render_plan_619_prefilter(
         rss_string(""),
         *(rss_string(value) for value in descriptors),
     ]
-    target_spec = OPERATOR_OPCODES["@rx"] * TARGET_COUNT_RADIX + len(descriptors) // 2
+    target_spec = encode_target_spec(OPERATOR_OPCODES["@rx"], list(descriptors))
     return (
         "next = engine_bundle::apply_rule_619(next, -1, 0, false, "
         f"[{', '.join(text)}], {target_spec}, {transform_plan}, 0, false, 403);"

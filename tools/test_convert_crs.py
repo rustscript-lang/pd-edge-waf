@@ -84,6 +84,15 @@ class TransformPlanTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unknown operator: @mystery"):
             convert_crs.encode_operator("@mystery")
 
+    def test_target_spec_marks_static_exclusions(self) -> None:
+        positive = ["ARGS", "", "REQUEST_HEADERS", "Host"]
+        excluded = [*positive, "!REQUEST_HEADERS", "Cookie"]
+        self.assertEqual(convert_crs.encode_target_spec(1, positive), 66)
+        self.assertEqual(
+            convert_crs.encode_target_spec(1, excluded),
+            convert_crs.TARGET_STATIC_EXCLUSIONS_BIT + 67,
+        )
+
     def test_eight_opcodes_fit_i64(self) -> None:
         plan = convert_crs.encode_transform_plan(["utf8toUnicode"] * 8)
         self.assertEqual(plan, 709362340500)

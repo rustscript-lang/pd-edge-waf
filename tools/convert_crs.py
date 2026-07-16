@@ -65,6 +65,7 @@ OPERATOR_OPCODES = {
 OPERATOR_NEGATED_BIT = 32
 TARGET_COUNT_RADIX = 64
 TARGET_STATIC_EXCLUSIONS_BIT = 1 << 14
+TARGET_POSITIVE_COUNT_MULTIPLIER = 1 << 15
 
 
 def encode_transform_plan(transforms: list[str]) -> int:
@@ -92,15 +93,33 @@ def encode_operator(operator: str) -> int:
 
 def encode_target_spec(operator_code: int, descriptors: list[str]) -> int:
     target_count = len(descriptors) // 2
-    has_static_exclusions = any(
-        descriptors[index].startswith("!")
+    positive_count = sum(
+        not descriptors[index].startswith("!")
         for index in range(0, len(descriptors), 2)
     )
+    has_static_exclusions = positive_count != target_count
     return (
         operator_code * TARGET_COUNT_RADIX
         + target_count
         + (TARGET_STATIC_EXCLUSIONS_BIT if has_static_exclusions else 0)
+        + (
+            positive_count * TARGET_POSITIVE_COUNT_MULTIPLIER
+            if has_static_exclusions
+            else 0
+        )
     )
+
+
+def pack_target_descriptors(descriptors: list[str]) -> list[str]:
+    positive: list[str] = []
+    excluded: list[str] = []
+    for index in range(0, len(descriptors), 2):
+        base, selector = descriptors[index : index + 2]
+        if base.startswith("!"):
+            excluded.extend((base[1:], selector))
+        else:
+            positive.extend((base, selector))
+    return positive + excluded
 
 
 @dataclass
@@ -397,13 +416,14 @@ def rule_arguments(
     descriptors = target_descriptors(directive.targets)
     if target_updates:
         descriptors.extend(target_updates.get(directive.rule_id, []))
+    target_spec = encode_target_spec(operator_code, descriptors)
+    descriptors = pack_target_descriptors(descriptors)
     text = [
         rss_string(pattern),
         rss_string(action_value(directive.actions, "skipAfter")),
         rss_string(directive.message),
         *(rss_string(value) for value in descriptors),
     ]
-    target_spec = encode_target_spec(operator_code, descriptors)
     return [
         str(directive.rule_id),
         str(directive.chain_index),
@@ -502,6 +522,9 @@ def render_plan_619_prefilter(
     if key is None:
         raise ValueError("plan 619 prefilter requires compatible directives")
     descriptors, transform_plan = key
+    descriptors = list(descriptors)
+    target_spec = encode_target_spec(OPERATOR_OPCODES["@rx"], descriptors)
+    descriptors = pack_target_descriptors(descriptors)
     combined = "|".join(f"(?:{directive.pattern})" for directive in directives)
     text = [
         rss_string(combined),
@@ -509,7 +532,6 @@ def render_plan_619_prefilter(
         rss_string(""),
         *(rss_string(value) for value in descriptors),
     ]
-    target_spec = encode_target_spec(OPERATOR_OPCODES["@rx"], list(descriptors))
     return (
         "next = engine_bundle::apply_rule_619(next, -1, 0, false, "
         f"[{', '.join(text)}], {target_spec}, {transform_plan}, 0, false, 403);"

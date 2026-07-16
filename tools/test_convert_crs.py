@@ -90,7 +90,15 @@ class TransformPlanTests(unittest.TestCase):
         self.assertEqual(convert_crs.encode_target_spec(1, positive), 66)
         self.assertEqual(
             convert_crs.encode_target_spec(1, excluded),
-            convert_crs.TARGET_STATIC_EXCLUSIONS_BIT + 67,
+            convert_crs.TARGET_STATIC_EXCLUSIONS_BIT
+            + 2 * convert_crs.TARGET_POSITIVE_COUNT_MULTIPLIER
+            + 67,
+        )
+        self.assertEqual(
+            convert_crs.pack_target_descriptors(
+                ["!REQUEST_HEADERS", "Cookie", "ARGS", "", "&TX", "COUNT"]
+            ),
+            ["ARGS", "", "&TX", "COUNT", "REQUEST_HEADERS", "Cookie"],
         )
 
     def test_eight_opcodes_fit_i64(self) -> None:
@@ -168,7 +176,7 @@ class TransformPlanTests(unittest.TestCase):
         )
         self.assertNotIn("fn evaluate_request_999_common_exceptions_after", rendered)
         self.assertIn(
-            '"REQUEST_COOKIES", "", "!REQUEST_COOKIES", "_ga"',
+            '"REQUEST_COOKIES", "", "REQUEST_COOKIES", "_ga"], 49218,',
             rendered,
         )
         self.assertNotIn("update_target(next,", rendered)

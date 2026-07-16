@@ -28,33 +28,33 @@ let state: map<string> = {
 let text: [string] = [
     "", "", "",
     "REQUEST_HEADERS", "",
-    "&ARGS", "",
+    "ARGS", "",
     "REQUEST_HEADERS", "Cookie"
 ];
-let values: [string] = ctx_targets(&state, &text, 81923, 123);
+let values: [string] = ctx_targets(&state, &text, 4374531, 123);
 assert(values.length == 3);
 assert((&values)[0] == "example.test");
 assert((&values)[1] == "selected");
 assert((&values)[2] == "2");
 
 let updated: map<string> = update_target(state, 123, "REQUEST_HEADERS", "Host");
-let remaining: [string] = ctx_targets(&updated, &text, 81923, 123);
+let remaining: [string] = ctx_targets(&updated, &text, 4374531, 123);
 assert(remaining.length == 2);
 assert((&remaining)[0] == "selected");
 assert((&remaining)[1] == "2");
 
 let regex_updated: map<string> = update_target(updated, 123, "REQUEST_HEADERS", "/^X-/");
-let regex_remaining: [string] = ctx_targets(&regex_updated, &text, 81923, 123);
+let regex_remaining: [string] = ctx_targets(&regex_updated, &text, 4374531, 123);
 assert(regex_remaining.length == 1);
 assert((&regex_remaining)[0] == "2");
 
 let counted_updated: map<string> = update_target(regex_updated, 123, "ARGS", "a");
-let counted_remaining: [string] = ctx_targets(&counted_updated, &text, 81923, 123);
+let counted_remaining: [string] = ctx_targets(&counted_updated, &text, 4374531, 123);
 assert(counted_remaining.length == 1);
 assert((&counted_remaining)[0] == "1");
 
 let broad_updated: map<string> = update_target(counted_updated, 123, "REQUEST_HEADERS", "");
-let broad_remaining: [string] = ctx_targets(&broad_updated, &text, 81923, 123);
+let broad_remaining: [string] = ctx_targets(&broad_updated, &text, 4374531, 123);
 assert(broad_remaining.length == 1);
 assert((&broad_remaining)[0] == "1");
 

@@ -10,7 +10,7 @@ pub fn evaluate_request_943_application_attack_session_fixation(next: map<string
     next = engine_bundle::apply_rule(next, 943110, 1, true, ["^(?:ht|f)tps?://(.*?)/", "", "", "REQUEST_HEADERS", "Referer"], 65, 0, 0, false, 403);
     next = engine_bundle::apply_rule(next, 943110, 2, false, ["request_headers.host", "", "", "TX", "1"], 6593, 0, 0, false, 403);
     next = engine_bundle::apply_rule(next, 943120, 0, true, ["^(?:json\\.)?(?:j(?:se(?:ssionid|rvsession)|wsession)|(?:asp(?:\\.net_)?session|session[\\-_]?)id|phpsessi(?:on|d)|(?:weblogic|laravel_)session|_(?:session_id|flask_session)|c(?:f(?:s?id|token)|onnect\\.sid))$", "", "Possible Session Fixation Attack: SessionID Parameter Name with No Referer", "ARGS_NAMES", ""], 65, 331, 5, false, 403);
-    next = engine_bundle::apply_rule(next, 943120, 1, false, ["0", "", "", "&REQUEST_HEADERS", "Referer"], 641, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 943120, 1, false, ["0", "", "", "REQUEST_HEADERS", "Referer"], 33409, 0, 0, false, 403);
     next = engine_bundle::apply_rule(next, 943013, 0, false, ["2", "END-REQUEST-943-APPLICATION-ATTACK-SESSION-FIXATION", "", "TX", "DETECTION_PARANOIA_LEVEL"], 705, 0, 0, false, 403);
     next = engine_bundle::apply_rule(next, 943014, 0, false, ["2", "END-REQUEST-943-APPLICATION-ATTACK-SESSION-FIXATION", "", "TX", "DETECTION_PARANOIA_LEVEL"], 705, 0, 0, false, 403);
     next = engine_bundle::apply_rule(next, 943015, 0, false, ["3", "END-REQUEST-943-APPLICATION-ATTACK-SESSION-FIXATION", "", "TX", "DETECTION_PARANOIA_LEVEL"], 705, 0, 0, false, 403);

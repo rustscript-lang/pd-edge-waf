@@ -114,7 +114,7 @@ fn generated_rules_and_runtime_use_typed_rule_abi() {
     assert!(transformed.contains(
         "apply_rule(next, 944250, 0, false, [\"java\\\\b.+(?:runtime|processbuilder)\", \"\", \"Remote Command Execution: Suspicious Java method detected\", \"ARGS\", \"\", \"ARGS_NAMES\", \"\""
     ));
-    assert!(transformed.contains("\"REQUEST_HEADERS\", \"Cookie\"], 278601,"));
+    assert!(transformed.contains("\"REQUEST_HEADERS\", \"Cookie\"], 540745,"));
     assert!(!transformed.contains("\"!REQUEST_HEADERS\""));
     assert!(!transformed.contains("ARGS|ARGS_NAMES|REQUEST_COOKIES"));
     assert!(!transformed.contains(
@@ -181,6 +181,6 @@ fn enabled_ruleset_folds_common_exception_updates_into_rule_payloads() {
         .find(|line| line.contains("apply_rule_619(next, 942290,"))
         .expect("enabled rule 942290 should exist");
     assert!(rule.contains("\"REQUEST_COOKIES\", \"__gads\""));
-    assert!(rule.contains("], 213066, 619,"));
+    assert!(rule.contains("], 409674, 619,"));
     assert!(!rule.contains("\"!REQUEST_COOKIES\""));
 }

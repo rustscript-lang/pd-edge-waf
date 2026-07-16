@@ -65,7 +65,9 @@ OPERATOR_OPCODES = {
 OPERATOR_NEGATED_BIT = 32
 TARGET_COUNT_RADIX = 64
 TARGET_STATIC_EXCLUSIONS_BIT = 1 << 14
-TARGET_POSITIVE_COUNT_MULTIPLIER = 1 << 15
+TARGET_COUNTED_DESCRIPTORS_BIT = 1 << 15
+TARGET_POSITIVE_COUNT_MULTIPLIER = 1 << 16
+TARGET_REGULAR_COUNT_MULTIPLIER = 1 << 22
 
 
 def encode_transform_plan(transforms: list[str]) -> int:
@@ -97,29 +99,43 @@ def encode_target_spec(operator_code: int, descriptors: list[str]) -> int:
         not descriptors[index].startswith("!")
         for index in range(0, len(descriptors), 2)
     )
+    regular_count = sum(
+        not descriptors[index].startswith(("!", "&"))
+        for index in range(0, len(descriptors), 2)
+    )
     has_static_exclusions = positive_count != target_count
+    has_counted_descriptors = regular_count != positive_count
     return (
         operator_code * TARGET_COUNT_RADIX
         + target_count
         + (TARGET_STATIC_EXCLUSIONS_BIT if has_static_exclusions else 0)
+        + (TARGET_COUNTED_DESCRIPTORS_BIT if has_counted_descriptors else 0)
         + (
             positive_count * TARGET_POSITIVE_COUNT_MULTIPLIER
             if has_static_exclusions
+            else 0
+        )
+        + (
+            regular_count * TARGET_REGULAR_COUNT_MULTIPLIER
+            if has_counted_descriptors
             else 0
         )
     )
 
 
 def pack_target_descriptors(descriptors: list[str]) -> list[str]:
-    positive: list[str] = []
+    regular: list[str] = []
+    counted: list[str] = []
     excluded: list[str] = []
     for index in range(0, len(descriptors), 2):
         base, selector = descriptors[index : index + 2]
         if base.startswith("!"):
             excluded.extend((base[1:], selector))
+        elif base.startswith("&"):
+            counted.extend((base[1:], selector))
         else:
-            positive.extend((base, selector))
-    return positive + excluded
+            regular.extend((base, selector))
+    return regular + counted + excluded
 
 
 @dataclass

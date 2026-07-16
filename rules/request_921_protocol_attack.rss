@@ -22,7 +22,7 @@ pub fn evaluate_request_921_protocol_attack(next: map<string>) -> map<string> {
     next = engine_bundle::apply_rule(next, 921422, 0, false, ["^[^\\s\\x0b,;]+[\\s\\x0b,;].*?\\b(?:((?:tex|multipar)t|application)|((?:audi|vide)o|image|cs[sv]|(?:vn|relate)d|p(?:df|lain)|json|(?:soa|cs)p|x(?:ml|-www-form-urlencoded)|form-data|x-amf|(?:octe|repor)t|stream)|([\\+/]))\\b", "", "Content-Type header: Dangerous content type outside the mime type declaration", "REQUEST_HEADERS", "Content-Type"], 65, 331, 5, false, 403);
     next = engine_bundle::apply_rule(next, 921015, 0, false, ["3", "END-REQUEST-921-PROTOCOL-ATTACK", "", "TX", "DETECTION_PARANOIA_LEVEL"], 705, 0, 0, false, 403);
     next = engine_bundle::apply_rule(next, 921016, 0, false, ["3", "END-REQUEST-921-PROTOCOL-ATTACK", "", "TX", "DETECTION_PARANOIA_LEVEL"], 705, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 921230, 0, false, ["0", "", "HTTP Range Header detected", "&REQUEST_HEADERS", "Range"], 833, 11, 5, false, 403);
+    next = engine_bundle::apply_rule(next, 921230, 0, false, ["0", "", "HTTP Range Header detected", "REQUEST_HEADERS", "Range"], 33601, 11, 5, false, 403);
     next = engine_bundle::apply_rule(next, 921170, 0, false, [".", "", "", "ARGS_NAMES", ""], 65, 0, 0, false, 403);
     next = engine_bundle::apply_rule(next, 921180, 0, false, ["1", "", "HTTP Parameter Pollution (%{MATCHED_VAR_NAME})", "TX", "/paramcounter_.*/"], 833, 0, 5, false, 403);
     next = engine_bundle::apply_rule(next, 921210, 0, false, ["(][^\\]]+$|][^\\]]+\\[)", "", "HTTP Parameter Pollution after detecting bogus char after parameter array", "ARGS_NAMES", ""], 65, 0, 5, false, 403);

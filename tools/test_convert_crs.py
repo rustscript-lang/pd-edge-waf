@@ -94,11 +94,18 @@ class TransformPlanTests(unittest.TestCase):
             + 2 * convert_crs.TARGET_POSITIVE_COUNT_MULTIPLIER
             + 67,
         )
+        counted = ["ARGS", "", "&TX", "COUNT"]
+        self.assertEqual(
+            convert_crs.encode_target_spec(1, counted),
+            convert_crs.TARGET_COUNTED_DESCRIPTORS_BIT
+            + convert_crs.TARGET_REGULAR_COUNT_MULTIPLIER
+            + 66,
+        )
         self.assertEqual(
             convert_crs.pack_target_descriptors(
                 ["!REQUEST_HEADERS", "Cookie", "ARGS", "", "&TX", "COUNT"]
             ),
-            ["ARGS", "", "&TX", "COUNT", "REQUEST_HEADERS", "Cookie"],
+            ["ARGS", "", "TX", "COUNT", "REQUEST_HEADERS", "Cookie"],
         )
 
     def test_eight_opcodes_fit_i64(self) -> None:
@@ -176,7 +183,7 @@ class TransformPlanTests(unittest.TestCase):
         )
         self.assertNotIn("fn evaluate_request_999_common_exceptions_after", rendered)
         self.assertIn(
-            '"REQUEST_COOKIES", "", "REQUEST_COOKIES", "_ga"], 49218,',
+            '"REQUEST_COOKIES", "", "REQUEST_COOKIES", "_ga"], 81986,',
             rendered,
         )
         self.assertNotIn("update_target(next,", rendered)

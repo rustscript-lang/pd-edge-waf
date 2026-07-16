@@ -9,8 +9,9 @@ use vm::{JitConfig, JitTraceTerminal, Value, Vm, VmStatus};
 const DEFAULT_WARMUP_BATCHES: usize = 1;
 const DEFAULT_MEASURED_BATCHES: usize = 5;
 const DEFAULT_BATCH_SIZE: usize = 2;
-const DEFAULT_JIT_STABLE_REQUESTS: usize = 2;
-const DEFAULT_JIT_MAX_WARMUP_REQUESTS: usize = 32;
+const DEFAULT_JIT_STABLE_REQUESTS: usize = 12;
+const DEFAULT_JIT_MAX_WARMUP_REQUESTS: usize = 128;
+const RUST_MATH_BASELINE_ITERATIONS: usize = 1_000_000;
 
 struct PerfConfig {
     warmup_batches: usize,
@@ -48,6 +49,8 @@ struct PerfStats {
     average_request: Duration,
     min_batch_average: Duration,
     max_batch_average: Duration,
+    rust_math_average: Duration,
+    normalized_to_rust_math: f64,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -246,7 +249,7 @@ fn default_request_program() -> vm::Program {
         .expect("default ruleset bundle should read");
     let source = format!(
         r#"{ruleset}
-let state: map<string> = new_state(
+assert((&inspect_request(new_state(
     "GET",
     "/products",
     "category=books&page=2",
@@ -259,9 +262,7 @@ let state: map<string> = new_state(
     }},
     {{ "category": "books", "page": "2" }},
     ""
-);
-let result: map<string> = inspect_request(state);
-assert((&result)["blocked"] == "0");
+)))["blocked"] == "0");
 "allow";
 "#
     );
@@ -346,6 +347,20 @@ fn run_jit_warmup_until_stable(
     );
 }
 
+fn run_rust_math_baseline() -> Duration {
+    let mut value = black_box(0x9e37_79b9_7f4a_7c15_u64);
+    let started = Instant::now();
+    for index in 0..RUST_MATH_BASELINE_ITERATIONS {
+        value = value
+            .wrapping_mul(0xbf58_476d_1ce4_e5b9)
+            .wrapping_add(index as u64)
+            .rotate_left(17)
+            ^ 0x94d0_49bb_1331_11eb;
+    }
+    black_box(value);
+    started.elapsed()
+}
+
 fn run_batch(vm: &mut Vm, expected: &Value, label: &str, batch_size: usize) -> Duration {
     let started = Instant::now();
     for request_index in 0..batch_size {
@@ -384,8 +399,12 @@ fn measure_case(
     let jit_before = JitCompilationState::capture(&vm);
 
     let mut batches = Vec::with_capacity(config.measured_batches);
+    let mut rust_math_samples = Vec::with_capacity(config.measured_batches);
     for _ in 0..config.measured_batches {
+        let before = run_rust_math_baseline();
         batches.push(run_batch(&mut vm, expected, label, config.batch_size));
+        let after = run_rust_math_baseline();
+        rust_math_samples.push(before.saturating_add(after).div_f64(2.0));
     }
 
     let jit_after = JitCompilationState::capture(&vm);
@@ -399,7 +418,62 @@ fn measure_case(
             "jit_bridge_stats label={label} hits={:?}",
             vm.jit_native_bridge_stats_snapshot()
         );
-        let mut traces = vm.jit_snapshot().traces;
+        let snapshot = vm.jit_snapshot();
+        let mut op_executions = std::collections::BTreeMap::<String, u64>::new();
+        for trace in &snapshot.traces {
+            for op in trace.op_names() {
+                let executions = op_executions.entry(op.to_string()).or_default();
+                *executions = executions.saturating_add(trace.executions);
+            }
+        }
+        println!(
+            "jit_specialized_ops label={label} call={} regex_match={} string_contains={}",
+            op_executions.get("call").copied().unwrap_or(0),
+            op_executions.get("regex_match").copied().unwrap_or(0),
+            op_executions.get("string_contains").copied().unwrap_or(0),
+        );
+        let mut weighted_ops = op_executions.into_iter().collect::<Vec<_>>();
+        weighted_ops.sort_by_key(|(_, executions)| std::cmp::Reverse(*executions));
+        println!(
+            "jit_weighted_ops label={label} top={:?}",
+            weighted_ops.into_iter().take(20).collect::<Vec<_>>()
+        );
+        let mut nyi_reasons = std::collections::BTreeMap::<String, usize>::new();
+        for line in vm
+            .dump_jit_info()
+            .lines()
+            .filter(|line| line.trim_start().starts_with("nyi "))
+        {
+            let reason = line
+                .split_once(" reason=")
+                .map(|(_, reason)| reason)
+                .unwrap_or("unknown");
+            *nyi_reasons.entry(reason.to_string()).or_default() += 1;
+        }
+        println!("jit_nyi_reasons label={label} counts={nyi_reasons:?}");
+        if std::env::var_os("WAF_PERF_DUMP_NYI_IPS").is_some() {
+            let disassembly = vm::disassemble_program(vm.program());
+            for attempt in snapshot.attempts.iter().filter(|attempt| {
+                attempt
+                    .result
+                    .as_ref()
+                    .err()
+                    .is_some_and(|reason| reason.message().contains("less-than operands"))
+            }) {
+                let instruction = disassembly
+                    .lines()
+                    .find(|line| {
+                        line.starts_with(&format!("{:04}\t", attempt.root_ip))
+                            || line.starts_with(&format!("{:04} ", attempt.root_ip))
+                    })
+                    .unwrap_or("");
+                println!(
+                    "jit_nyi_ip label={label} root_ip={} stack_depth={} line={:?} disasm={instruction}",
+                    attempt.root_ip, attempt.entry_stack_depth, attempt.line,
+                );
+            }
+        }
+        let mut traces = snapshot.traces.clone();
         traces.sort_by_key(|trace| std::cmp::Reverse(trace.executions));
         for trace in traces.into_iter().take(15) {
             println!(
@@ -411,12 +485,53 @@ fn measure_case(
                 trace.ssa_text().replace('\n', " | ")
             );
         }
+        if std::env::var_os("WAF_PERF_DUMP_EXIT_IPS").is_some() {
+            let mut exit_ip_weights: std::collections::BTreeMap<usize, u64> =
+                std::collections::BTreeMap::new();
+            for trace in &snapshot.traces {
+                if let Some(exit_ip) = trace.terminal_call_exit_ip() {
+                    let weight = exit_ip_weights.entry(exit_ip).or_default();
+                    *weight = weight.saturating_add(trace.executions);
+                }
+            }
+            let mut ranked: Vec<(usize, u64)> = exit_ip_weights.into_iter().collect();
+            ranked.sort_by_key(|(_, weight)| std::cmp::Reverse(*weight));
+            let disassembly = vm::disassemble_program(vm.program());
+            println!("jit_exit_ip_weights label={label} top={:?}", ranked.iter().take(15).collect::<Vec<_>>());
+            for (ip, weight) in ranked.into_iter().take(15) {
+                let line = disassembly
+                    .lines()
+                    .find(|line| line.starts_with(&format!("{ip:04}\t")) || line.starts_with(&format!("{ip:04} ")))
+                    .unwrap_or("");
+                println!("jit_exit_ip_target label={label} ip={ip} weight={weight} disasm={line}");
+                for trace in snapshot
+                    .traces
+                    .iter()
+                    .filter(|trace| trace.terminal_call_exit_ip() == Some(ip))
+                    .take(3)
+                {
+                    println!(
+                        "jit_exit_ip_trace label={label} ip={ip} root_ip={} line={:?} executions={} ops={:?}",
+                        trace.root_ip,
+                        trace.start_line,
+                        trace.executions,
+                        trace.op_names(),
+                    );
+                }
+            }
+        }
     }
 
     let total_duration: Duration = batches.iter().copied().sum();
     let total_requests = config.measured_batches * config.batch_size;
+    let average_request = total_duration.div_f64(total_requests as f64);
+    let rust_math_average = rust_math_samples
+        .iter()
+        .copied()
+        .sum::<Duration>()
+        .div_f64(rust_math_samples.len() as f64);
     let stats = PerfStats {
-        average_request: total_duration.div_f64(total_requests as f64),
+        average_request,
         min_batch_average: batches
             .iter()
             .copied()
@@ -429,16 +544,22 @@ fn measure_case(
             .max()
             .expect("at least two measured batches")
             .div_f64(config.batch_size as f64),
+        rust_math_average,
+        normalized_to_rust_math: average_request.as_secs_f64()
+            / rust_math_average.as_secs_f64().max(f64::EPSILON),
     };
 
     println!(
-        "{label} mode={execution_mode} warmup_requests={warmup_requests} batches={} batch_size={} requests={} average_us={:.3} min_batch_average_us={:.3} max_batch_average_us={:.3} jit_attempts={} recorded_traces={} native_traces={} regex_cache_entries={} regex_compile_count={} regex_cache_hits={}",
+        "{label} mode={execution_mode} warmup_requests={warmup_requests} batches={} batch_size={} requests={} average_us={:.3} min_batch_average_us={:.3} max_batch_average_us={:.3} rust_math_iterations={} rust_math_average_us={:.3} normalized_to_rust_math={:.6} jit_attempts={} recorded_traces={} native_traces={} regex_cache_entries={} regex_compile_count={} regex_cache_hits={}",
         config.measured_batches,
         config.batch_size,
         total_requests,
         stats.average_request.as_secs_f64() * 1_000_000.0,
         stats.min_batch_average.as_secs_f64() * 1_000_000.0,
         stats.max_batch_average.as_secs_f64() * 1_000_000.0,
+        RUST_MATH_BASELINE_ITERATIONS,
+        stats.rust_math_average.as_secs_f64() * 1_000_000.0,
+        stats.normalized_to_rust_math,
         jit_after.attempts,
         jit_after.recorded_traces,
         jit_after.native_traces,
@@ -459,6 +580,23 @@ fn run_default_ruleset_perf() {
     let config = PerfConfig::from_env();
     let baseline_program = baseline_request_program();
     let default_ruleset_program = default_request_program();
+    if std::env::var_os("WAF_PERF_DUMP_CALLS").is_some() {
+        let re_match_index = vm::builtin_call_index("re::match");
+        let disassembly = vm::disassemble_program(&default_ruleset_program);
+        let re_match_calls = re_match_index
+            .map(|index| disassembly.matches(&format!("call {index} ")).count())
+            .unwrap_or(0);
+        println!(
+            "re_match_builtin_index={re_match_index:?} bytecode_calls={re_match_calls}",
+        );
+        for line in disassembly
+            .lines()
+            .filter(|line| line.contains("call"))
+            .take(60)
+        {
+            println!("waf_call {line}");
+        }
+    }
     let expected = Value::string("allow");
 
     let baseline = measure_case(
@@ -495,13 +633,80 @@ fn run_default_ruleset_perf() {
     let jit_incremental = incremental_average(&jit, &baseline);
     let jit_to_interpreter_ratio = jit.average_request.as_secs_f64()
         / interpreter.average_request.as_secs_f64().max(f64::EPSILON);
+    let normalized_jit_to_interpreter_ratio = jit.normalized_to_rust_math
+        / interpreter.normalized_to_rust_math.max(f64::EPSILON);
     println!(
-        "waf_comparison_perf baseline_average_us={:.3} interpreter_average_us={:.3} interpreter_incremental_us={:.3} jit_average_us={:.3} jit_incremental_us={:.3} jit_to_interpreter_ratio={jit_to_interpreter_ratio:.3}",
+        "waf_comparison_perf baseline_average_us={:.3} interpreter_average_us={:.3} interpreter_incremental_us={:.3} jit_average_us={:.3} jit_incremental_us={:.3} jit_to_interpreter_ratio={jit_to_interpreter_ratio:.3} interpreter_normalized_to_rust_math={:.6} jit_normalized_to_rust_math={:.6} normalized_jit_to_interpreter_ratio={normalized_jit_to_interpreter_ratio:.3}",
         baseline.average_request.as_secs_f64() * 1_000_000.0,
         interpreter.average_request.as_secs_f64() * 1_000_000.0,
         interpreter_incremental.as_secs_f64() * 1_000_000.0,
         jit.average_request.as_secs_f64() * 1_000_000.0,
         jit_incremental.as_secs_f64() * 1_000_000.0,
+        interpreter.normalized_to_rust_math,
+        jit.normalized_to_rust_math,
+    );
+
+    if std::env::var_os("WAF_PERF_AOT_DIAG").is_some() {
+        let mut aot_vm = Vm::new_with_jit_config(
+            default_request_program(),
+            JitConfig {
+                enabled: false,
+                ..JitConfig::default()
+            },
+        );
+        aot_vm.compile_aot().expect("WAF AOT diagnostic should compile");
+        let aot = measure_case(
+            "default_ruleset_aot_diag",
+            aot_vm,
+            WarmupPolicy::Fixed,
+            &config,
+            &expected,
+        );
+        println!(
+            "waf_aot_diag average_us={:.3} aot_to_interpreter_ratio={:.3}",
+            aot.average_request.as_secs_f64() * 1_000_000.0,
+            aot.average_request.as_secs_f64()
+                / interpreter.average_request.as_secs_f64().max(f64::EPSILON),
+        );
+    }
+}
+
+#[test]
+fn vm_dependency_specializes_regex_match() {
+    if !JitConfig::default().enabled {
+        return;
+    }
+    let compiled = vm::compile_source(
+        r#"
+use re;
+let mut i = 0;
+let mut matched = false;
+while i < 8 {
+    matched = re::match("(?i)^rustscript$", "RustScript");
+    i = i + 1;
+}
+matched;
+"#,
+    )
+    .expect("regex specialization fixture should compile");
+    let mut vm = Vm::new_with_jit_config(
+        compiled.program,
+        JitConfig {
+            enabled: true,
+            hot_loop_threshold: 1,
+            max_trace_len: 512,
+        },
+    );
+    assert_eq!(vm.run().expect("regex fixture should run"), VmStatus::Halted);
+    assert_eq!(vm.stack(), &[Value::Bool(true)]);
+    let snapshot = vm.jit_snapshot();
+    assert!(
+        snapshot
+            .traces
+            .iter()
+            .any(|trace| trace.op_names().iter().any(|op| op == "regex_match")),
+        "pd-edge-waf VM dependency should specialize regex match:\n{}",
+        vm.dump_jit_info()
     );
 }
 

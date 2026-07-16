@@ -117,13 +117,13 @@ impl TraceShapeStats {
 
             let shape = by_shape
                 .entry((
-                    trace.terminal.clone(),
+                    trace.terminal,
                     trace.has_call,
                     trace.entry_stack_depth,
                     op_count,
                 ))
                 .or_insert_with(|| TraceShape {
-                    terminal: trace.terminal.clone(),
+                    terminal: trace.terminal,
                     has_call: trace.has_call,
                     entry_stack_depth: trace.entry_stack_depth,
                     op_count,
@@ -497,11 +497,17 @@ fn measure_case(
             let mut ranked: Vec<(usize, u64)> = exit_ip_weights.into_iter().collect();
             ranked.sort_by_key(|(_, weight)| std::cmp::Reverse(*weight));
             let disassembly = vm::disassemble_program(vm.program());
-            println!("jit_exit_ip_weights label={label} top={:?}", ranked.iter().take(15).collect::<Vec<_>>());
+            println!(
+                "jit_exit_ip_weights label={label} top={:?}",
+                ranked.iter().take(15).collect::<Vec<_>>()
+            );
             for (ip, weight) in ranked.into_iter().take(15) {
                 let line = disassembly
                     .lines()
-                    .find(|line| line.starts_with(&format!("{ip:04}\t")) || line.starts_with(&format!("{ip:04} ")))
+                    .find(|line| {
+                        line.starts_with(&format!("{ip:04}\t"))
+                            || line.starts_with(&format!("{ip:04} "))
+                    })
                     .unwrap_or("");
                 println!("jit_exit_ip_target label={label} ip={ip} weight={weight} disasm={line}");
                 for trace in snapshot
@@ -586,9 +592,7 @@ fn run_default_ruleset_perf() {
         let re_match_calls = re_match_index
             .map(|index| disassembly.matches(&format!("call {index} ")).count())
             .unwrap_or(0);
-        println!(
-            "re_match_builtin_index={re_match_index:?} bytecode_calls={re_match_calls}",
-        );
+        println!("re_match_builtin_index={re_match_index:?} bytecode_calls={re_match_calls}",);
         for line in disassembly
             .lines()
             .filter(|line| line.contains("call"))
@@ -633,8 +637,8 @@ fn run_default_ruleset_perf() {
     let jit_incremental = incremental_average(&jit, &baseline);
     let jit_to_interpreter_ratio = jit.average_request.as_secs_f64()
         / interpreter.average_request.as_secs_f64().max(f64::EPSILON);
-    let normalized_jit_to_interpreter_ratio = jit.normalized_to_rust_math
-        / interpreter.normalized_to_rust_math.max(f64::EPSILON);
+    let normalized_jit_to_interpreter_ratio =
+        jit.normalized_to_rust_math / interpreter.normalized_to_rust_math.max(f64::EPSILON);
     println!(
         "waf_comparison_perf baseline_average_us={:.3} interpreter_average_us={:.3} interpreter_incremental_us={:.3} jit_average_us={:.3} jit_incremental_us={:.3} jit_to_interpreter_ratio={jit_to_interpreter_ratio:.3} interpreter_normalized_to_rust_math={:.6} jit_normalized_to_rust_math={:.6} normalized_jit_to_interpreter_ratio={normalized_jit_to_interpreter_ratio:.3}",
         baseline.average_request.as_secs_f64() * 1_000_000.0,
@@ -654,7 +658,9 @@ fn run_default_ruleset_perf() {
                 ..JitConfig::default()
             },
         );
-        aot_vm.compile_aot().expect("WAF AOT diagnostic should compile");
+        aot_vm
+            .compile_aot()
+            .expect("WAF AOT diagnostic should compile");
         let aot = measure_case(
             "default_ruleset_aot_diag",
             aot_vm,
@@ -697,7 +703,10 @@ matched;
             max_trace_len: 512,
         },
     );
-    assert_eq!(vm.run().expect("regex fixture should run"), VmStatus::Halted);
+    assert_eq!(
+        vm.run().expect("regex fixture should run"),
+        VmStatus::Halted
+    );
     assert_eq!(vm.stack(), &[Value::Bool(true)]);
     let snapshot = vm.jit_snapshot();
     assert!(

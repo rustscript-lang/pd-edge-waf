@@ -105,6 +105,28 @@ let allowed: map<string> = apply_rule_619(
     65, 619, 5, false, 403
 );
 assert((&allowed)["blocked"] == "0");
+let prefilter_hit: map<string> = apply_rule_619(
+    new_state(
+        "GET", "/", "q=second", "HTTP/1.1", "192.0.2.10",
+        {{}}, {{ "q": "second" }}, ""
+    ),
+    -1, 0, false,
+    ["(?:first)|(?:second)", "", "", "ARGS", ""],
+    65, 619, 0, false, 403
+);
+assert((&prefilter_hit)["prefilter"] == "1");
+assert((&prefilter_hit)["blocked"] == "0");
+assert((&prefilter_hit)["score"] == "0");
+let prefilter_miss: map<string> = apply_rule_619(
+    new_state(
+        "GET", "/", "q=plain", "HTTP/1.1", "192.0.2.10",
+        {{}}, {{ "q": "plain" }}, ""
+    ),
+    -1, 0, false,
+    ["(?:first)|(?:second)", "", "", "ARGS", ""],
+    65, 619, 0, false, 403
+);
+assert((&prefilter_miss)["prefilter"] == "0");
 "ok";
 "#
     );

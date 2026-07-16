@@ -191,7 +191,9 @@ pub fn apply_rule_619(state: map<string>, id: int, chain_index: int, has_chain: 
             }
         }
     }
-    if chain_index == 0 && has_chain {
+    if id == -1 {
+        s["prefilter"] = if matched => { "1" } else => { "0" };
+    } else if chain_index == 0 && has_chain {
         s["chain_active"] = "1";
         s["chain_matched"] = if matched => { "1" } else => { "0" };
         s["chain_id"] = id + "";

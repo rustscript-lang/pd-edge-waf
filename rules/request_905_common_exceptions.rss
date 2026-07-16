@@ -2,12 +2,11 @@
 // Executable RustScript; do not edit by hand.
 use engine_bundle;
 
-pub fn evaluate_request_905_common_exceptions(state: map<string>) -> map<string> {
-    let mut next = state;
-    next = engine_bundle::apply_rule(next, 905100, 1, 0, true, ["@streq", "GET /", "", "", "REQUEST_LINE", "", "REQUEST_LINE"], 1, 11, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 905100, 0, 1, false, ["@ipMatch", "127.0.0.1,::1", "", "", "REMOTE_ADDR", "", "REMOTE_ADDR"], 1, 11, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 905110, 1, 0, true, ["@ipMatch", "127.0.0.1,::1", "", "", "REMOTE_ADDR", "", "REMOTE_ADDR"], 1, 11, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 905110, 0, 1, true, ["@endsWith", "(internal dummy connection)", "", "", "REQUEST_HEADERS", "User-Agent", "REQUEST_HEADERS:User-Agent"], 1, 11, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 905110, 0, 2, false, ["@rx", "^(?:GET /|OPTIONS \\*) HTTP/[12]\\.[01]$", "", "", "REQUEST_LINE", "", "REQUEST_LINE"], 1, 11, 0, 0, false, 403);
+pub fn evaluate_request_905_common_exceptions(next: map<string>) -> map<string> {
+    next = engine_bundle::apply_rule(next, 905100, 0, true, ["GET /", "", "", "REQUEST_LINE", ""], 513, 11, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 905100, 1, false, ["127.0.0.1,::1", "", "", "REMOTE_ADDR", ""], 1153, 11, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 905110, 0, true, ["127.0.0.1,::1", "", "", "REMOTE_ADDR", ""], 1153, 11, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 905110, 1, true, ["(internal dummy connection)", "", "", "REQUEST_HEADERS", "User-Agent"], 449, 11, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 905110, 2, false, ["^(?:GET /|OPTIONS \\*) HTTP/[12]\\.[01]$", "", "", "REQUEST_LINE", ""], 65, 11, 0, false, 403);
     next
 }

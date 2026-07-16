@@ -41,6 +41,30 @@ TRANSFORM_OPCODES = {
     "utf8toUnicode": 20,
 }
 
+OPERATOR_OPCODES = {
+    "@rx": 1,
+    "@pm": 2,
+    "@pmFromFile": 2,
+    "@detectSQLi": 3,
+    "@detectXSS": 4,
+    "@contains": 5,
+    "@beginsWith": 6,
+    "@endsWith": 7,
+    "@streq": 8,
+    "@within": 9,
+    "@eq": 10,
+    "@lt": 11,
+    "@ge": 12,
+    "@gt": 13,
+    "@validateUrlEncoding": 14,
+    "@validateUtf8Encoding": 15,
+    "@validateByteRange": 16,
+    "@unconditionalMatch": 17,
+    "@ipMatch": 18,
+}
+OPERATOR_NEGATED_BIT = 32
+TARGET_COUNT_RADIX = 64
+
 
 def encode_transform_plan(transforms: list[str]) -> int:
     if len(transforms) > 8:
@@ -53,6 +77,16 @@ def encode_transform_plan(transforms: list[str]) -> int:
             raise ValueError(f"unknown transformation: {name}") from error
         plan |= opcode << (index * 5)
     return plan
+
+
+def encode_operator(operator: str) -> int:
+    negated = operator.startswith("!")
+    name = operator[1:] if negated else operator
+    try:
+        opcode = OPERATOR_OPCODES[name]
+    except KeyError as error:
+        raise ValueError(f"unknown operator: {operator}") from error
+    return opcode + (OPERATOR_NEGATED_BIT if negated else 0)
 
 
 @dataclass
@@ -314,7 +348,7 @@ def target_descriptors(targets: str) -> list[str]:
         pieces = spec.split(":", 1)
         base = pieces[0]
         selector = pieces[1] if len(pieces) > 1 else ""
-        descriptors.extend((base, selector, spec))
+        descriptors.extend((base, selector))
     return descriptors
 
 
@@ -336,26 +370,34 @@ def rule_arguments(
     pattern = directive.pattern
     if directive.operator.lstrip("!") == "@pmFromFile":
         pattern = data_contents.get(pattern, "")
+    operator_code = encode_operator(directive.operator)
+    exact_state = re.fullmatch(r"%\{([^}]+)\}", pattern)
+    prefixed_state = re.fullmatch(r"\.%\{([^}]+)\}", pattern)
+    if exact_state:
+        operator_code += 64
+        pattern = exact_state.group(1).lower()
+    elif prefixed_state:
+        operator_code += 128
+        pattern = prefixed_state.group(1).lower()
     transforms = action_values(directive.actions, "t")
     descriptors = target_descriptors(directive.targets)
     if target_updates:
         descriptors.extend(target_updates.get(directive.rule_id, []))
     text = [
-        rss_string(directive.operator),
         rss_string(pattern),
         rss_string(action_value(directive.actions, "skipAfter")),
         rss_string(directive.message),
         *(rss_string(value) for value in descriptors),
     ]
+    target_count = len(descriptors) // 2
+    target_spec = operator_code * TARGET_COUNT_RADIX + target_count
     return [
         str(directive.rule_id),
-        str(directive.phase),
         str(directive.chain_index),
         "true" if has_action(directive.actions, "chain") else "false",
         f"[{', '.join(text)}]",
-        str(len(descriptors) // 3),
+        str(target_spec),
         str(encode_transform_plan(transforms)),
-        str(paranoia_level(directive.actions)),
         str(anomaly_score(directive.actions)),
         "true" if has_action(directive.actions, "deny") else "false",
         str(action_int(directive.actions, "status", 403)),
@@ -368,10 +410,15 @@ def render_directive_call(
     target_updates: dict[int, list[str]] | None = None,
 ) -> str:
     if directive.kind == "SecRule":
-        rendered = ", ".join(
-            rule_arguments(directive, data_contents, target_updates)
-        )
-        return f"next = engine_bundle::apply_rule(next, {rendered});"
+        arguments = rule_arguments(directive, data_contents, target_updates)
+        rendered = ", ".join(arguments)
+        if arguments[5] in {
+            "619", "14955", "15979", "17003", "18027", "20107", "511627"
+        }:
+            evaluator = "apply_rule_619"
+        else:
+            evaluator = "apply_rule"
+        return f"next = engine_bundle::{evaluator}(next, {rendered});"
     if directive.kind == "SecAction":
         return f"next = engine_bundle::apply_action(next, {directive.phase});"
     if directive.kind == "SecMarker":
@@ -379,8 +426,8 @@ def render_directive_call(
     if directive.kind == "SecRuleUpdateTargetById":
         descriptors = target_descriptors(directive.value)
         calls = []
-        for index in range(0, len(descriptors), 3):
-            base, selector, _canonical = descriptors[index : index + 3]
+        for index in range(0, len(descriptors), 2):
+            base, selector = descriptors[index : index + 2]
             calls.append(
                 "next = engine_bundle::update_target("
                 f"next, {directive.rule_id}, {rss_string(base)}, "
@@ -403,8 +450,7 @@ def render_module(
         "// Executable RustScript; do not edit by hand.",
         "use engine_bundle;",
         "",
-        f"pub fn evaluate_{module}(state: map<string>) -> map<string> {{",
-        "    let mut next = state;",
+        f"pub fn evaluate_{module}(next: map<string>) -> map<string> {{",
     ]
     for directive in directives:
         lines.append(
@@ -412,6 +458,49 @@ def render_module(
         )
     lines.extend(["    next", "}", ""])
     return "\n".join(lines)
+
+
+def plan_619_prefilter_key(
+    directive: Directive,
+    data_contents: dict[str, str],
+    target_updates: dict[int, list[str]],
+) -> tuple[tuple[str, ...], int] | None:
+    if (
+        directive.kind != "SecRule"
+        or directive.chain_index != 0
+        or directive.operator != "@rx"
+        or "%{" in directive.pattern
+    ):
+        return None
+    arguments = rule_arguments(directive, data_contents, target_updates)
+    if arguments[5] != "619":
+        return None
+    descriptors = target_descriptors(directive.targets)
+    descriptors.extend(target_updates.get(directive.rule_id, []))
+    return tuple(descriptors), 619
+
+
+def render_plan_619_prefilter(
+    directives: list[Directive],
+    data_contents: dict[str, str],
+    target_updates: dict[int, list[str]],
+) -> str:
+    key = plan_619_prefilter_key(directives[0], data_contents, target_updates)
+    if key is None:
+        raise ValueError("plan 619 prefilter requires compatible directives")
+    descriptors, transform_plan = key
+    combined = "|".join(f"(?:{directive.pattern})" for directive in directives)
+    text = [
+        rss_string(combined),
+        rss_string(""),
+        rss_string(""),
+        *(rss_string(value) for value in descriptors),
+    ]
+    target_spec = OPERATOR_OPCODES["@rx"] * TARGET_COUNT_RADIX + len(descriptors) // 2
+    return (
+        "next = engine_bundle::apply_rule_619(next, -1, 0, false, "
+        f"[{', '.join(text)}], {target_spec}, {transform_plan}, 0, false, 403);"
+    )
 
 
 def render_entry(
@@ -426,7 +515,7 @@ def render_entry(
         if module_name(directive.source) in enabled_categories:
             grouped.setdefault(directive.source, []).append(directive)
 
-    evaluators: dict[str, str] = {}
+    evaluators: dict[tuple[str, int], str] = {}
     lines = [
         f"// Executable OWASP CRS {version} ruleset.",
         "// Each enabled category executes generated RSS expressions directly.",
@@ -435,56 +524,119 @@ def render_entry(
     ]
     for source, source_directives in grouped.items():
         category = module_name(source)
-        evaluator = f"evaluate_{category}"
-        evaluators[source] = evaluator
-        lines.extend(
-            [
-                f"fn {evaluator}(state: map<string>) -> map<string> {{",
-                "    let mut next = state;",
-            ]
-        )
-        if category == "request_942_application_attack_sqli":
-            lines.append(
-                '    next = engine_bundle::apply_rule(next, 942100, 2, 0, false, ["@detectSQLi", "", "", "SQL Injection Attack Detected", "QUERY_STRING", "", "QUERY_STRING", "ARGS", "", "ARGS", "REQUEST_BODY", "", "REQUEST_BODY"], 3, 15979, 1, 5, false, 403);'
-            )
+        phased_directives: dict[int, list[tuple[Directive, int]]] = {}
+        chain_phase = 0
+        chain_paranoia = 0
+        markers: list[Directive] = []
         for directive in source_directives:
-            call = render_directive_call(directive, data_contents, target_updates)
-            lines.append(
-                f'    if engine_bundle::category_enabled(&next, "{category}") {{ {call} }}'
-            )
-        lines.extend(["    next", "}", ""])
+            if directive.kind == "SecMarker":
+                markers.append(directive)
+                continue
+            effective_phase = directive.phase
+            effective_paranoia = 0
+            if directive.kind == "SecRule":
+                effective_paranoia = paranoia_level(directive.actions)
+                if directive.chain_index == 0:
+                    chain_phase = directive.phase
+                    chain_paranoia = effective_paranoia
+                else:
+                    if effective_phase == 0:
+                        effective_phase = chain_phase
+                    if effective_paranoia == 0:
+                        effective_paranoia = chain_paranoia
+            if effective_phase > 0:
+                phased_directives.setdefault(effective_phase, []).append(
+                    (directive, effective_paranoia)
+                )
+        if category == "request_942_application_attack_sqli":
+            phased_directives.setdefault(2, [])
+        for phase, phase_directives in phased_directives.items():
+            evaluator = f"evaluate_{category}_phase_{phase}"
+            evaluators[(source, phase)] = evaluator
+            lines.append(f"fn {evaluator}(next: map<string>) -> map<string> {{")
+            if category == "request_942_application_attack_sqli" and phase == 2:
+                lines.append(
+                    '    next = engine_bundle::apply_rule(next, 942100, 0, false, ["", "", "SQL Injection Attack Detected", "QUERY_STRING", "", "ARGS", "", "REQUEST_BODY", ""], 195, 15979, 5, false, 403);'
+                )
+            directive_index = 0
+            while directive_index < len(phase_directives):
+                directive = phase_directives[directive_index][0]
+                prefilter_key = plan_619_prefilter_key(
+                    directive, data_contents, target_updates
+                )
+                run_end = directive_index + 1
+                if prefilter_key is not None:
+                    while run_end < len(phase_directives):
+                        candidate = phase_directives[run_end][0]
+                        if (
+                            plan_619_prefilter_key(
+                                candidate, data_contents, target_updates
+                            )
+                            != prefilter_key
+                        ):
+                            break
+                        run_end += 1
+                if run_end - directive_index >= 2:
+                    run = [item[0] for item in phase_directives[directive_index:run_end]]
+                    lines.append(
+                        f"    {render_plan_619_prefilter(run, data_contents, target_updates)}"
+                    )
+                    lines.append('    if (&next)["prefilter"] == "1" {')
+                    for grouped_directive in run:
+                        call = render_directive_call(
+                            grouped_directive,
+                            data_contents,
+                            target_updates,
+                        )
+                        lines.append(f"        {call}")
+                    lines.append("    }")
+                    lines.append('    next["prefilter"] = "0";')
+                else:
+                    call = render_directive_call(
+                        directive,
+                        data_contents,
+                        target_updates,
+                    )
+                    lines.append(f"    {call}")
+                directive_index = run_end
+            for marker in markers:
+                call = render_directive_call(marker, data_contents, target_updates)
+                lines.append(f"    {call}")
+            lines.extend(["    next", "}", ""])
 
-    def append_enabled_call(source: str) -> None:
+    def append_enabled_call(source: str, phase: int) -> None:
         category = module_name(source)
-        evaluator = evaluators[source]
+        evaluator = evaluators.get((source, phase))
+        if evaluator is None:
+            return
         lines.append(
             f'    if engine_bundle::category_enabled(&next, "{category}") {{ next = {evaluator}(next); }}'
         )
 
     lines.extend(
         [
-            "pub fn inspect_request(state: map<string>) -> map<string> {",
-            "    let mut next = state;",
+            "pub fn inspect_request(next: map<string>) -> map<string> {",
         ]
     )
+
     for phase in (1, 2):
-        lines.append(f"    next = engine_bundle::set_phase(next, {phase});")
+        lines.append(f"    next = engine_bundle::ctx_set_phase(next, {phase});")
         for source in grouped:
             if source.startswith("REQUEST-"):
-                append_enabled_call(source)
+                append_enabled_call(source, phase)
     lines.extend(["    next", "}", ""])
 
     lines.extend(
         [
-            "pub fn inspect_response(state: map<string>) -> map<string> {",
-            "    let mut next = state;",
+            "pub fn inspect_response(next: map<string>) -> map<string> {",
         ]
     )
+
     for phase in (3, 4, 5):
-        lines.append(f"    next = engine_bundle::set_phase(next, {phase});")
+        lines.append(f"    next = engine_bundle::ctx_set_phase(next, {phase});")
         for source in grouped:
             if source.startswith("RESPONSE-"):
-                append_enabled_call(source)
+                append_enabled_call(source, phase)
     lines.extend(
         [
             "    next",

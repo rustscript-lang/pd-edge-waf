@@ -55,6 +55,35 @@ class TransformPlanTests(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertEqual(convert_crs.encode_transform_plan([name]), opcode)
 
+    def test_operator_opcodes_are_stable_and_encode_negation(self) -> None:
+        expected = {
+            "@rx": 1,
+            "@pm": 2,
+            "@pmFromFile": 2,
+            "@detectSQLi": 3,
+            "@detectXSS": 4,
+            "@contains": 5,
+            "@beginsWith": 6,
+            "@endsWith": 7,
+            "@streq": 8,
+            "@within": 9,
+            "@eq": 10,
+            "@lt": 11,
+            "@ge": 12,
+            "@gt": 13,
+            "@validateUrlEncoding": 14,
+            "@validateUtf8Encoding": 15,
+            "@validateByteRange": 16,
+            "@unconditionalMatch": 17,
+            "@ipMatch": 18,
+        }
+        self.assertEqual(convert_crs.OPERATOR_OPCODES, expected)
+        self.assertEqual(convert_crs.encode_operator("@rx"), 1)
+        self.assertEqual(convert_crs.encode_operator("!@rx"), 33)
+        self.assertEqual(convert_crs.encode_operator("!@within"), 41)
+        with self.assertRaisesRegex(ValueError, "unknown operator: @mystery"):
+            convert_crs.encode_operator("@mystery")
+
     def test_eight_opcodes_fit_i64(self) -> None:
         plan = convert_crs.encode_transform_plan(["utf8toUnicode"] * 8)
         self.assertEqual(plan, 709362340500)
@@ -74,10 +103,10 @@ class TransformPlanTests(unittest.TestCase):
                 "ARGS|REQUEST_HEADERS:Host|!REQUEST_HEADERS:Cookie|&TX:COUNT"
             ),
             [
-                "ARGS", "", "ARGS",
-                "REQUEST_HEADERS", "Host", "REQUEST_HEADERS:Host",
-                "!REQUEST_HEADERS", "Cookie", "!REQUEST_HEADERS:Cookie",
-                "&TX", "COUNT", "&TX:COUNT",
+                "ARGS", "",
+                "REQUEST_HEADERS", "Host",
+                "!REQUEST_HEADERS", "Cookie",
+                "&TX", "COUNT",
             ],
         )
 
@@ -87,8 +116,8 @@ class TransformPlanTests(unittest.TestCase):
                 r"ARGS:/foo\|bar:baz/|REQUEST_HEADERS:Host"
             ),
             [
-                "ARGS", r"/foo\|bar:baz/", r"ARGS:/foo\|bar:baz/",
-                "REQUEST_HEADERS", "Host", "REQUEST_HEADERS:Host",
+                "ARGS", r"/foo\|bar:baz/",
+                "REQUEST_HEADERS", "Host",
             ],
         )
 
@@ -130,8 +159,7 @@ class TransformPlanTests(unittest.TestCase):
         )
         self.assertNotIn("fn evaluate_request_999_common_exceptions_after", rendered)
         self.assertIn(
-            '"REQUEST_COOKIES", "", "REQUEST_COOKIES", '
-            '"!REQUEST_COOKIES", "_ga", "!REQUEST_COOKIES:_ga"',
+            '"REQUEST_COOKIES", "", "!REQUEST_COOKIES", "_ga"',
             rendered,
         )
         self.assertNotIn("update_target(next,", rendered)
@@ -156,10 +184,115 @@ class TransformPlanTests(unittest.TestCase):
         )
         self.assertEqual(
             convert_crs.render_directive_call(directive, {}),
-            'next = engine_bundle::apply_rule(next, 123, 2, 0, false, '
-            '["@rx", "PATTERN", "", "ordered", "TARGET", "", "TARGET"], '
-            '1, 10858, 0, 0, false, 403);',
+            'next = engine_bundle::apply_rule(next, 123, 0, false, '
+            '["PATTERN", "", "ordered", "TARGET", ""], '
+            '65, 10858, 0, false, 403);',
         )
+
+    def test_state_macro_patterns_use_typed_operator_flags(self) -> None:
+        exact = convert_crs.Directive(
+            kind="SecRule",
+            source="REQUEST-TEST.conf",
+            source_line=1,
+            rule_id=911100,
+            phase=1,
+            chain_index=0,
+            targets="REQUEST_METHOD",
+            operator="!@within",
+            pattern="%{TX.allowed_methods}",
+        )
+        prefixed = convert_crs.Directive(
+            kind="SecRule",
+            source="REQUEST-TEST.conf",
+            source_line=2,
+            rule_id=920350,
+            phase=1,
+            chain_index=0,
+            targets="REQUEST_HEADERS:Host",
+            operator="@rx",
+            pattern=".%{request_headers.host}",
+        )
+        self.assertIn(
+            '["tx.allowed_methods", "", "", "REQUEST_METHOD", ""], 6721,',
+            convert_crs.render_directive_call(exact, {}),
+        )
+        self.assertIn(
+            '["request_headers.host", "", "", "REQUEST_HEADERS", "Host"], 8257,',
+            convert_crs.render_directive_call(prefixed, {}),
+        )
+
+    def test_plan_619_uses_specialized_rule_evaluator(self) -> None:
+        directive = convert_crs.Directive(
+            kind="SecRule",
+            source="REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+            source_line=140,
+            rule_id=942140,
+            phase=2,
+            chain_index=0,
+            targets="ARGS",
+            operator="@rx",
+            pattern="PATTERN",
+            actions="id:942140,phase:2,t:none,t:urlDecodeUni,severity:'CRITICAL'",
+        )
+        rendered = convert_crs.render_directive_call(directive, {})
+        self.assertTrue(rendered.startswith("next = engine_bundle::apply_rule_619("))
+        self.assertIn(", 65, 619, 5, false, 403);", rendered)
+
+    def test_entry_guards_rule_calls_by_phase(self) -> None:
+        phase_one = convert_crs.Directive(
+            kind="SecRule", source="REQUEST-TEST.conf", source_line=1,
+            rule_id=101, phase=1, chain_index=0, targets="ARGS",
+            operator="@rx", pattern="one",
+        )
+        phase_two = convert_crs.Directive(
+            kind="SecRule", source="REQUEST-TEST.conf", source_line=2,
+            rule_id=202, phase=2, chain_index=0, targets="ARGS",
+            operator="@rx", pattern="two",
+        )
+        rendered = convert_crs.render_entry(
+            [phase_one, phase_two], "4.28.0", {}, {"request_test"}
+        )
+        phase_one_body = rendered.split("fn evaluate_request_test_phase_1", 1)[1].split("fn ", 1)[0]
+        phase_two_body = rendered.split("fn evaluate_request_test_phase_2", 1)[1].split("pub fn ", 1)[0]
+        self.assertIn("apply_rule(next, 101, 0, false", phase_one_body)
+        self.assertNotIn("apply_rule(next, 202, 0, false", phase_one_body)
+        self.assertIn("apply_rule(next, 202, 0, false", phase_two_body)
+        self.assertNotIn("apply_rule(next, 101, 0, false", phase_two_body)
+        self.assertNotIn("category_enabled", phase_one_body)
+        self.assertNotIn("category_enabled", phase_two_body)
+        self.assertEqual(
+            rendered.count('category_enabled(&next, "request_test")'),
+            2,
+        )
+
+    def test_contiguous_plan_619_regex_rules_share_sound_prefilter(self) -> None:
+        directives = [
+            convert_crs.Directive(
+                kind="SecRule",
+                source="REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
+                source_line=index,
+                rule_id=942000 + index,
+                phase=2,
+                chain_index=0,
+                targets="ARGS|ARGS_NAMES",
+                operator="@rx",
+                pattern=pattern,
+                actions="phase:2,t:none,t:urlDecodeUni",
+            )
+            for index, pattern in enumerate(("first", "second"), 1)
+        ]
+        rendered = convert_crs.render_entry(
+            directives,
+            "4.28.0",
+            {},
+            {"request_942_application_attack_sqli"},
+        )
+        self.assertEqual(rendered.count("apply_rule_619(next, -1"), 1)
+        self.assertIn("(?:first)|(?:second)", rendered)
+
+        first = rendered.index("apply_rule_619(next, 942001")
+        second = rendered.index("apply_rule_619(next, 942002")
+        self.assertLess(first, second)
 
     def test_enabled_sqli_probe_uses_plan_abi(self) -> None:
         directive = convert_crs.Directive(
@@ -178,10 +311,10 @@ class TransformPlanTests(unittest.TestCase):
             {"request_942_application_attack_sqli"},
         )
         self.assertIn(
-            'apply_rule(next, 942100, 2, 0, false, '
-            '["@detectSQLi", "", "", "SQL Injection Attack Detected", '
-            '"QUERY_STRING", "", "QUERY_STRING", "ARGS", "", "ARGS", '
-            '"REQUEST_BODY", "", "REQUEST_BODY"], 3, 15979, 1, 5, false, 403);',
+            'apply_rule(next, 942100, 0, false, '
+            '["", "", "SQL Injection Attack Detected", '
+            '"QUERY_STRING", "", "ARGS", "", "REQUEST_BODY", ""], '
+            '195, 15979, 5, false, 403);',
             rendered,
         )
         self.assertNotIn("none,urlDecodeUni,removeNulls", rendered)

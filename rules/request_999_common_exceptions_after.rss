@@ -2,8 +2,7 @@
 // Executable RustScript; do not edit by hand.
 use engine_bundle;
 
-pub fn evaluate_request_999_common_exceptions_after(state: map<string>) -> map<string> {
-    let mut next = state;
+pub fn evaluate_request_999_common_exceptions_after(next: map<string>) -> map<string> {
     next = engine_bundle::update_target(next, 932240, "!REQUEST_COOKIES", "/^_ga(?:_\\w+)?$/");
     next = engine_bundle::update_target(next, 941100, "!REQUEST_COOKIES", "/^_ga(?:_\\w+)?$/");
     next = engine_bundle::update_target(next, 942290, "!REQUEST_COOKIES", "/^_ga(?:_\\w+)?$/");

@@ -3,8 +3,8 @@ use re;
 pub fn lower(value: string) -> string { string_lower_ascii(value) }
 pub fn contains(value: string, needle: string) -> bool { string_contains(value, needle) }
 pub fn replace(value: string, needle: string, replacement: string) -> string { string_replace_literal(value, needle, replacement) }
-pub fn starts(value: string, prefix: string) -> bool { prefix.length <= value.length && (&value)[0:prefix.length] == prefix }
-pub fn ends(value: string, suffix: string) -> bool { suffix.length <= value.length && (&value)[(value.length - suffix.length):value.length] == suffix }
+pub fn starts(value: string, prefix: string) -> bool { prefix.length <= value.length && string_contains(&value, &prefix) && (&value)[0:prefix.length] == prefix }
+pub fn ends(value: string, suffix: string) -> bool { suffix.length <= value.length && string_contains(&value, &suffix) && (&value)[(value.length - suffix.length):value.length] == suffix }
 pub fn number(value: string, fallback: int) -> int {
  let digits = "0123456789"; let mut out = 0; let mut valid = value.length > 0;
  for i in 0..value.length { let ch = (&value)[i:(i + 1)]; let mut digit = -1; for j in 0..10 { if ch == (&digits)[j:(j + 1)] { digit = j; break; } } if digit < 0 { valid = false; break; } out = out * 10 + digit; }
@@ -15,23 +15,41 @@ pub fn encode_map(values: map<string>) -> string {
  for i in 0..keys.length { let key: string = (&keys)[i]; out = out + key + "=" + (&values)[key] + "\n"; }
  out
 }
-pub fn transforms(value: string, encoded: int) -> string {
- let mut out = value;
- let mut plan = encoded;
- while plan > 0 {
-  let op = plan % 32;
-  plan = plan / 32;
-  if op == 4 || op == 8 || op == 19 { out = replace(out, "%27", "'"); out = replace(out, "%22", "\""); out = replace(out, "%20", " "); out = replace(out, "%3d", "="); out = replace(out, "%3D", "="); out = replace(out, "%3c", "<"); out = replace(out, "%3C", "<"); out = replace(out, "%3e", ">"); out = replace(out, "%3E", ">"); out = replace(out, "+", " "); }
-  else if op == 7 { out = replace(out, "&lt;", "<"); out = replace(out, "&gt;", ">"); out = replace(out, "&quot;", "\""); out = replace(out, "&#39;", "'"); }
-  else if op == 15 { out = replace(out, "\0", ""); }
-  else if op == 16 { out = re::replace("\\s+", out, ""); }
-  else if op == 3 { out = re::replace("\\s+", out, " "); }
-  else if op == 17 { out = re::replace("(?s)/\\*.*?\\*/", out, " "); }
-  else if op == 12 || op == 13 { out = replace(out, "\\", "/"); }
-  else if op == 2 { out = replace(out, "\\", ""); out = lower(out); }
-  else if op == 10 { out = lower(out); }
-  else if op == 9 { out = out.length + ""; }
-  else if op == 1 || op == 5 || op == 6 || op == 11 || op == 14 || op == 18 || op == 20 { out = out; }
- }
+fn transforms_generic(value: string, encoded: int) -> string {
+ let mut out: string = value;
+ let mut plan: int = encoded;
+  while plan > 0 {
+   let op = plan % 32;
+   plan = plan / 32;
+   if op == 4 || op == 8 || op == 19 {
+    if contains(&out, "%") || contains(&out, "+") {
+     out = replace(out, "%27", "'");
+     out = replace(out, "%22", "\"");
+     out = replace(out, "%20", " ");
+     out = replace(out, "%3d", "=");
+     out = replace(out, "%3D", "=");
+     out = replace(out, "%3c", "<");
+     out = replace(out, "%3C", "<");
+     out = replace(out, "%3e", ">");
+     out = replace(out, "%3E", ">");
+     out = replace(out, "+", " ");
+    }
+   }
+   else if op == 7 { if contains(&out, "&") { out = replace(out, "&lt;", "<"); out = replace(out, "&gt;", ">"); out = replace(out, "&quot;", "\""); out = replace(out, "&#39;", "'"); } }
+   else if op == 15 { if contains(&out, "\0") { out = replace(out, "\0", ""); } }
+   else if op == 16 { out = re::replace("\\s+", out, ""); }
+   else if op == 3 { out = re::replace("\\s+", out, " "); }
+   else if op == 17 { if contains(&out, "/*") { out = re::replace("(?s)/\\*.*?\\*/", out, " "); } }
+   else if op == 12 || op == 13 { if contains(&out, "\\") { out = replace(out, "\\", "/"); } }
+   else if op == 2 { if contains(&out, "\\") { out = replace(out, "\\", ""); } out = lower(out); }
+   else if op == 10 { out = lower(out); }
+   else if op == 9 { out = out.length + ""; }
+   else if op == 1 || op == 5 || op == 6 || op == 11 || op == 14 || op == 18 || op == 20 { out = out; }
+  }
  out
+}
+pub fn transforms(value: string, encoded: int) -> string {
+ if encoded == 0 || encoded == 11 || encoded == 171 => { value }
+ else if encoded == 10 || encoded == 331 => { lower(value) }
+ else => { transforms_generic(value, encoded) }
 }

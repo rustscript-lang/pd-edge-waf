@@ -16,6 +16,7 @@ pub fn new_state(method: string, path: string, query: string, protocol: string, 
     state["response_headers"] = "";
     state["response_body"] = "";
     state["phase"] = "1";
+    state["prefilter"] = "0";
     state["paranoia"] = "1";
     state["score"] = "0";
     state["outbound_score"] = "0";
@@ -111,17 +112,17 @@ fn record(state: map<string>, matched: [string]) -> map<string> {
     s
 }
 
-pub fn apply_rule(state: map<string>, id: int, phase: int, chain_index: int, has_chain: bool, text: [string], target_count: int, transform_plan: int, paranoia: int, score: int, disruptive: bool, status: int) -> map<string> {
+pub fn apply_rule(state: map<string>, id: int, chain_index: int, has_chain: bool, text: [string], target_count: int, transform_plan: int, score: int, disruptive: bool, status: int) -> map<string> {
     let mut s = state;
-    let current_user = engine_text::number(engine_context::ctx_get(&s, "phase"), 1);
-    let skip_state = engine_context::ctx_get(&s, "skip");
-    if (phase == 0 || phase == current_user) && paranoia <= engine_text::number(engine_context::ctx_get(&s, "paranoia"), 1) && skip_state == "" {
+    let operator: int = target_count / 64;
+    target_count = target_count - operator * 64;
+    if engine_context::ctx_get(&s, "blocked") != "1" && engine_context::ctx_get(&s, "skip") == "" {
     let mut matched = false;
     if chain_index == 0 || engine_context::ctx_get(&s, "chain_matched") == "1" {
         let values: [string] = engine_context::ctx_targets(&s, &text, target_count, id);
         for i in 0..values.length {
             let transformed: string = engine_text::transforms((&values)[i], transform_plan);
-            if engine_operators::op_matches(&s, &(&text)[0], &(&text)[1], transformed) {
+            if engine_operators::op_matches(&s, operator, &(&text)[0], transformed) {
                 matched = true;
                 break;
             }
@@ -134,8 +135,8 @@ pub fn apply_rule(state: map<string>, id: int, phase: int, chain_index: int, has
         s["chain_score"] = score + "";
         s["chain_disruptive"] = if disruptive => { "1" } else => { "0" };
         s["chain_status"] = status + "";
-        s["chain_skip"] = (&text)[2];
-        s["chain_message"] = (&text)[3];
+        s["chain_skip"] = (&text)[1];
+        s["chain_message"] = (&text)[2];
     } else if chain_index > 0 {
         let ok = engine_context::ctx_get(&s, "chain_matched") == "1" && matched;
         s["chain_matched"] = if ok => { "1" } else => { "0" };
@@ -154,7 +155,127 @@ pub fn apply_rule(state: map<string>, id: int, phase: int, chain_index: int, has
             s["chain_matched"] = "0";
         }
     } else if matched {
-        s = record(s, [id + "", score + "", if disruptive => { "1" } else => { "0" }, status + "", (&text)[2], (&text)[3]]);
+        s = record(s, [id + "", score + "", if disruptive => { "1" } else => { "0" }, status + "", (&text)[1], (&text)[2]]);
+    }
+    }
+    s
+}
+
+pub fn apply_rule_619(state: map<string>, id: int, chain_index: int, has_chain: bool, text: [string], target_count: int, transform_plan: int, score: int, disruptive: bool, status: int) -> map<string> {
+    let mut s = state;
+    if engine_context::ctx_get(&s, "blocked") != "1" && engine_context::ctx_get(&s, "skip") == "" {
+    let mut matched = false;
+    if chain_index == 0 || engine_context::ctx_get(&s, "chain_matched") == "1" {
+        let values: [string] = engine_context::ctx_targets(&s, &text, target_count % 64, id);
+        let decode_needles = ["%27", "%22", "%20", "%3d", "%3D", "%3c", "%3C", "%3e", "%3E", "+"];
+        let decode_replacements = ["'", "\"", " ", "=", "=", "<", "<", ">", ">", " "];
+        for i in 0..values.length {
+            let mut transformed: string = (&values)[i];
+            if engine_text::contains(&transformed, "%") || engine_text::contains(&transformed, "+") {
+                transformed = string_replace_literal(
+                    transformed,
+                    &decode_needles,
+                    &decode_replacements
+                );
+            }
+            if transform_plan == 18027 && engine_text::contains(&transformed, "/*") {
+                transformed = re::replace("(?s)/\\*.*?\\*/", transformed, " ");
+            } else if (transform_plan == 511627 || transform_plan == 15979) && engine_text::contains(&transformed, "\0") {
+                transformed = string_replace_literal(transformed, "\0", "");
+            } else if transform_plan == 17003 {
+                transformed = re::replace("\\s+", transformed, "");
+            }
+            if engine_operators::op_matches(&s, target_count / 64, &(&text)[0], transformed) {
+                matched = true;
+                break;
+            }
+        }
+    }
+    if chain_index == 0 && has_chain {
+        s["chain_active"] = "1";
+        s["chain_matched"] = if matched => { "1" } else => { "0" };
+        s["chain_id"] = id + "";
+        s["chain_score"] = score + "";
+        s["chain_disruptive"] = if disruptive => { "1" } else => { "0" };
+        s["chain_status"] = status + "";
+        s["chain_skip"] = (&text)[1];
+        s["chain_message"] = (&text)[2];
+    } else if chain_index > 0 {
+        let ok = engine_context::ctx_get(&s, "chain_matched") == "1" && matched;
+        s["chain_matched"] = if ok => { "1" } else => { "0" };
+        if !has_chain {
+            if engine_context::ctx_get(&s, "chain_active") == "1" && ok {
+                s = record(s, [
+                    engine_context::ctx_get(&s, "chain_id"),
+                    engine_context::ctx_get(&s, "chain_score"),
+                    engine_context::ctx_get(&s, "chain_disruptive"),
+                    engine_context::ctx_get(&s, "chain_status"),
+                    engine_context::ctx_get(&s, "chain_skip"),
+                    engine_context::ctx_get(&s, "chain_message")
+                ]);
+            }
+            s["chain_active"] = "0";
+            s["chain_matched"] = "0";
+        }
+    } else if matched {
+        s = record(s, [id + "", score + "", if disruptive => { "1" } else => { "0" }, status + "", (&text)[1], (&text)[2]]);
+    }
+    }
+    s
+}
+
+pub fn apply_rule_decode_comments(state: map<string>, id: int, chain_index: int, has_chain: bool, text: [string], target_count: int, transform_plan: int, score: int, disruptive: bool, status: int) -> map<string> {
+    let mut s = state;
+    if engine_context::ctx_get(&s, "blocked") != "1" && engine_context::ctx_get(&s, "skip") == "" {
+    let mut matched = false;
+    if chain_index == 0 || engine_context::ctx_get(&s, "chain_matched") == "1" {
+        let values: [string] = engine_context::ctx_targets(&s, &text, target_count % 64, id);
+        for i in 0..values.length {
+            let mut transformed: string = (&values)[i];
+            if engine_text::contains(&transformed, "%") || engine_text::contains(&transformed, "+") {
+                transformed = string_replace_literal(
+                    transformed,
+                    ["%27", "%22", "%20", "%3d", "%3D", "%3c", "%3C", "%3e", "%3E", "+"],
+                    ["'", "\"", " ", "=", "=", "<", "<", ">", ">", " "]
+                );
+            }
+            if engine_text::contains(&transformed, "/*") {
+                transformed = re::replace("(?s)/\\*.*?\\*/", transformed, " ");
+            }
+            if engine_operators::op_matches(&s, target_count / 64, &(&text)[0], transformed) {
+                matched = true;
+                break;
+            }
+        }
+    }
+    if chain_index == 0 && has_chain {
+        s["chain_active"] = "1";
+        s["chain_matched"] = if matched => { "1" } else => { "0" };
+        s["chain_id"] = id + "";
+        s["chain_score"] = score + "";
+        s["chain_disruptive"] = if disruptive => { "1" } else => { "0" };
+        s["chain_status"] = status + "";
+        s["chain_skip"] = (&text)[1];
+        s["chain_message"] = (&text)[2];
+    } else if chain_index > 0 {
+        let ok = engine_context::ctx_get(&s, "chain_matched") == "1" && matched;
+        s["chain_matched"] = if ok => { "1" } else => { "0" };
+        if !has_chain {
+            if engine_context::ctx_get(&s, "chain_active") == "1" && ok {
+                s = record(s, [
+                    engine_context::ctx_get(&s, "chain_id"),
+                    engine_context::ctx_get(&s, "chain_score"),
+                    engine_context::ctx_get(&s, "chain_disruptive"),
+                    engine_context::ctx_get(&s, "chain_status"),
+                    engine_context::ctx_get(&s, "chain_skip"),
+                    engine_context::ctx_get(&s, "chain_message")
+                ]);
+            }
+            s["chain_active"] = "0";
+            s["chain_matched"] = "0";
+        }
+    } else if matched {
+        s = record(s, [id + "", score + "", if disruptive => { "1" } else => { "0" }, status + "", (&text)[1], (&text)[2]]);
     }
     }
     s

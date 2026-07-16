@@ -2,38 +2,37 @@
 // Executable RustScript; do not edit by hand.
 use engine_bundle;
 
-pub fn evaluate_request_949_blocking_evaluation(state: map<string>) -> map<string> {
-    let mut next = state;
-    next = engine_bundle::apply_rule(next, 949052, 1, 0, false, ["@ge", "1", "", "", "TX", "BLOCKING_PARANOIA_LEVEL", "TX:BLOCKING_PARANOIA_LEVEL"], 1, 11, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 949152, 1, 0, false, ["@ge", "1", "", "", "TX", "DETECTION_PARANOIA_LEVEL", "TX:DETECTION_PARANOIA_LEVEL"], 1, 11, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 949053, 1, 0, false, ["@ge", "2", "", "", "TX", "BLOCKING_PARANOIA_LEVEL", "TX:BLOCKING_PARANOIA_LEVEL"], 1, 11, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 949153, 1, 0, false, ["@ge", "2", "", "", "TX", "DETECTION_PARANOIA_LEVEL", "TX:DETECTION_PARANOIA_LEVEL"], 1, 11, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 949054, 1, 0, false, ["@ge", "3", "", "", "TX", "BLOCKING_PARANOIA_LEVEL", "TX:BLOCKING_PARANOIA_LEVEL"], 1, 11, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 949154, 1, 0, false, ["@ge", "3", "", "", "TX", "DETECTION_PARANOIA_LEVEL", "TX:DETECTION_PARANOIA_LEVEL"], 1, 11, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 949055, 1, 0, false, ["@ge", "4", "", "", "TX", "BLOCKING_PARANOIA_LEVEL", "TX:BLOCKING_PARANOIA_LEVEL"], 1, 11, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 949155, 1, 0, false, ["@ge", "4", "", "", "TX", "DETECTION_PARANOIA_LEVEL", "TX:DETECTION_PARANOIA_LEVEL"], 1, 11, 0, 0, false, 403);
+pub fn evaluate_request_949_blocking_evaluation(next: map<string>) -> map<string> {
+    next = engine_bundle::apply_rule(next, 949052, 0, false, ["1", "", "", "TX", "BLOCKING_PARANOIA_LEVEL"], 769, 11, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 949152, 0, false, ["1", "", "", "TX", "DETECTION_PARANOIA_LEVEL"], 769, 11, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 949053, 0, false, ["2", "", "", "TX", "BLOCKING_PARANOIA_LEVEL"], 769, 11, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 949153, 0, false, ["2", "", "", "TX", "DETECTION_PARANOIA_LEVEL"], 769, 11, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 949054, 0, false, ["3", "", "", "TX", "BLOCKING_PARANOIA_LEVEL"], 769, 11, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 949154, 0, false, ["3", "", "", "TX", "DETECTION_PARANOIA_LEVEL"], 769, 11, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 949055, 0, false, ["4", "", "", "TX", "BLOCKING_PARANOIA_LEVEL"], 769, 11, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 949155, 0, false, ["4", "", "", "TX", "DETECTION_PARANOIA_LEVEL"], 769, 11, 0, false, 403);
     next = engine_bundle::apply_action(next, 2);
     next = engine_bundle::apply_action(next, 2);
-    next = engine_bundle::apply_rule(next, 949060, 2, 0, false, ["@ge", "1", "", "", "TX", "BLOCKING_PARANOIA_LEVEL", "TX:BLOCKING_PARANOIA_LEVEL"], 1, 11, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 949160, 2, 0, false, ["@ge", "1", "", "", "TX", "DETECTION_PARANOIA_LEVEL", "TX:DETECTION_PARANOIA_LEVEL"], 1, 11, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 949061, 2, 0, false, ["@ge", "2", "", "", "TX", "BLOCKING_PARANOIA_LEVEL", "TX:BLOCKING_PARANOIA_LEVEL"], 1, 11, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 949161, 2, 0, false, ["@ge", "2", "", "", "TX", "DETECTION_PARANOIA_LEVEL", "TX:DETECTION_PARANOIA_LEVEL"], 1, 11, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 949062, 2, 0, false, ["@ge", "3", "", "", "TX", "BLOCKING_PARANOIA_LEVEL", "TX:BLOCKING_PARANOIA_LEVEL"], 1, 11, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 949162, 2, 0, false, ["@ge", "3", "", "", "TX", "DETECTION_PARANOIA_LEVEL", "TX:DETECTION_PARANOIA_LEVEL"], 1, 11, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 949063, 2, 0, false, ["@ge", "4", "", "", "TX", "BLOCKING_PARANOIA_LEVEL", "TX:BLOCKING_PARANOIA_LEVEL"], 1, 11, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 949163, 2, 0, false, ["@ge", "4", "", "", "TX", "DETECTION_PARANOIA_LEVEL", "TX:DETECTION_PARANOIA_LEVEL"], 1, 11, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 949060, 0, false, ["1", "", "", "TX", "BLOCKING_PARANOIA_LEVEL"], 769, 11, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 949160, 0, false, ["1", "", "", "TX", "DETECTION_PARANOIA_LEVEL"], 769, 11, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 949061, 0, false, ["2", "", "", "TX", "BLOCKING_PARANOIA_LEVEL"], 769, 11, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 949161, 0, false, ["2", "", "", "TX", "DETECTION_PARANOIA_LEVEL"], 769, 11, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 949062, 0, false, ["3", "", "", "TX", "BLOCKING_PARANOIA_LEVEL"], 769, 11, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 949162, 0, false, ["3", "", "", "TX", "DETECTION_PARANOIA_LEVEL"], 769, 11, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 949063, 0, false, ["4", "", "", "TX", "BLOCKING_PARANOIA_LEVEL"], 769, 11, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 949163, 0, false, ["4", "", "", "TX", "DETECTION_PARANOIA_LEVEL"], 769, 11, 0, false, 403);
     next = engine_bundle::apply_marker(next, "BEGIN-REQUEST-BLOCKING-EVAL");
-    next = engine_bundle::apply_rule(next, 949111, 1, 0, true, ["@ge", "%{tx.inbound_anomaly_score_threshold}", "", "Inbound Anomaly Score Exceeded in phase 1 (Total Score: %{TX.BLOCKING_INBOUND_ANOMALY_SCORE})", "TX", "BLOCKING_INBOUND_ANOMALY_SCORE", "TX:BLOCKING_INBOUND_ANOMALY_SCORE"], 1, 11, 0, 0, true, 403);
-    next = engine_bundle::apply_rule(next, 949111, 0, 1, false, ["@eq", "1", "", "", "TX", "EARLY_BLOCKING", "TX:EARLY_BLOCKING"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 949110, 2, 0, false, ["@ge", "%{tx.inbound_anomaly_score_threshold}", "", "Inbound Anomaly Score Exceeded (Total Score: %{TX.BLOCKING_INBOUND_ANOMALY_SCORE})", "TX", "BLOCKING_INBOUND_ANOMALY_SCORE", "TX:BLOCKING_INBOUND_ANOMALY_SCORE"], 1, 11, 0, 0, true, 403);
-    next = engine_bundle::apply_rule(next, 949011, 1, 0, false, ["@lt", "1", "END-REQUEST-949-BLOCKING-EVALUATION", "", "TX", "DETECTION_PARANOIA_LEVEL", "TX:DETECTION_PARANOIA_LEVEL"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 949012, 2, 0, false, ["@lt", "1", "END-REQUEST-949-BLOCKING-EVALUATION", "", "TX", "DETECTION_PARANOIA_LEVEL", "TX:DETECTION_PARANOIA_LEVEL"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 949013, 1, 0, false, ["@lt", "2", "END-REQUEST-949-BLOCKING-EVALUATION", "", "TX", "DETECTION_PARANOIA_LEVEL", "TX:DETECTION_PARANOIA_LEVEL"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 949014, 2, 0, false, ["@lt", "2", "END-REQUEST-949-BLOCKING-EVALUATION", "", "TX", "DETECTION_PARANOIA_LEVEL", "TX:DETECTION_PARANOIA_LEVEL"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 949015, 1, 0, false, ["@lt", "3", "END-REQUEST-949-BLOCKING-EVALUATION", "", "TX", "DETECTION_PARANOIA_LEVEL", "TX:DETECTION_PARANOIA_LEVEL"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 949016, 2, 0, false, ["@lt", "3", "END-REQUEST-949-BLOCKING-EVALUATION", "", "TX", "DETECTION_PARANOIA_LEVEL", "TX:DETECTION_PARANOIA_LEVEL"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 949017, 1, 0, false, ["@lt", "4", "END-REQUEST-949-BLOCKING-EVALUATION", "", "TX", "DETECTION_PARANOIA_LEVEL", "TX:DETECTION_PARANOIA_LEVEL"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 949018, 2, 0, false, ["@lt", "4", "END-REQUEST-949-BLOCKING-EVALUATION", "", "TX", "DETECTION_PARANOIA_LEVEL", "TX:DETECTION_PARANOIA_LEVEL"], 1, 0, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 949111, 0, true, ["tx.inbound_anomaly_score_threshold", "", "Inbound Anomaly Score Exceeded in phase 1 (Total Score: %{TX.BLOCKING_INBOUND_ANOMALY_SCORE})", "TX", "BLOCKING_INBOUND_ANOMALY_SCORE"], 4865, 11, 0, true, 403);
+    next = engine_bundle::apply_rule(next, 949111, 1, false, ["1", "", "", "TX", "EARLY_BLOCKING"], 641, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 949110, 0, false, ["tx.inbound_anomaly_score_threshold", "", "Inbound Anomaly Score Exceeded (Total Score: %{TX.BLOCKING_INBOUND_ANOMALY_SCORE})", "TX", "BLOCKING_INBOUND_ANOMALY_SCORE"], 4865, 11, 0, true, 403);
+    next = engine_bundle::apply_rule(next, 949011, 0, false, ["1", "END-REQUEST-949-BLOCKING-EVALUATION", "", "TX", "DETECTION_PARANOIA_LEVEL"], 705, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 949012, 0, false, ["1", "END-REQUEST-949-BLOCKING-EVALUATION", "", "TX", "DETECTION_PARANOIA_LEVEL"], 705, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 949013, 0, false, ["2", "END-REQUEST-949-BLOCKING-EVALUATION", "", "TX", "DETECTION_PARANOIA_LEVEL"], 705, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 949014, 0, false, ["2", "END-REQUEST-949-BLOCKING-EVALUATION", "", "TX", "DETECTION_PARANOIA_LEVEL"], 705, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 949015, 0, false, ["3", "END-REQUEST-949-BLOCKING-EVALUATION", "", "TX", "DETECTION_PARANOIA_LEVEL"], 705, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 949016, 0, false, ["3", "END-REQUEST-949-BLOCKING-EVALUATION", "", "TX", "DETECTION_PARANOIA_LEVEL"], 705, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 949017, 0, false, ["4", "END-REQUEST-949-BLOCKING-EVALUATION", "", "TX", "DETECTION_PARANOIA_LEVEL"], 705, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 949018, 0, false, ["4", "END-REQUEST-949-BLOCKING-EVALUATION", "", "TX", "DETECTION_PARANOIA_LEVEL"], 705, 0, 0, false, 403);
     next = engine_bundle::apply_marker(next, "END-REQUEST-949-BLOCKING-EVALUATION");
     next
 }

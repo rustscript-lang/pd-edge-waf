@@ -65,14 +65,22 @@ fn generated_rules_preserve_all_crs_regex_operators() {
     for category in categories {
         let generated = std::fs::read_to_string(root.join("rules").join(format!("{category}.rss")))
             .expect("generated category module should be readable");
-        generated_positive += generated
-            .lines()
-            .filter(|line| line.contains(", [\"@rx\", "))
-            .count();
-        generated_negative += generated
-            .lines()
-            .filter(|line| line.contains(", [\"!@rx\", "))
-            .count();
+        let operator_codes = generated.lines().filter_map(|line| {
+            line.split("], ")
+                .nth(1)?
+                .split(',')
+                .next()?
+                .parse::<usize>()
+                .ok()
+                .map(|target_spec| target_spec / 64)
+        });
+        for operator_code in operator_codes {
+            if operator_code == 1 {
+                generated_positive += 1;
+            } else if operator_code == 33 {
+                generated_negative += 1;
+            }
+        }
     }
     assert_eq!(generated_positive, 297);
     assert_eq!(generated_negative, 21);
@@ -98,15 +106,15 @@ fn generated_rules_and_runtime_use_typed_rule_abi() {
     let generated = std::fs::read_to_string(rules.join("request_911_method_enforcement.rss"))
         .expect("generated rule module should be readable");
     assert!(generated.contains(
-        "apply_rule(next, 911100, 1, 0, false, [\"!@within\", \"%{tx.allowed_methods}\", \"\", \"Method is not allowed by policy\", \"REQUEST_METHOD\", \"\", \"REQUEST_METHOD\"], 1, 0, 1, 5, false, 403)"
+        "apply_rule(next, 911100, 0, false, [\"tx.allowed_methods\", \"\", \"Method is not allowed by policy\", \"REQUEST_METHOD\", \"\"], 6721, 0, 5, false, 403)"
     ));
     let transformed =
         std::fs::read_to_string(rules.join("request_944_application_attack_java.rss"))
             .expect("generated transformed rule module should be readable");
     assert!(transformed.contains(
-        "apply_rule(next, 944250, 2, 0, false, [\"@rx\", \"java\\\\b.+(?:runtime|processbuilder)\", \"\", \"Remote Command Execution: Suspicious Java method detected\", \"ARGS\", \"\", \"ARGS\", \"ARGS_NAMES\", \"\", \"ARGS_NAMES\""
+        "apply_rule(next, 944250, 0, false, [\"java\\\\b.+(?:runtime|processbuilder)\", \"\", \"Remote Command Execution: Suspicious Java method detected\", \"ARGS\", \"\", \"ARGS_NAMES\", \"\""
     ));
-    assert!(transformed.contains("\"!REQUEST_HEADERS\", \"Cookie\", \"!REQUEST_HEADERS:Cookie\""));
+    assert!(transformed.contains("\"!REQUEST_HEADERS\", \"Cookie\""));
     assert!(!transformed.contains("ARGS|ARGS_NAMES|REQUEST_COOKIES"));
     assert!(!transformed.contains(
         "\"lowercase\", \"\", \"Remote Command Execution: Suspicious Java method detected\""
@@ -115,6 +123,18 @@ fn generated_rules_and_runtime_use_typed_rule_abi() {
     let engine = std::fs::read_to_string(rules.join("engine.rss"))
         .expect("engine source should be readable");
     assert!(!engine.contains("(&rule)["));
+
+    let bundle = std::fs::read_to_string(rules.join("engine_bundle.rss"))
+        .expect("engine bundle should be readable");
+    assert!(!bundle.contains("pub fn contains("));
+    assert!(!bundle.contains("pub fn lower("));
+    assert!(!bundle.contains("pub fn replace("));
+    assert!(bundle.contains("string_contains("));
+    assert!(bundle.contains("string_lower_ascii("));
+    assert!(bundle.contains("string_replace_literal("));
+    assert!(bundle.contains("re::replace("));
+    assert!(bundle.contains("operator: int"));
+    assert!(!bundle.contains("operator: string"));
 }
 
 #[test]
@@ -129,6 +149,8 @@ fn runtime_rule_abi_consumes_typed_transform_plan() {
         .expect("engine context source should be readable");
     assert!(!context.contains("re::split"));
     assert!(context.contains("string_split_literal"));
+    assert!(context.contains("3 + i * 2"));
+    assert!(!context.contains("4 + i * 2"));
 
     let operators = std::fs::read_to_string(root.join("rules/engine_operators.rss"))
         .expect("engine operators source should be readable");
@@ -155,7 +177,7 @@ fn enabled_ruleset_folds_common_exception_updates_into_rule_payloads() {
     assert!(!source.contains("update_target(next, 941100"));
     let rule = source
         .lines()
-        .find(|line| line.contains("apply_rule(next, 942290,"))
+        .find(|line| line.contains("apply_rule_619(next, 942290,"))
         .expect("enabled rule 942290 should exist");
-    assert!(rule.contains("\"!REQUEST_COOKIES\", \"__gads\", \"!REQUEST_COOKIES:__gads\""));
+    assert!(rule.contains("\"!REQUEST_COOKIES\", \"__gads\""));
 }

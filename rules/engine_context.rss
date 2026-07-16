@@ -16,7 +16,7 @@ pub fn selector_matches(selector: string, name: string) -> bool {
 }
 pub fn descriptor_excludes(text: [string], target_count: int, base: string, name: string) -> bool {
  let mut excluded: bool = false; let mut i: int = 0;
- while i < target_count { let position: int = 4 + i * 3; let raw_base: string = (&text)[position]; let excluded_selector: string = (&text)[position + 1]; if engine_text::starts(&raw_base, "!") && normalized_target_base(raw_base) == base && (excluded_selector == "" || (name != "" && selector_matches(excluded_selector, name))) { excluded = true; break; } i = i + 1; }
+ while i < target_count { let position: int = 3 + i * 2; let raw_base: string = (&text)[position]; let excluded_selector: string = (&text)[position + 1]; if engine_text::starts(&raw_base, "!") && normalized_target_base(raw_base) == base && (excluded_selector == "" || (name != "" && selector_matches(excluded_selector, name))) { excluded = true; break; } i = i + 1; }
  excluded
 }
 pub fn dynamic_descriptor_excludes(bases: [string], selectors: [string], base: string, name: string) -> bool {
@@ -31,6 +31,7 @@ pub fn pair_values(encoded: string, selector: string, names: bool, text: [string
  }
  out
 }
+
 pub fn one(state: map<string>, raw_base: string, name: string, text: [string], target_count: int, dynamic_bases: [string], dynamic_selectors: [string]) -> [string] {
  let counted: bool = engine_text::starts(&raw_base, "&"); let base: string = normalized_target_base(raw_base); let mut out: [string] = [];
  if base == "REQUEST_METHOD" { out = [ctx_get(&state, "method")]; }
@@ -53,9 +54,10 @@ pub fn one(state: map<string>, raw_base: string, name: string, text: [string], t
  else if base == "TX" { let tx_key: string = "tx." + engine_text::lower(&name); if !engine_text::starts(&name, "/") && (&state).has(&tx_key) { out = [(&state)[tx_key]]; } }
  if counted => { [out.length + ""] } else => { out }
 }
+
 pub fn ctx_targets(state: map<string>, text: [string], target_count: int, id: int) -> [string] {
  let mut out: [string] = []; let id_text: string = id + ""; let base_key: string = "exclude_base." + id_text; let has_dynamic: bool = (&state).has(&base_key); let encoded_bases: string = if has_dynamic => { (&state)[base_key] } else => { "" }; let encoded_selectors: string = if has_dynamic => { ctx_get(&state, "exclude_selector." + id_text) } else => { "" }; let dynamic_bases: [string] = if has_dynamic => { string_split_literal(encoded_bases, "\n") } else => { [] }; let dynamic_selectors: [string] = if has_dynamic => { string_split_literal(encoded_selectors, "\n") } else => { [] }; let mut i: int = 0;
- while i < target_count { let position: int = 4 + i * 3; let raw_base: string = (&text)[position]; let name: string = (&text)[position + 1]; let base: string = normalized_target_base(&raw_base); if !engine_text::starts(&raw_base, "!") && !descriptor_excludes(&text, target_count, &base, &name) && (!has_dynamic || !dynamic_descriptor_excludes(&dynamic_bases, &dynamic_selectors, &base, &name)) { let values: [string] = one(&state, raw_base, name, &text, target_count, &dynamic_bases, &dynamic_selectors); for j in 0..values.length { out[out.length] = (&values)[j]; } } i = i + 1; }
+ while i < target_count { let position: int = 3 + i * 2; let raw_base: string = (&text)[position]; let name: string = (&text)[position + 1]; let base: string = normalized_target_base(&raw_base); if !engine_text::starts(&raw_base, "!") && !descriptor_excludes(&text, target_count, &base, &name) && (!has_dynamic || !dynamic_descriptor_excludes(&dynamic_bases, &dynamic_selectors, &base, &name)) { let values: [string] = one(&state, raw_base, name, &text, target_count, &dynamic_bases, &dynamic_selectors); for j in 0..values.length { out[out.length] = (&values)[j]; } } i = i + 1; }
  out
 }
 pub fn ctx_update(state: map<string>, id: int, raw_base: string, selector: string) -> map<string> {

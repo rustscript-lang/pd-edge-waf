@@ -2,43 +2,42 @@
 // Executable RustScript; do not edit by hand.
 use engine_bundle;
 
-pub fn evaluate_request_901_initialization(state: map<string>) -> map<string> {
-    let mut next = state;
+pub fn evaluate_request_901_initialization(next: map<string>) -> map<string> {
     next = engine_bundle::component_signature(next, "OWASP_CRS/4.28.0");
-    next = engine_bundle::apply_rule(next, 901001, 1, 0, false, ["@eq", "0", "", "CRS is deployed without configuration! Please copy the crs-setup.conf.example template to crs-setup.conf, and include the crs-setup.conf file in your webserver configuration before including the CRS rules. See the INSTALL file in the CRS directory for detailed instructions", "&TX", "crs_setup_version", "&TX:crs_setup_version"], 1, 0, 0, 5, true, 500);
-    next = engine_bundle::apply_rule(next, 901100, 1, 0, false, ["@eq", "0", "", "", "&TX", "inbound_anomaly_score_threshold", "&TX:inbound_anomaly_score_threshold"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 901110, 1, 0, false, ["@eq", "0", "", "", "&TX", "outbound_anomaly_score_threshold", "&TX:outbound_anomaly_score_threshold"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 901111, 1, 0, false, ["@eq", "0", "", "", "&TX", "reporting_level", "&TX:reporting_level"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 901115, 1, 0, false, ["@eq", "0", "", "", "&TX", "early_blocking", "&TX:early_blocking"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 901120, 1, 0, false, ["@eq", "0", "", "", "&TX", "blocking_paranoia_level", "&TX:blocking_paranoia_level"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 901125, 1, 0, false, ["@eq", "0", "", "", "&TX", "detection_paranoia_level", "&TX:detection_paranoia_level"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 901130, 1, 0, false, ["@eq", "0", "", "", "&TX", "sampling_percentage", "&TX:sampling_percentage"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 901140, 1, 0, false, ["@eq", "0", "", "", "&TX", "critical_anomaly_score", "&TX:critical_anomaly_score"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 901141, 1, 0, false, ["@eq", "0", "", "", "&TX", "error_anomaly_score", "&TX:error_anomaly_score"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 901142, 1, 0, false, ["@eq", "0", "", "", "&TX", "warning_anomaly_score", "&TX:warning_anomaly_score"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 901143, 1, 0, false, ["@eq", "0", "", "", "&TX", "notice_anomaly_score", "&TX:notice_anomaly_score"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 901160, 1, 0, false, ["@eq", "0", "", "", "&TX", "allowed_methods", "&TX:allowed_methods"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 901162, 1, 0, false, ["@eq", "0", "", "", "&TX", "allowed_request_content_type", "&TX:allowed_request_content_type"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 901168, 1, 0, false, ["@eq", "0", "", "", "&TX", "allowed_request_content_type_charset", "&TX:allowed_request_content_type_charset"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 901163, 1, 0, false, ["@eq", "0", "", "", "&TX", "allowed_http_versions", "&TX:allowed_http_versions"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 901164, 1, 0, false, ["@eq", "0", "", "", "&TX", "restricted_extensions", "&TX:restricted_extensions"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 901165, 1, 0, false, ["@eq", "0", "", "", "&TX", "restricted_headers_basic", "&TX:restricted_headers_basic"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 901171, 1, 0, false, ["@eq", "0", "", "", "&TX", "restricted_headers_extended", "&TX:restricted_headers_extended"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 901510, 1, 0, false, ["@eq", "0", "", "", "&TX", "allow_method_override_parameter", "&TX:allow_method_override_parameter"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 901167, 1, 0, false, ["@eq", "0", "", "", "&TX", "enforce_bodyproc_urlencoded", "&TX:enforce_bodyproc_urlencoded"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 901169, 1, 0, false, ["@eq", "0", "", "", "&TX", "crs_validate_utf8_encoding", "&TX:crs_validate_utf8_encoding"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 901170, 1, 0, false, ["@eq", "0", "", "", "&TX", "crs_skip_response_analysis", "&TX:crs_skip_response_analysis"], 1, 0, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 901001, 0, false, ["0", "", "CRS is deployed without configuration! Please copy the crs-setup.conf.example template to crs-setup.conf, and include the crs-setup.conf file in your webserver configuration before including the CRS rules. See the INSTALL file in the CRS directory for detailed instructions", "&TX", "crs_setup_version"], 641, 0, 5, true, 500);
+    next = engine_bundle::apply_rule(next, 901100, 0, false, ["0", "", "", "&TX", "inbound_anomaly_score_threshold"], 641, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 901110, 0, false, ["0", "", "", "&TX", "outbound_anomaly_score_threshold"], 641, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 901111, 0, false, ["0", "", "", "&TX", "reporting_level"], 641, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 901115, 0, false, ["0", "", "", "&TX", "early_blocking"], 641, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 901120, 0, false, ["0", "", "", "&TX", "blocking_paranoia_level"], 641, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 901125, 0, false, ["0", "", "", "&TX", "detection_paranoia_level"], 641, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 901130, 0, false, ["0", "", "", "&TX", "sampling_percentage"], 641, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 901140, 0, false, ["0", "", "", "&TX", "critical_anomaly_score"], 641, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 901141, 0, false, ["0", "", "", "&TX", "error_anomaly_score"], 641, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 901142, 0, false, ["0", "", "", "&TX", "warning_anomaly_score"], 641, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 901143, 0, false, ["0", "", "", "&TX", "notice_anomaly_score"], 641, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 901160, 0, false, ["0", "", "", "&TX", "allowed_methods"], 641, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 901162, 0, false, ["0", "", "", "&TX", "allowed_request_content_type"], 641, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 901168, 0, false, ["0", "", "", "&TX", "allowed_request_content_type_charset"], 641, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 901163, 0, false, ["0", "", "", "&TX", "allowed_http_versions"], 641, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 901164, 0, false, ["0", "", "", "&TX", "restricted_extensions"], 641, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 901165, 0, false, ["0", "", "", "&TX", "restricted_headers_basic"], 641, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 901171, 0, false, ["0", "", "", "&TX", "restricted_headers_extended"], 641, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 901510, 0, false, ["0", "", "", "&TX", "allow_method_override_parameter"], 641, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 901167, 0, false, ["0", "", "", "&TX", "enforce_bodyproc_urlencoded"], 641, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 901169, 0, false, ["0", "", "", "&TX", "crs_validate_utf8_encoding"], 641, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 901170, 0, false, ["0", "", "", "&TX", "crs_skip_response_analysis"], 641, 0, 0, false, 403);
     next = engine_bundle::apply_action(next, 1);
-    next = engine_bundle::apply_rule(next, 901320, 1, 0, true, ["@eq", "1", "", "", "&TX", "ENABLE_DEFAULT_COLLECTIONS", "&TX:ENABLE_DEFAULT_COLLECTIONS"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 901320, 0, 1, true, ["@eq", "1", "", "", "TX", "ENABLE_DEFAULT_COLLECTIONS", "TX:ENABLE_DEFAULT_COLLECTIONS"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 901320, 0, 2, false, ["@unconditionalMatch", "", "", "", "TX", "ua_hash", "TX:ua_hash"], 1, 6731, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 901340, 1, 0, false, ["!@rx", "(?:URLENCODED|MULTIPART|XML|JSON)", "", "Enabling body inspection", "REQBODY_PROCESSOR", "", "REQBODY_PROCESSOR"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 901350, 1, 0, true, ["@eq", "1", "", "Enabling forced body inspection for ASCII content", "TX", "enforce_bodyproc_urlencoded", "TX:enforce_bodyproc_urlencoded"], 1, 619, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 901350, 0, 1, false, ["!@rx", "(?:URLENCODED|MULTIPART|XML|JSON)", "", "", "REQBODY_PROCESSOR", "", "REQBODY_PROCESSOR"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 901400, 1, 0, false, ["@eq", "100", "END-SAMPLING", "", "TX", "sampling_percentage", "TX:sampling_percentage"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 901410, 1, 0, false, ["@rx", "^[a-f]*([0-9])[a-f]*([0-9])", "", "", "UNIQUE_ID", "", "UNIQUE_ID"], 1, 210, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 901450, 1, 0, false, ["!@lt", "%{tx.sampling_percentage}", "", "Sampling: Disable the rule engine based on sampling_percentage %{TX.sampling_percentage} and random number %{TX.sampling_rnd100}", "TX", "sampling_rnd100", "TX:sampling_rnd100"], 1, 0, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 901320, 0, true, ["1", "", "", "&TX", "ENABLE_DEFAULT_COLLECTIONS"], 641, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 901320, 1, true, ["1", "", "", "TX", "ENABLE_DEFAULT_COLLECTIONS"], 641, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 901320, 2, false, ["", "", "", "TX", "ua_hash"], 1089, 6731, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 901340, 0, false, ["(?:URLENCODED|MULTIPART|XML|JSON)", "", "Enabling body inspection", "REQBODY_PROCESSOR", ""], 2113, 0, 0, false, 403);
+    next = engine_bundle::apply_rule_619(next, 901350, 0, true, ["1", "", "Enabling forced body inspection for ASCII content", "TX", "enforce_bodyproc_urlencoded"], 641, 619, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 901350, 1, false, ["(?:URLENCODED|MULTIPART|XML|JSON)", "", "", "REQBODY_PROCESSOR", ""], 2113, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 901400, 0, false, ["100", "END-SAMPLING", "", "TX", "sampling_percentage"], 641, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 901410, 0, false, ["^[a-f]*([0-9])[a-f]*([0-9])", "", "", "UNIQUE_ID", ""], 65, 210, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 901450, 0, false, ["tx.sampling_percentage", "", "Sampling: Disable the rule engine based on sampling_percentage %{TX.sampling_percentage} and random number %{TX.sampling_rnd100}", "TX", "sampling_rnd100"], 6849, 0, 0, false, 403);
     next = engine_bundle::apply_marker(next, "END-SAMPLING");
-    next = engine_bundle::apply_rule(next, 901500, 1, 0, false, ["@lt", "%{tx.blocking_paranoia_level}", "", "Detection paranoia level configured is lower than the paranoia level itself. This is illegal. Blocking request. Aborting", "TX", "detection_paranoia_level", "TX:detection_paranoia_level"], 1, 11, 0, 0, true, 500);
+    next = engine_bundle::apply_rule(next, 901500, 0, false, ["tx.blocking_paranoia_level", "", "Detection paranoia level configured is lower than the paranoia level itself. This is illegal. Blocking request. Aborting", "TX", "detection_paranoia_level"], 4801, 11, 0, true, 500);
     next
 }

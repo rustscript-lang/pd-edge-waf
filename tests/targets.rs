@@ -26,10 +26,10 @@ let state: map<string> = {
     "exclude.123": ""
 };
 let text: [string] = [
-    "@rx", "", "", "",
-    "REQUEST_HEADERS", "", "REQUEST_HEADERS",
-    "!REQUEST_HEADERS", "Cookie", "!REQUEST_HEADERS:Cookie",
-    "&ARGS", "", "&ARGS"
+    "", "", "",
+    "REQUEST_HEADERS", "",
+    "!REQUEST_HEADERS", "Cookie",
+    "&ARGS", ""
 ];
 let values: [string] = ctx_targets(&state, &text, 3, 123);
 assert(values.length == 3);
@@ -59,8 +59,8 @@ assert(broad_remaining.length == 1);
 assert((&broad_remaining)[0] == "1");
 
 let regex_text: [string] = [
-    "@rx", "", "", "",
-    "REQUEST_HEADERS", "/^X-/", "REQUEST_HEADERS:/^X-/"
+    "", "", "",
+    "REQUEST_HEADERS", "/^X-/"
 ];
 let selected: [string] = ctx_targets(&broad_updated, &regex_text, 1, 124);
 assert(selected.length == 1);
@@ -68,8 +68,8 @@ assert((&selected)[0] == "selected");
 
 let complex_state: map<string> = { "request_headers": "X|Alt:Name=complex" };
 let complex_text: [string] = [
-    "@rx", "", "", "",
-    "REQUEST_HEADERS", "/^X\\|Alt:Name$/", "REQUEST_HEADERS:/^X\\|Alt:Name$/"
+    "", "", "",
+    "REQUEST_HEADERS", "/^X\\|Alt:Name$/"
 ];
 let complex_selected: [string] = ctx_targets(&complex_state, &complex_text, 1, 125);
 assert(complex_selected.length == 1);

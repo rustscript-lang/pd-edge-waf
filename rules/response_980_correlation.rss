@@ -2,31 +2,30 @@
 // Executable RustScript; do not edit by hand.
 use engine_bundle;
 
-pub fn evaluate_response_980_correlation(state: map<string>) -> map<string> {
-    let mut next = state;
+pub fn evaluate_response_980_correlation(next: map<string>) -> map<string> {
     next = engine_bundle::apply_action(next, 5);
-    next = engine_bundle::apply_rule(next, 980041, 5, 0, false, ["@eq", "0", "END-REPORTING", "", "TX", "REPORTING_LEVEL", "TX:REPORTING_LEVEL"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 980042, 5, 0, false, ["@ge", "5", "LOG-REPORTING", "", "TX", "REPORTING_LEVEL", "TX:REPORTING_LEVEL"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 980043, 5, 0, false, ["@eq", "0", "END-REPORTING", "", "TX", "DETECTION_ANOMALY_SCORE", "TX:DETECTION_ANOMALY_SCORE"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 980044, 5, 0, false, ["@ge", "%{tx.inbound_anomaly_score_threshold}", "LOG-REPORTING", "", "TX", "BLOCKING_INBOUND_ANOMALY_SCORE", "TX:BLOCKING_INBOUND_ANOMALY_SCORE"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 980045, 5, 0, false, ["@ge", "%{tx.outbound_anomaly_score_threshold}", "LOG-REPORTING", "", "TX", "BLOCKING_OUTBOUND_ANOMALY_SCORE", "TX:BLOCKING_OUTBOUND_ANOMALY_SCORE"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 980046, 5, 0, false, ["@lt", "2", "END-REPORTING", "", "TX", "REPORTING_LEVEL", "TX:REPORTING_LEVEL"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 980047, 5, 0, false, ["@ge", "%{tx.inbound_anomaly_score_threshold}", "LOG-REPORTING", "", "TX", "DETECTION_INBOUND_ANOMALY_SCORE", "TX:DETECTION_INBOUND_ANOMALY_SCORE"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 980048, 5, 0, false, ["@ge", "%{tx.outbound_anomaly_score_threshold}", "LOG-REPORTING", "", "TX", "DETECTION_OUTBOUND_ANOMALY_SCORE", "TX:DETECTION_OUTBOUND_ANOMALY_SCORE"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 980049, 5, 0, false, ["@lt", "3", "END-REPORTING", "", "TX", "REPORTING_LEVEL", "TX:REPORTING_LEVEL"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 980050, 5, 0, false, ["@gt", "0", "LOG-REPORTING", "", "TX", "BLOCKING_ANOMALY_SCORE", "TX:BLOCKING_ANOMALY_SCORE"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 980051, 5, 0, false, ["@lt", "4", "END-REPORTING", "", "TX", "REPORTING_LEVEL", "TX:REPORTING_LEVEL"], 1, 0, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 980041, 0, false, ["0", "END-REPORTING", "", "TX", "REPORTING_LEVEL"], 641, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 980042, 0, false, ["5", "LOG-REPORTING", "", "TX", "REPORTING_LEVEL"], 769, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 980043, 0, false, ["0", "END-REPORTING", "", "TX", "DETECTION_ANOMALY_SCORE"], 641, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 980044, 0, false, ["tx.inbound_anomaly_score_threshold", "LOG-REPORTING", "", "TX", "BLOCKING_INBOUND_ANOMALY_SCORE"], 4865, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 980045, 0, false, ["tx.outbound_anomaly_score_threshold", "LOG-REPORTING", "", "TX", "BLOCKING_OUTBOUND_ANOMALY_SCORE"], 4865, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 980046, 0, false, ["2", "END-REPORTING", "", "TX", "REPORTING_LEVEL"], 705, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 980047, 0, false, ["tx.inbound_anomaly_score_threshold", "LOG-REPORTING", "", "TX", "DETECTION_INBOUND_ANOMALY_SCORE"], 4865, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 980048, 0, false, ["tx.outbound_anomaly_score_threshold", "LOG-REPORTING", "", "TX", "DETECTION_OUTBOUND_ANOMALY_SCORE"], 4865, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 980049, 0, false, ["3", "END-REPORTING", "", "TX", "REPORTING_LEVEL"], 705, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 980050, 0, false, ["0", "LOG-REPORTING", "", "TX", "BLOCKING_ANOMALY_SCORE"], 833, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 980051, 0, false, ["4", "END-REPORTING", "", "TX", "REPORTING_LEVEL"], 705, 0, 0, false, 403);
     next = engine_bundle::apply_marker(next, "LOG-REPORTING");
     next = engine_bundle::apply_action(next, 5);
     next = engine_bundle::apply_marker(next, "END-REPORTING");
-    next = engine_bundle::apply_rule(next, 980011, 1, 0, false, ["@lt", "1", "END-RESPONSE-980-CORRELATION", "", "TX", "DETECTION_PARANOIA_LEVEL", "TX:DETECTION_PARANOIA_LEVEL"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 980012, 2, 0, false, ["@lt", "1", "END-RESPONSE-980-CORRELATION", "", "TX", "DETECTION_PARANOIA_LEVEL", "TX:DETECTION_PARANOIA_LEVEL"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 980013, 1, 0, false, ["@lt", "2", "END-RESPONSE-980-CORRELATION", "", "TX", "DETECTION_PARANOIA_LEVEL", "TX:DETECTION_PARANOIA_LEVEL"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 980014, 2, 0, false, ["@lt", "2", "END-RESPONSE-980-CORRELATION", "", "TX", "DETECTION_PARANOIA_LEVEL", "TX:DETECTION_PARANOIA_LEVEL"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 980015, 1, 0, false, ["@lt", "3", "END-RESPONSE-980-CORRELATION", "", "TX", "DETECTION_PARANOIA_LEVEL", "TX:DETECTION_PARANOIA_LEVEL"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 980016, 2, 0, false, ["@lt", "3", "END-RESPONSE-980-CORRELATION", "", "TX", "DETECTION_PARANOIA_LEVEL", "TX:DETECTION_PARANOIA_LEVEL"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 980017, 1, 0, false, ["@lt", "4", "END-RESPONSE-980-CORRELATION", "", "TX", "DETECTION_PARANOIA_LEVEL", "TX:DETECTION_PARANOIA_LEVEL"], 1, 0, 0, 0, false, 403);
-    next = engine_bundle::apply_rule(next, 980018, 2, 0, false, ["@lt", "4", "END-RESPONSE-980-CORRELATION", "", "TX", "DETECTION_PARANOIA_LEVEL", "TX:DETECTION_PARANOIA_LEVEL"], 1, 0, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 980011, 0, false, ["1", "END-RESPONSE-980-CORRELATION", "", "TX", "DETECTION_PARANOIA_LEVEL"], 705, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 980012, 0, false, ["1", "END-RESPONSE-980-CORRELATION", "", "TX", "DETECTION_PARANOIA_LEVEL"], 705, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 980013, 0, false, ["2", "END-RESPONSE-980-CORRELATION", "", "TX", "DETECTION_PARANOIA_LEVEL"], 705, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 980014, 0, false, ["2", "END-RESPONSE-980-CORRELATION", "", "TX", "DETECTION_PARANOIA_LEVEL"], 705, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 980015, 0, false, ["3", "END-RESPONSE-980-CORRELATION", "", "TX", "DETECTION_PARANOIA_LEVEL"], 705, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 980016, 0, false, ["3", "END-RESPONSE-980-CORRELATION", "", "TX", "DETECTION_PARANOIA_LEVEL"], 705, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 980017, 0, false, ["4", "END-RESPONSE-980-CORRELATION", "", "TX", "DETECTION_PARANOIA_LEVEL"], 705, 0, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 980018, 0, false, ["4", "END-RESPONSE-980-CORRELATION", "", "TX", "DETECTION_PARANOIA_LEVEL"], 705, 0, 0, false, 403);
     next = engine_bundle::apply_marker(next, "END-RESPONSE-980-CORRELATION");
     next
 }

@@ -64,8 +64,55 @@ assert(transforms("same", 11) == "same");
 assert(transforms("same", 14) == "same");
 assert(transforms("same", 18) == "same");
 assert(transforms("same", 20) == "same");
+assert(transforms("same", 0) == "same");
+assert(transforms("%3C+", 619) == "< ");
+assert(transforms("%3C+", 14955) == "< ");
+assert(transforms("%3C+", 20107) == "< ");
+assert(transforms("%3C\0", 15979) == "<");
+assert(transforms("%3C\0", 511627) == "<");
+assert(transforms("%3C +", 17003) == "<");
+assert(transforms("%3C/*x*/", 18027) == "< ");
 "ok";
 "#,
     );
     assert_eq!(result, Value::string("ok"));
+}
+
+#[test]
+fn specialized_plan_619_preserves_url_decode_rule_semantics() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let engine = std::fs::read_to_string(root.join("rules/engine_bundle.rss"))
+        .expect("engine bundle source should be readable");
+    let source = format!(
+        r#"{engine}
+let encoded: map<string> = new_state(
+    "GET", "/", "q=%3C", "HTTP/1.1", "192.0.2.10",
+    {{}}, {{ "q": "%3C" }}, ""
+);
+let blocked: map<string> = apply_rule_619(
+    encoded, 1, 0, false,
+    ["<", "", "decoded", "ARGS", ""],
+    65, 619, 5, false, 403
+);
+assert((&blocked)["blocked"] == "1");
+let plain: map<string> = new_state(
+    "GET", "/", "q=plain", "HTTP/1.1", "192.0.2.10",
+    {{}}, {{ "q": "plain" }}, ""
+);
+let allowed: map<string> = apply_rule_619(
+    plain, 2, 0, false,
+    ["<", "", "decoded", "ARGS", ""],
+    65, 619, 5, false, 403
+);
+assert((&allowed)["blocked"] == "0");
+"ok";
+"#
+    );
+    let compiled = vm::compile_source(&source).expect("specialized plan fixture should compile");
+    let mut vm = Vm::new(compiled.program);
+    assert_eq!(
+        vm.run().expect("specialized plan fixture should execute"),
+        VmStatus::Halted
+    );
+    assert_eq!(vm.stack().last(), Some(&Value::string("ok")));
 }

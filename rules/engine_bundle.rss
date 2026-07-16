@@ -3,11 +3,8 @@ use bytes;
 
 // bundled from engine_text.rss
 
-pub fn lower(value: string) -> string { string_lower_ascii(value) }
-pub fn contains(value: string, needle: string) -> bool { string_contains(value, needle) }
-pub fn replace(value: string, needle: string, replacement: string) -> string { string_replace_literal(value, needle, replacement) }
-pub fn starts(value: string, prefix: string) -> bool { prefix.length <= value.length && (&value)[0:prefix.length] == prefix }
-pub fn ends(value: string, suffix: string) -> bool { suffix.length <= value.length && (&value)[(value.length - suffix.length):value.length] == suffix }
+pub fn starts(value: string, prefix: string) -> bool { prefix.length <= value.length && string_contains(&value, &prefix) && (&value)[0:prefix.length] == prefix }
+pub fn ends(value: string, suffix: string) -> bool { suffix.length <= value.length && string_contains(&value, &suffix) && (&value)[(value.length - suffix.length):value.length] == suffix }
 pub fn number(value: string, fallback: int) -> int {
  let digits = "0123456789"; let mut out = 0; let mut valid = value.length > 0;
  for i in 0..value.length { let ch = (&value)[i:(i + 1)]; let mut digit = -1; for j in 0..10 { if ch == (&digits)[j:(j + 1)] { digit = j; break; } } if digit < 0 { valid = false; break; } out = out * 10 + digit; }
@@ -18,25 +15,43 @@ pub fn encode_map(values: map<string>) -> string {
  for i in 0..keys.length { let key: string = (&keys)[i]; out = out + key + "=" + (&values)[key] + "\n"; }
  out
 }
-pub fn transforms(value: string, encoded: int) -> string {
- let mut out = value;
- let mut plan = encoded;
- while plan > 0 {
-  let op = plan % 32;
-  plan = plan / 32;
-  if op == 4 || op == 8 || op == 19 { out = replace(out, "%27", "'"); out = replace(out, "%22", "\""); out = replace(out, "%20", " "); out = replace(out, "%3d", "="); out = replace(out, "%3D", "="); out = replace(out, "%3c", "<"); out = replace(out, "%3C", "<"); out = replace(out, "%3e", ">"); out = replace(out, "%3E", ">"); out = replace(out, "+", " "); }
-  else if op == 7 { out = replace(out, "&lt;", "<"); out = replace(out, "&gt;", ">"); out = replace(out, "&quot;", "\""); out = replace(out, "&#39;", "'"); }
-  else if op == 15 { out = replace(out, "\0", ""); }
-  else if op == 16 { out = re::replace("\\s+", out, ""); }
-  else if op == 3 { out = re::replace("\\s+", out, " "); }
-  else if op == 17 { out = re::replace("(?s)/\\*.*?\\*/", out, " "); }
-  else if op == 12 || op == 13 { out = replace(out, "\\", "/"); }
-  else if op == 2 { out = replace(out, "\\", ""); out = lower(out); }
-  else if op == 10 { out = lower(out); }
-  else if op == 9 { out = out.length + ""; }
-  else if op == 1 || op == 5 || op == 6 || op == 11 || op == 14 || op == 18 || op == 20 { out = out; }
- }
+fn transforms_generic(value: string, encoded: int) -> string {
+ let mut out: string = value;
+ let mut plan: int = encoded;
+  while plan > 0 {
+   let op = plan % 32;
+   plan = plan / 32;
+   if op == 4 || op == 8 || op == 19 {
+    if string_contains(&out, "%") || string_contains(&out, "+") {
+     out = string_replace_literal(out, "%27", "'");
+     out = string_replace_literal(out, "%22", "\"");
+     out = string_replace_literal(out, "%20", " ");
+     out = string_replace_literal(out, "%3d", "=");
+     out = string_replace_literal(out, "%3D", "=");
+     out = string_replace_literal(out, "%3c", "<");
+     out = string_replace_literal(out, "%3C", "<");
+     out = string_replace_literal(out, "%3e", ">");
+     out = string_replace_literal(out, "%3E", ">");
+     out = string_replace_literal(out, "+", " ");
+    }
+   }
+   else if op == 7 { if string_contains(&out, "&") { out = string_replace_literal(out, "&lt;", "<"); out = string_replace_literal(out, "&gt;", ">"); out = string_replace_literal(out, "&quot;", "\""); out = string_replace_literal(out, "&#39;", "'"); } }
+   else if op == 15 { if string_contains(&out, "\0") { out = string_replace_literal(out, "\0", ""); } }
+   else if op == 16 { out = re::replace("\\s+", out, ""); }
+   else if op == 3 { out = re::replace("\\s+", out, " "); }
+   else if op == 17 { if string_contains(&out, "/*") { out = re::replace("(?s)/\\*.*?\\*/", out, " "); } }
+   else if op == 12 || op == 13 { if string_contains(&out, "\\") { out = string_replace_literal(out, "\\", "/"); } }
+   else if op == 2 { if string_contains(&out, "\\") { out = string_replace_literal(out, "\\", ""); } out = string_lower_ascii(out); }
+   else if op == 10 { out = string_lower_ascii(out); }
+   else if op == 9 { out = out.length + ""; }
+   else if op == 1 || op == 5 || op == 6 || op == 11 || op == 14 || op == 18 || op == 20 { out = out; }
+  }
  out
+}
+pub fn transforms(value: string, encoded: int) -> string {
+ if encoded == 0 || encoded == 11 || encoded == 171 => { value }
+ else if encoded == 10 || encoded == 331 => { string_lower_ascii(value) }
+ else => { transforms_generic(value, encoded) }
 }
 
 // bundled from engine_context.rss
@@ -52,11 +67,11 @@ pub fn normalized_target_base(raw: string) -> string {
  if starts(&positive, "&") => { (&positive)[1:positive.length] } else => { positive }
 }
 pub fn selector_matches(selector: string, name: string) -> bool {
- selector == "" || lower(&name) == lower(&selector) || (selector.length > 2 && (&selector)[0:1] == "/" && re::match((&selector)[1:(selector.length - 1)], &name))
+ selector == "" || string_lower_ascii(&name) == string_lower_ascii(&selector) || (selector.length > 2 && (&selector)[0:1] == "/" && re::match((&selector)[1:(selector.length - 1)], &name))
 }
 pub fn descriptor_excludes(text: [string], target_count: int, base: string, name: string) -> bool {
  let mut excluded: bool = false; let mut i: int = 0;
- while i < target_count { let position: int = 4 + i * 3; let raw_base: string = (&text)[position]; let excluded_selector: string = (&text)[position + 1]; if starts(&raw_base, "!") && normalized_target_base(raw_base) == base && (excluded_selector == "" || (name != "" && selector_matches(excluded_selector, name))) { excluded = true; break; } i = i + 1; }
+ while i < target_count { let position: int = 3 + i * 2; let raw_base: string = (&text)[position]; let excluded_selector: string = (&text)[position + 1]; if starts(&raw_base, "!") && normalized_target_base(raw_base) == base && (excluded_selector == "" || (name != "" && selector_matches(excluded_selector, name))) { excluded = true; break; } i = i + 1; }
  excluded
 }
 pub fn dynamic_descriptor_excludes(bases: [string], selectors: [string], base: string, name: string) -> bool {
@@ -71,6 +86,7 @@ pub fn pair_values(encoded: string, selector: string, names: bool, text: [string
  }
  out
 }
+
 pub fn one(state: map<string>, raw_base: string, name: string, text: [string], target_count: int, dynamic_bases: [string], dynamic_selectors: [string]) -> [string] {
  let counted: bool = starts(&raw_base, "&"); let base: string = normalized_target_base(raw_base); let mut out: [string] = [];
  if base == "REQUEST_METHOD" { out = [ctx_get(&state, "method")]; }
@@ -90,12 +106,13 @@ pub fn one(state: map<string>, raw_base: string, name: string, text: [string], t
  else if base == "RESPONSE_BODY" { out = [ctx_get(&state, "response_body")]; }
  else if base == "RESPONSE_STATUS" { out = [ctx_get(&state, "response_status")]; }
  else if base == "RESPONSE_HEADERS" { out = pair_values(ctx_get(&state, "response_headers"), name, false, &text, target_count, &base, &dynamic_bases, &dynamic_selectors); }
- else if base == "TX" { let tx_key: string = "tx." + lower(&name); if !starts(&name, "/") && (&state).has(&tx_key) { out = [(&state)[tx_key]]; } }
+ else if base == "TX" { let tx_key: string = "tx." + string_lower_ascii(&name); if !starts(&name, "/") && (&state).has(&tx_key) { out = [(&state)[tx_key]]; } }
  if counted => { [out.length + ""] } else => { out }
 }
+
 pub fn ctx_targets(state: map<string>, text: [string], target_count: int, id: int) -> [string] {
  let mut out: [string] = []; let id_text: string = id + ""; let base_key: string = "exclude_base." + id_text; let has_dynamic: bool = (&state).has(&base_key); let encoded_bases: string = if has_dynamic => { (&state)[base_key] } else => { "" }; let encoded_selectors: string = if has_dynamic => { ctx_get(&state, "exclude_selector." + id_text) } else => { "" }; let dynamic_bases: [string] = if has_dynamic => { string_split_literal(encoded_bases, "\n") } else => { [] }; let dynamic_selectors: [string] = if has_dynamic => { string_split_literal(encoded_selectors, "\n") } else => { [] }; let mut i: int = 0;
- while i < target_count { let position: int = 4 + i * 3; let raw_base: string = (&text)[position]; let name: string = (&text)[position + 1]; let base: string = normalized_target_base(&raw_base); if !starts(&raw_base, "!") && !descriptor_excludes(&text, target_count, &base, &name) && (!has_dynamic || !dynamic_descriptor_excludes(&dynamic_bases, &dynamic_selectors, &base, &name)) { let values: [string] = one(&state, raw_base, name, &text, target_count, &dynamic_bases, &dynamic_selectors); for j in 0..values.length { out[out.length] = (&values)[j]; } } i = i + 1; }
+ while i < target_count { let position: int = 3 + i * 2; let raw_base: string = (&text)[position]; let name: string = (&text)[position + 1]; let base: string = normalized_target_base(&raw_base); if !starts(&raw_base, "!") && !descriptor_excludes(&text, target_count, &base, &name) && (!has_dynamic || !dynamic_descriptor_excludes(&dynamic_bases, &dynamic_selectors, &base, &name)) { let values: [string] = one(&state, raw_base, name, &text, target_count, &dynamic_bases, &dynamic_selectors); for j in 0..values.length { out[out.length] = (&values)[j]; } } i = i + 1; }
  out
 }
 pub fn ctx_update(state: map<string>, id: int, raw_base: string, selector: string) -> map<string> {
@@ -108,31 +125,31 @@ pub fn ctx_update(state: map<string>, id: int, raw_base: string, selector: strin
 // bundled from engine_operators.rss
 pub fn op_expand(state: map<string>, value: string) -> string {
  let mut out: string = value;
- if contains(&out, "%{") { let keys: [string] = (&state).keys; for i in 0..keys.length { let key: string = (&keys)[i]; if starts(&key, "tx.") { out = replace(out, "%{" + key + "}", (&state)[key]); } } }
+ if string_contains(&out, "%{") { let keys: [string] = (&state).keys; for i in 0..keys.length { let key: string = (&keys)[i]; if starts(&key, "tx.") { out = string_replace_literal(out, "%{" + key + "}", (&state)[key]); } } }
  out
 }
-pub fn sqli(value: string) -> bool { let text: string = lower(value); (contains(&text, " union ") && contains(&text, "select")) || contains(&text, "' or '") || contains(&text, "'or 1=1") || contains(&text, " or 1=1") || contains(&text, "sleep(") || contains(&text, "benchmark(") || contains(&text, "information_schema") }
-pub fn xss(value: string) -> bool { let text: string = lower(value); contains(&text, "<script") || contains(&text, "javascript:") || contains(&text, "onerror=") || contains(&text, "onload=") || (contains(&text, "<svg") && contains(&text, "on")) }
-pub fn phrase(pattern: string, value: string) -> bool { let phrases: [string] = if contains(&pattern, "\n") => { string_split_literal(pattern, "\n") } else => { string_split_literal(pattern, " ") }; let haystack: string = lower(value); let mut found = false; for i in 0..phrases.length { let item: string = lower((&phrases)[i]); if item != "" && contains(&haystack, item) { found = true; break; } } found }
-pub fn op_matches(state: map<string>, operator: string, argument: string, value: string) -> bool {
- let negated: bool = starts(&operator, "!"); let name: string = if negated => { (&operator)[1:operator.length] } else => { operator }; let expected: string = op_expand(&state, argument); let mut raw: bool = false;
- if name == "@rx" { raw = re::match(&expected, &value); }
- else if name == "@pm" || name == "@pmFromFile" { raw = phrase(&expected, &value); }
- else if name == "@detectSQLi" { raw = sqli(&value); }
- else if name == "@detectXSS" { raw = xss(&value); }
- else if name == "@contains" { raw = contains(&value, &expected); }
- else if name == "@beginsWith" { raw = starts(&value, &expected); }
- else if name == "@endsWith" { raw = ends(&value, &expected); }
- else if name == "@streq" { raw = value == expected; }
- else if name == "@within" { raw = contains(" " + expected + " ", " " + value + " "); }
- else if name == "@eq" { raw = number(&value, 0) == number(&expected, 0); }
- else if name == "@lt" { raw = number(&value, 0) < number(&expected, 0); }
- else if name == "@ge" { raw = number(&value, 0) >= number(&expected, 0); }
- else if name == "@gt" { raw = number(&value, 0) > number(&expected, 0); }
- else if name == "@validateUrlEncoding" { raw = !re::match("%(?:[^0-9A-Fa-f]|.[^0-9A-Fa-f]|$)", &value); }
- else if name == "@validateUtf8Encoding" || name == "@validateByteRange" { raw = false; }
- else if name == "@unconditionalMatch" { raw = true; }
- else if name == "@ipMatch" { raw = phrase(replace(&expected, ",", "\n"), &value); }
+pub fn sqli(value: string) -> bool { let text: string = string_lower_ascii(value); (string_contains(&text, " union ") && string_contains(&text, "select")) || string_contains(&text, "' or '") || string_contains(&text, "'or 1=1") || string_contains(&text, " or 1=1") || string_contains(&text, "sleep(") || string_contains(&text, "benchmark(") || string_contains(&text, "information_schema") }
+pub fn xss(value: string) -> bool { let text: string = string_lower_ascii(value); string_contains(&text, "<script") || string_contains(&text, "javascript:") || string_contains(&text, "onerror=") || string_contains(&text, "onload=") || (string_contains(&text, "<svg") && string_contains(&text, "on")) }
+pub fn phrase(pattern: string, value: string) -> bool { let phrases: [string] = if string_contains(&pattern, "\n") => { string_split_literal(pattern, "\n") } else => { string_split_literal(pattern, " ") }; let haystack: string = string_lower_ascii(value); let mut found = false; for i in 0..phrases.length { let item: string = string_lower_ascii((&phrases)[i]); if item != "" && string_contains(&haystack, item) { found = true; break; } } found }
+pub fn op_matches(state: map<string>, operator: int, argument: string, value: string) -> bool {
+ let expected = if operator >= 128 => { operator = operator - 128; if (&state).has(&argument) => { "." + (&state)[argument] } else => { ".%{" + argument + "}" } } else if operator >= 64 => { operator = operator - 64; if (&state).has(&argument) => { (&state)[argument] } else => { "%{" + argument + "}" } } else => { op_expand(&state, argument) }; let negated: bool = operator >= 32; let code: int = if negated => { operator - 32 } else => { operator }; let mut raw: bool = false;
+ if code == 1 { raw = re::match(&expected, &value); }
+ else if code == 2 { raw = phrase(&expected, &value); }
+ else if code == 3 { raw = sqli(&value); }
+ else if code == 4 { raw = xss(&value); }
+ else if code == 5 { raw = string_contains(&value, &expected); }
+ else if code == 6 { raw = starts(&value, &expected); }
+ else if code == 7 { raw = ends(&value, &expected); }
+ else if code == 8 { raw = value == expected; }
+ else if code == 9 { raw = string_contains(" " + expected + " ", " " + value + " "); }
+ else if code == 10 { raw = number(&value, 0) == number(&expected, 0); }
+ else if code == 11 { raw = number(&value, 0) < number(&expected, 0); }
+ else if code == 12 { raw = number(&value, 0) >= number(&expected, 0); }
+ else if code == 13 { raw = number(&value, 0) > number(&expected, 0); }
+ else if code == 14 { raw = !re::match("%(?:[^0-9A-Fa-f]|.[^0-9A-Fa-f]|$)", &value); }
+ else if code == 15 || code == 16 { raw = false; }
+ else if code == 17 { raw = true; }
+ else if code == 18 { raw = phrase(string_replace_literal(&expected, ",", "\n"), &value); }
  if negated => { !raw } else => { raw }
 }
 
@@ -152,6 +169,7 @@ pub fn new_state(method: string, path: string, query: string, protocol: string, 
     state["response_headers"] = "";
     state["response_body"] = "";
     state["phase"] = "1";
+    state["prefilter"] = "0";
     state["paranoia"] = "1";
     state["score"] = "0";
     state["outbound_score"] = "0";
@@ -192,14 +210,6 @@ pub fn new_state(method: string, path: string, query: string, protocol: string, 
     state
 }
 
-pub fn set_phase(state: map<string>, phase: int) -> map<string> {
-    ctx_set_phase(state, phase)
-}
-
-pub fn apply_action(state: map<string>, phase: int) -> map<string> {
-    state
-}
-
 pub fn apply_marker(state: map<string>, marker: string) -> map<string> {
     let mut s = state;
     if ctx_get(&s, "skip") == marker {
@@ -210,12 +220,6 @@ pub fn apply_marker(state: map<string>, marker: string) -> map<string> {
 
 pub fn update_target(state: map<string>, id: int, base: string, selector: string) -> map<string> {
     ctx_update(state, id, base, selector)
-}
-
-pub fn component_signature(state: map<string>, signature: string) -> map<string> {
-    let mut s = state;
-    s["tx.component_signature"] = signature;
-    s
 }
 
 // Match fields: id, score, disruptive, status, skip-after, message.
@@ -247,17 +251,17 @@ fn record(state: map<string>, matched: [string]) -> map<string> {
     s
 }
 
-pub fn apply_rule(state: map<string>, id: int, phase: int, chain_index: int, has_chain: bool, text: [string], target_count: int, transform_plan: int, paranoia: int, score: int, disruptive: bool, status: int) -> map<string> {
+pub fn apply_rule(state: map<string>, id: int, chain_index: int, has_chain: bool, text: [string], target_count: int, transform_plan: int, score: int, disruptive: bool, status: int) -> map<string> {
     let mut s = state;
-    let current_user = number(ctx_get(&s, "phase"), 1);
-    let skip_state = ctx_get(&s, "skip");
-    if (phase == 0 || phase == current_user) && paranoia <= number(ctx_get(&s, "paranoia"), 1) && skip_state == "" {
+    let operator: int = target_count / 64;
+    target_count = target_count - operator * 64;
+    if ctx_get(&s, "blocked") != "1" && ctx_get(&s, "skip") == "" {
     let mut matched = false;
     if chain_index == 0 || ctx_get(&s, "chain_matched") == "1" {
         let values: [string] = ctx_targets(&s, &text, target_count, id);
         for i in 0..values.length {
             let transformed: string = transforms((&values)[i], transform_plan);
-            if op_matches(&s, &(&text)[0], &(&text)[1], transformed) {
+            if op_matches(&s, operator, &(&text)[0], transformed) {
                 matched = true;
                 break;
             }
@@ -270,8 +274,8 @@ pub fn apply_rule(state: map<string>, id: int, phase: int, chain_index: int, has
         s["chain_score"] = score + "";
         s["chain_disruptive"] = if disruptive => { "1" } else => { "0" };
         s["chain_status"] = status + "";
-        s["chain_skip"] = (&text)[2];
-        s["chain_message"] = (&text)[3];
+        s["chain_skip"] = (&text)[1];
+        s["chain_message"] = (&text)[2];
     } else if chain_index > 0 {
         let ok = ctx_get(&s, "chain_matched") == "1" && matched;
         s["chain_matched"] = if ok => { "1" } else => { "0" };
@@ -290,7 +294,127 @@ pub fn apply_rule(state: map<string>, id: int, phase: int, chain_index: int, has
             s["chain_matched"] = "0";
         }
     } else if matched {
-        s = record(s, [id + "", score + "", if disruptive => { "1" } else => { "0" }, status + "", (&text)[2], (&text)[3]]);
+        s = record(s, [id + "", score + "", if disruptive => { "1" } else => { "0" }, status + "", (&text)[1], (&text)[2]]);
+    }
+    }
+    s
+}
+
+pub fn apply_rule_619(state: map<string>, id: int, chain_index: int, has_chain: bool, text: [string], target_count: int, transform_plan: int, score: int, disruptive: bool, status: int) -> map<string> {
+    let mut s = state;
+    if ctx_get(&s, "blocked") != "1" && ctx_get(&s, "skip") == "" {
+    let mut matched = false;
+    if chain_index == 0 || ctx_get(&s, "chain_matched") == "1" {
+        let values: [string] = ctx_targets(&s, &text, target_count % 64, id);
+        let decode_needles = ["%27", "%22", "%20", "%3d", "%3D", "%3c", "%3C", "%3e", "%3E", "+"];
+        let decode_replacements = ["'", "\"", " ", "=", "=", "<", "<", ">", ">", " "];
+        for i in 0..values.length {
+            let mut transformed: string = (&values)[i];
+            if string_contains(&transformed, "%") || string_contains(&transformed, "+") {
+                transformed = string_replace_literal(
+                    transformed,
+                    &decode_needles,
+                    &decode_replacements
+                );
+            }
+            if transform_plan == 18027 && string_contains(&transformed, "/*") {
+                transformed = re::replace("(?s)/\\*.*?\\*/", transformed, " ");
+            } else if (transform_plan == 511627 || transform_plan == 15979) && string_contains(&transformed, "\0") {
+                transformed = string_replace_literal(transformed, "\0", "");
+            } else if transform_plan == 17003 {
+                transformed = re::replace("\\s+", transformed, "");
+            }
+            if op_matches(&s, target_count / 64, &(&text)[0], transformed) {
+                matched = true;
+                break;
+            }
+        }
+    }
+    if chain_index == 0 && has_chain {
+        s["chain_active"] = "1";
+        s["chain_matched"] = if matched => { "1" } else => { "0" };
+        s["chain_id"] = id + "";
+        s["chain_score"] = score + "";
+        s["chain_disruptive"] = if disruptive => { "1" } else => { "0" };
+        s["chain_status"] = status + "";
+        s["chain_skip"] = (&text)[1];
+        s["chain_message"] = (&text)[2];
+    } else if chain_index > 0 {
+        let ok = ctx_get(&s, "chain_matched") == "1" && matched;
+        s["chain_matched"] = if ok => { "1" } else => { "0" };
+        if !has_chain {
+            if ctx_get(&s, "chain_active") == "1" && ok {
+                s = record(s, [
+                    ctx_get(&s, "chain_id"),
+                    ctx_get(&s, "chain_score"),
+                    ctx_get(&s, "chain_disruptive"),
+                    ctx_get(&s, "chain_status"),
+                    ctx_get(&s, "chain_skip"),
+                    ctx_get(&s, "chain_message")
+                ]);
+            }
+            s["chain_active"] = "0";
+            s["chain_matched"] = "0";
+        }
+    } else if matched {
+        s = record(s, [id + "", score + "", if disruptive => { "1" } else => { "0" }, status + "", (&text)[1], (&text)[2]]);
+    }
+    }
+    s
+}
+
+pub fn apply_rule_decode_comments(state: map<string>, id: int, chain_index: int, has_chain: bool, text: [string], target_count: int, transform_plan: int, score: int, disruptive: bool, status: int) -> map<string> {
+    let mut s = state;
+    if ctx_get(&s, "blocked") != "1" && ctx_get(&s, "skip") == "" {
+    let mut matched = false;
+    if chain_index == 0 || ctx_get(&s, "chain_matched") == "1" {
+        let values: [string] = ctx_targets(&s, &text, target_count % 64, id);
+        for i in 0..values.length {
+            let mut transformed: string = (&values)[i];
+            if string_contains(&transformed, "%") || string_contains(&transformed, "+") {
+                transformed = string_replace_literal(
+                    transformed,
+                    ["%27", "%22", "%20", "%3d", "%3D", "%3c", "%3C", "%3e", "%3E", "+"],
+                    ["'", "\"", " ", "=", "=", "<", "<", ">", ">", " "]
+                );
+            }
+            if string_contains(&transformed, "/*") {
+                transformed = re::replace("(?s)/\\*.*?\\*/", transformed, " ");
+            }
+            if op_matches(&s, target_count / 64, &(&text)[0], transformed) {
+                matched = true;
+                break;
+            }
+        }
+    }
+    if chain_index == 0 && has_chain {
+        s["chain_active"] = "1";
+        s["chain_matched"] = if matched => { "1" } else => { "0" };
+        s["chain_id"] = id + "";
+        s["chain_score"] = score + "";
+        s["chain_disruptive"] = if disruptive => { "1" } else => { "0" };
+        s["chain_status"] = status + "";
+        s["chain_skip"] = (&text)[1];
+        s["chain_message"] = (&text)[2];
+    } else if chain_index > 0 {
+        let ok = ctx_get(&s, "chain_matched") == "1" && matched;
+        s["chain_matched"] = if ok => { "1" } else => { "0" };
+        if !has_chain {
+            if ctx_get(&s, "chain_active") == "1" && ok {
+                s = record(s, [
+                    ctx_get(&s, "chain_id"),
+                    ctx_get(&s, "chain_score"),
+                    ctx_get(&s, "chain_disruptive"),
+                    ctx_get(&s, "chain_status"),
+                    ctx_get(&s, "chain_skip"),
+                    ctx_get(&s, "chain_message")
+                ]);
+            }
+            s["chain_active"] = "0";
+            s["chain_matched"] = "0";
+        }
+    } else if matched {
+        s = record(s, [id + "", score + "", if disruptive => { "1" } else => { "0" }, status + "", (&text)[1], (&text)[2]]);
     }
     }
     s
@@ -298,5 +422,5 @@ pub fn apply_rule(state: map<string>, id: int, phase: int, chain_index: int, has
 
 pub fn category_enabled(state: map<string>, category: string) -> bool {
     let enabled = ctx_get(&state, "enabled_ruleset");
-    ctx_get(&state, "blocked") != "1" && (enabled == "" || contains(" " + enabled + " ", " " + category + " "))
+    ctx_get(&state, "blocked") != "1" && (enabled == "" || string_contains(" " + enabled + " ", " " + category + " "))
 }

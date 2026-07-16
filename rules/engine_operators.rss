@@ -8,24 +8,24 @@ pub fn op_expand(state: map<string>, value: string) -> string {
 pub fn sqli(value: string) -> bool { let text: string = engine_text::lower(value); (engine_text::contains(&text, " union ") && engine_text::contains(&text, "select")) || engine_text::contains(&text, "' or '") || engine_text::contains(&text, "'or 1=1") || engine_text::contains(&text, " or 1=1") || engine_text::contains(&text, "sleep(") || engine_text::contains(&text, "benchmark(") || engine_text::contains(&text, "information_schema") }
 pub fn xss(value: string) -> bool { let text: string = engine_text::lower(value); engine_text::contains(&text, "<script") || engine_text::contains(&text, "javascript:") || engine_text::contains(&text, "onerror=") || engine_text::contains(&text, "onload=") || (engine_text::contains(&text, "<svg") && engine_text::contains(&text, "on")) }
 pub fn phrase(pattern: string, value: string) -> bool { let phrases: [string] = if engine_text::contains(&pattern, "\n") => { string_split_literal(pattern, "\n") } else => { string_split_literal(pattern, " ") }; let haystack: string = engine_text::lower(value); let mut found = false; for i in 0..phrases.length { let item: string = engine_text::lower((&phrases)[i]); if item != "" && engine_text::contains(&haystack, item) { found = true; break; } } found }
-pub fn op_matches(state: map<string>, operator: string, argument: string, value: string) -> bool {
- let negated: bool = engine_text::starts(&operator, "!"); let name: string = if negated => { (&operator)[1:operator.length] } else => { operator }; let expected: string = op_expand(&state, argument); let mut raw: bool = false;
- if name == "@rx" { raw = re::match(&expected, &value); }
- else if name == "@pm" || name == "@pmFromFile" { raw = phrase(&expected, &value); }
- else if name == "@detectSQLi" { raw = sqli(&value); }
- else if name == "@detectXSS" { raw = xss(&value); }
- else if name == "@contains" { raw = engine_text::contains(&value, &expected); }
- else if name == "@beginsWith" { raw = engine_text::starts(&value, &expected); }
- else if name == "@endsWith" { raw = engine_text::ends(&value, &expected); }
- else if name == "@streq" { raw = value == expected; }
- else if name == "@within" { raw = engine_text::contains(" " + expected + " ", " " + value + " "); }
- else if name == "@eq" { raw = engine_text::number(&value, 0) == engine_text::number(&expected, 0); }
- else if name == "@lt" { raw = engine_text::number(&value, 0) < engine_text::number(&expected, 0); }
- else if name == "@ge" { raw = engine_text::number(&value, 0) >= engine_text::number(&expected, 0); }
- else if name == "@gt" { raw = engine_text::number(&value, 0) > engine_text::number(&expected, 0); }
- else if name == "@validateUrlEncoding" { raw = !re::match("%(?:[^0-9A-Fa-f]|.[^0-9A-Fa-f]|$)", &value); }
- else if name == "@validateUtf8Encoding" || name == "@validateByteRange" { raw = false; }
- else if name == "@unconditionalMatch" { raw = true; }
- else if name == "@ipMatch" { raw = phrase(engine_text::replace(&expected, ",", "\n"), &value); }
+pub fn op_matches(state: map<string>, operator: int, argument: string, value: string) -> bool {
+ let expected = if operator >= 128 => { operator = operator - 128; if (&state).has(&argument) => { "." + (&state)[argument] } else => { ".%{" + argument + "}" } } else if operator >= 64 => { operator = operator - 64; if (&state).has(&argument) => { (&state)[argument] } else => { "%{" + argument + "}" } } else => { op_expand(&state, argument) }; let negated: bool = operator >= 32; let code: int = if negated => { operator - 32 } else => { operator }; let mut raw: bool = false;
+ if code == 1 { raw = re::match(&expected, &value); }
+ else if code == 2 { raw = phrase(&expected, &value); }
+ else if code == 3 { raw = sqli(&value); }
+ else if code == 4 { raw = xss(&value); }
+ else if code == 5 { raw = engine_text::contains(&value, &expected); }
+ else if code == 6 { raw = engine_text::starts(&value, &expected); }
+ else if code == 7 { raw = engine_text::ends(&value, &expected); }
+ else if code == 8 { raw = value == expected; }
+ else if code == 9 { raw = engine_text::contains(" " + expected + " ", " " + value + " "); }
+ else if code == 10 { raw = engine_text::number(&value, 0) == engine_text::number(&expected, 0); }
+ else if code == 11 { raw = engine_text::number(&value, 0) < engine_text::number(&expected, 0); }
+ else if code == 12 { raw = engine_text::number(&value, 0) >= engine_text::number(&expected, 0); }
+ else if code == 13 { raw = engine_text::number(&value, 0) > engine_text::number(&expected, 0); }
+ else if code == 14 { raw = !re::match("%(?:[^0-9A-Fa-f]|.[^0-9A-Fa-f]|$)", &value); }
+ else if code == 15 || code == 16 { raw = false; }
+ else if code == 17 { raw = true; }
+ else if code == 18 { raw = phrase(engine_text::replace(&expected, ",", "\n"), &value); }
  if negated => { !raw } else => { raw }
 }

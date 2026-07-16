@@ -58,6 +58,14 @@ let broad_remaining: [string] = ctx_targets(&broad_updated, &text, 4374531, 123)
 assert(broad_remaining.length == 1);
 assert((&broad_remaining)[0] == "1");
 
+let empty_state: map<string> = { "request_headers": "" };
+let empty_text: [string] = ["", "", "", "REQUEST_HEADERS", ""];
+let empty_values: [string] = ctx_targets(&empty_state, &empty_text, 1, 126);
+assert(empty_values.length == 0);
+let empty_count: [string] = ctx_targets(&empty_state, &empty_text, 32769, 126);
+assert(empty_count.length == 1);
+assert((&empty_count)[0] == "0");
+
 let regex_text: [string] = [
     "", "", "",
     "REQUEST_HEADERS", "/^X-/"

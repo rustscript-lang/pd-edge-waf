@@ -25,9 +25,11 @@ pub fn dynamic_descriptor_excludes(bases: [string], selectors: [string], base: s
  excluded
 }
 pub fn pair_values(encoded: string, selector: string, names: bool, text: [string], target_count: int, base: string, dynamic_bases: [string], dynamic_selectors: [string]) -> [string] {
- let lines: [string] = string_split_literal(encoded, "\n"); let mut out: [string] = [];
- for i in 0..lines.length { let line: string = (&lines)[i]; let pieces: [string] = string_split_literal(line, "=");
-  if pieces.length > 0 { let key: string = (&pieces)[0]; if selector_matches(selector, &key) && (target_count % 32768 < 16384 || !descriptor_excludes(&text, target_count, &base, &key)) && (dynamic_bases.length == 0 || !dynamic_descriptor_excludes(&dynamic_bases, &dynamic_selectors, &base, &key)) { out[out.length] = if names => { key } else if pieces.length > 1 => { (&pieces)[1] } else => { "" }; } }
+ let mut out: [string] = [];
+ if encoded != "" { let lines: [string] = string_split_literal(encoded, "\n");
+  for i in 0..lines.length { let line: string = (&lines)[i]; let pieces: [string] = string_split_literal(line, "=");
+   if pieces.length > 0 { let key: string = (&pieces)[0]; if selector_matches(selector, &key) && (target_count % 32768 < 16384 || !descriptor_excludes(&text, target_count, &base, &key)) && (dynamic_bases.length == 0 || !dynamic_descriptor_excludes(&dynamic_bases, &dynamic_selectors, &base, &key)) { out[out.length] = if names => { key } else if pieces.length > 1 => { (&pieces)[1] } else => { "" }; } }
+  }
  }
  out
 }

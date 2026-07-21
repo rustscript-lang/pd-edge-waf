@@ -461,12 +461,7 @@ def render_directive_call(
     if directive.kind == "SecRule":
         arguments = rule_arguments(directive, data_contents, target_updates)
         rendered = ", ".join(arguments)
-        if arguments[5] in {
-            "619", "14955", "15979", "17003", "18027", "20107", "511627"
-        }:
-            evaluator = "apply_rule_619"
-        else:
-            evaluator = "apply_rule"
+        evaluator = "apply_rule"
         return f"next = engine_bundle::{evaluator}(next, {rendered});"
     if directive.kind == "SecAction":
         return f"next = engine_bundle::apply_action(next, {directive.phase});"

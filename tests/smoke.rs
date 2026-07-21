@@ -178,7 +178,7 @@ fn enabled_ruleset_folds_common_exception_updates_into_rule_payloads() {
     assert!(!source.contains("update_target(next, 941100"));
     let rule = source
         .lines()
-        .find(|line| line.contains("apply_rule_619(next, 942290,"))
+        .find(|line| line.contains("apply_rule(next, 942290,"))
         .expect("enabled rule 942290 should exist");
     assert!(rule.contains("\"REQUEST_COOKIES\", \"__gads\""));
     assert!(rule.contains("], 409674, 619,"));

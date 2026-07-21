@@ -64,6 +64,7 @@ pub fn ctx_targets(state: map<string>, text: [string], target_count: int, id: in
 }
 pub fn ctx_update(state: map<string>, id: int, raw_base: string, selector: string) -> map<string> {
  let mut s = state; let id_text: string = id + ""; let base_key: string = "exclude_base." + id_text; let selector_key: string = "exclude_selector." + id_text;
+ s["has_dynamic_exclusions"] = "1";
  s[base_key] = ctx_get(&s, &base_key) + "\n" + normalized_target_base(raw_base) + "\n";
  s[selector_key] = ctx_get(&s, &selector_key) + "\n" + selector + "\n";
  s

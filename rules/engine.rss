@@ -166,16 +166,19 @@ pub fn apply_rule_619(state: map<string>, id: int, chain_index: int, has_chain: 
     let mut matched = false;
     if chain_index == 0 || engine_context::ctx_get(&s, "chain_matched") == "1" {
         let values: [string] = engine_context::ctx_targets(&s, &text, target_count, id);
-        let decode_needles = ["%27", "%22", "%20", "%3d", "%3D", "%3c", "%3C", "%3e", "%3E", "+"];
-        let decode_replacements = ["'", "\"", " ", "=", "=", "<", "<", ">", ">", " "];
         for i in 0..values.length {
             let mut transformed: string = (&values)[i];
             if engine_text::contains(&transformed, "%") || engine_text::contains(&transformed, "+") {
-                transformed = string_replace_literal(
-                    transformed,
-                    &decode_needles,
-                    &decode_replacements
-                );
+                transformed = string_replace_literal(transformed, "%27", "'");
+                transformed = string_replace_literal(transformed, "%22", "\"");
+                transformed = string_replace_literal(transformed, "%20", " ");
+                transformed = string_replace_literal(transformed, "%3d", "=");
+                transformed = string_replace_literal(transformed, "%3D", "=");
+                transformed = string_replace_literal(transformed, "%3c", "<");
+                transformed = string_replace_literal(transformed, "%3C", "<");
+                transformed = string_replace_literal(transformed, "%3e", ">");
+                transformed = string_replace_literal(transformed, "%3E", ">");
+                transformed = string_replace_literal(transformed, "+", " ");
             }
             if transform_plan == 18027 && engine_text::contains(&transformed, "/*") {
                 transformed = re::replace("(?s)/\\*.*?\\*/", transformed, " ");
@@ -234,11 +237,16 @@ pub fn apply_rule_decode_comments(state: map<string>, id: int, chain_index: int,
         for i in 0..values.length {
             let mut transformed: string = (&values)[i];
             if engine_text::contains(&transformed, "%") || engine_text::contains(&transformed, "+") {
-                transformed = string_replace_literal(
-                    transformed,
-                    ["%27", "%22", "%20", "%3d", "%3D", "%3c", "%3C", "%3e", "%3E", "+"],
-                    ["'", "\"", " ", "=", "=", "<", "<", ">", ">", " "]
-                );
+                transformed = string_replace_literal(transformed, "%27", "'");
+                transformed = string_replace_literal(transformed, "%22", "\"");
+                transformed = string_replace_literal(transformed, "%20", " ");
+                transformed = string_replace_literal(transformed, "%3d", "=");
+                transformed = string_replace_literal(transformed, "%3D", "=");
+                transformed = string_replace_literal(transformed, "%3c", "<");
+                transformed = string_replace_literal(transformed, "%3C", "<");
+                transformed = string_replace_literal(transformed, "%3e", ">");
+                transformed = string_replace_literal(transformed, "%3E", ">");
+                transformed = string_replace_literal(transformed, "+", " ");
             }
             if engine_text::contains(&transformed, "/*") {
                 transformed = re::replace("(?s)/\\*.*?\\*/", transformed, " ");

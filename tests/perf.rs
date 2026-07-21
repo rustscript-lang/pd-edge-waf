@@ -196,6 +196,7 @@ fn terminal_rank(terminal: &JitTraceTerminal) -> u8 {
         JitTraceTerminal::LoopBack => 0,
         JitTraceTerminal::BranchExit => 1,
         JitTraceTerminal::Halt => 2,
+        JitTraceTerminal::CallValue => 3,
     }
 }
 
@@ -623,7 +624,13 @@ fn run_default_ruleset_perf() {
         &config,
         &expected,
     );
-    let mut jit_vm = Vm::new(default_ruleset_program);
+    let mut jit_vm = Vm::new_with_jit_config(
+        default_ruleset_program.clone(),
+        JitConfig {
+            max_trace_len: 64,
+            ..JitConfig::default()
+        },
+    );
     jit_vm.set_jit_native_bridge_stats_enabled(true);
     let jit = measure_case(
         "default_ruleset_jit_perf",

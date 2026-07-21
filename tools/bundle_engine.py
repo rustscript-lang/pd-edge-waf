@@ -72,9 +72,7 @@ engine_bundle = re.sub(r"\blower\(", "string_lower_ascii(", engine_bundle)
 engine_bundle = re.sub(r"\bcontains\(", "string_contains(", engine_bundle)
 engine_bundle = re.sub(r"(?<!::)\breplace\(", "string_replace_literal(", engine_bundle)
 
-ruleset = specialize_rule_evaluators(
-    (rules / "ruleset.rss").read_text(encoding="utf-8")
-)
+ruleset = (rules / "ruleset.rss").read_text(encoding="utf-8")
 ruleset_lines = [line for line in ruleset.splitlines() if not line.startswith("use ")]
 ruleset_body = "\n".join(ruleset_lines).replace("engine_bundle::", "")
 for helper in ("set_phase", "apply_action", "component_signature"):

@@ -40,6 +40,16 @@ async fn pd_edge_entrypoint_forwards_benign_and_blocks_attacks() {
         compiled.program.local_count <= 256,
         "entrypoint must fit the standard VM local-slot format"
     );
+    assert!(
+        compiled
+            .program
+            .root_callable_bindings
+            .iter()
+            .all(|binding| (binding.local_slot as usize) < compiled.program.local_count),
+        "entrypoint root callable binding exceeds local frame: local_count={}, bindings={:?}",
+        compiled.program.local_count,
+        compiled.program.root_callable_bindings,
+    );
     let program = encode_program(&compiled.program).expect("WAF bytecode should encode");
 
     let upstream_hits = Arc::new(AtomicUsize::new(0));

@@ -650,11 +650,8 @@ def render_entry(
                 lines.append(f"    {call}")
             lines.extend(["    next", "}", ""])
 
-    def append_enabled_call(source: str, phase: int) -> None:
+    def category_condition(source: str) -> str:
         category = module_name(source)
-        evaluator = evaluators.get((source, phase))
-        if evaluator is None:
-            return
         condition = f'engine_bundle::category_enabled(&next, "{category}")'
         if category == "request_911_method_enforcement":
             condition += (
@@ -665,6 +662,13 @@ def render_entry(
             )
         elif category == "request_942_application_attack_sqli":
             condition += " && engine_bundle::sqli_category_prefilter(&next)"
+        return condition
+
+    def append_enabled_call(source: str, phase: int) -> None:
+        evaluator = evaluators.get((source, phase))
+        if evaluator is None:
+            return
+        condition = category_condition(source)
         lines.append(f"    if {condition} {{ next = {evaluator}(next); }}")
 
     lines.extend(
@@ -673,12 +677,27 @@ def render_entry(
         ]
     )
 
+    request_conditions = [
+        category_condition(source)
+        for source in grouped
+        if source.startswith("REQUEST-")
+        and any((source, phase) in evaluators for phase in (1, 2))
+    ]
+    if request_conditions:
+        lines.append(
+            "    if !(" + " || ".join(request_conditions)
+            + ") => { engine_bundle::ctx_set_phase(next, 2) } else => {"
+        )
+
     for phase in (1, 2):
         lines.append(f"    next = engine_bundle::ctx_set_phase(next, {phase});")
         for source in grouped:
             if source.startswith("REQUEST-"):
                 append_enabled_call(source, phase)
-    lines.extend(["    next", "}", ""])
+    lines.append("    next")
+    if request_conditions:
+        lines.append("    }")
+    lines.extend(["}", ""])
 
     lines.extend(
         [

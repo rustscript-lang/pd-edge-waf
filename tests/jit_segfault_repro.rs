@@ -57,7 +57,6 @@ fn jit_master_segfault_at_max_trace_len_256() {
         },
     );
     vm.set_jit_native_bridge_stats_enabled(true);
-    vm.set_jit_native_direct_links_enabled(false);
 
     for req_idx in 0..32usize {
         let prev = REQUEST_COUNT.fetch_add(1, Ordering::SeqCst);

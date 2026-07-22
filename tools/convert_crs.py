@@ -544,7 +544,7 @@ def render_plan_619_prefilter(
         *(rss_string(value) for value in descriptors),
     ]
     return (
-        "next = engine_bundle::apply_rule_619(next, -1, 0, false, "
+        "next = engine_bundle::apply_rule(next, -1, 0, false, "
         f"[{', '.join(text)}], {target_spec}, {transform_plan}, 0, false, 403);"
     )
 

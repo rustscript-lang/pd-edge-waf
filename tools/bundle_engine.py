@@ -31,29 +31,6 @@ def remove_function(source: str, name: str) -> str:
     return source[:line_start] + source[end:]
 
 
-def specialize_rule_evaluators(source: str) -> str:
-    evaluators = {
-        619: "apply_rule_619",
-        14955: "apply_rule_619",
-        15979: "apply_rule_619",
-        17003: "apply_rule_619",
-        18027: "apply_rule_619",
-        20107: "apply_rule_619",
-        511627: "apply_rule_619",
-    }
-    lines = []
-    for line in source.splitlines():
-        for plan, evaluator in evaluators.items():
-            if f", {plan}," in line:
-                line = line.replace(
-                    "engine_bundle::apply_rule(",
-                    f"engine_bundle::{evaluator}(",
-                    1,
-                )
-                break
-        lines.append(line)
-    return "\n".join(lines)
-
 
 root = Path(__file__).resolve().parents[1]
 rules = root / "rules"

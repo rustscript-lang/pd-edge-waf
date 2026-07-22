@@ -199,13 +199,29 @@ let attack: map<string> = new_state(
     {{ "q": "1 union select password" }},
     ""
 );
-assert(!sqli_category_prefilter(&benign));
-assert(sqli_category_prefilter(&attack));
+let path_attack: map<string> = new_state(
+    "GET",
+    "/admin/select-password",
+    "",
+    "HTTP/1.1",
+    "192.0.2.10",
+    {{ "host": "shop.example.test" }},
+    {{}},
+    ""
+);
+assert(!sqli_category_prefilter(&benign, false));
+assert(sqli_category_prefilter(&attack, false));
+assert(!sqli_query_rule_match(&benign));
+assert(sqli_query_rule_match(&attack));
+assert(!sqli_category_prefilter(&attack, true));
+assert(sqli_category_prefilter(&path_attack, false));
+assert(sqli_category_prefilter(&path_attack, true));
 "ok";
 "#
     );
     let compiled = vm::compile_source(&source).expect("prefilter fixture should compile");
     let mut vm = vm::Vm::new(compiled.program);
+
     assert_eq!(
         vm.run().expect("prefilter fixture should run"),
         vm::VmStatus::Halted

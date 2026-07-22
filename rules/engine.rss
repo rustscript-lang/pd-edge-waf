@@ -3,58 +3,58 @@ use engine_context;
 use engine_operators;
 
 pub fn new_state(method: string, path: string, query: string, protocol: string, client_ip: string, headers: map<string>, args: map<string>, body: string) -> map<string> {
-    let mut state: map<string> = {};
-    state["method"] = method;
-    state["path"] = path;
-    state["query"] = query;
-    state["protocol"] = if engine_text::starts(&protocol, "HTTP/") => { protocol } else => { "HTTP/" + protocol };
-    state["client_ip"] = client_ip;
-    state["request_headers"] = engine_text::encode_map(headers);
-    state["args"] = engine_text::encode_map(args);
-    state["request_body"] = body;
-    state["response_status"] = "0";
-    state["response_headers"] = "";
-    state["response_body"] = "";
-    state["phase"] = "1";
-    state["prefilter"] = "0";
-    state["paranoia"] = "1";
-    state["score"] = "0";
-    state["outbound_score"] = "0";
-    state["blocked"] = "0";
-    state["status"] = "403";
-    state["skip"] = "";
-    state["chain_active"] = "0";
-    state["chain_matched"] = "0";
-    state["matched_ids"] = "";
-    state["messages"] = "";
-    state["enabled_ruleset"] = "";
-    state["tx.crs_setup_version"] = "428";
-    state["tx.inbound_anomaly_score_threshold"] = "5";
-    state["tx.outbound_anomaly_score_threshold"] = "4";
-    state["tx.reporting_level"] = "4";
-    state["tx.early_blocking"] = "0";
-    state["tx.blocking_paranoia_level"] = "1";
-    state["tx.detection_paranoia_level"] = "1";
-    state["tx.sampling_percentage"] = "100";
-    state["tx.critical_anomaly_score"] = "5";
-    state["tx.error_anomaly_score"] = "4";
-    state["tx.warning_anomaly_score"] = "3";
-    state["tx.notice_anomaly_score"] = "2";
-    state["tx.allowed_methods"] = "GET HEAD POST OPTIONS";
-    state["tx.allowed_request_content_type"] = "|application/x-www-form-urlencoded| |multipart/form-data| |text/xml| |application/xml| |application/soap+xml| |application/json|";
-    state["tx.allowed_request_content_type_charset"] = "|utf-8| |iso-8859-1| |iso-8859-15| |windows-1252|";
-    state["tx.allowed_http_versions"] = "HTTP/1.0 HTTP/1.1 HTTP/2 HTTP/2.0 HTTP/3 HTTP/3.0";
-    state["tx.restricted_extensions"] = ".asa .asax .ascx .bak .bat .cfg .cmd .config .conf .db .dll .ini .key .log .pem .sh .sql .sqlite .swp .tmp";
-    state["tx.restricted_headers_basic"] = "content-encoding proxy lock-token content-range if x-http-method-override x-http-method x-method-override x-middleware-subrequest expect";
-    state["tx.restricted_headers_extended"] = "accept-charset";
-    state["tx.allow_method_override_parameter"] = "0";
-    state["tx.enforce_bodyproc_urlencoded"] = "0";
-    state["tx.crs_validate_utf8_encoding"] = "1";
-    state["tx.crs_skip_response_analysis"] = "0";
-    state["tx.enable_default_collections"] = "0";
-    state["tx.inbound_anomaly_score"] = "0";
-    state["tx.outbound_anomaly_score"] = "0";
-    state
+    {
+        "method": method,
+        "path": path,
+        "query": query,
+        "protocol": if engine_text::starts(&protocol, "HTTP/") => { protocol } else => { "HTTP/" + protocol },
+        "client_ip": client_ip,
+        "request_headers": engine_text::encode_map(headers),
+        "args": engine_text::encode_map(args),
+        "request_body": body,
+        "response_status": "0",
+        "response_headers": "",
+        "response_body": "",
+        "phase": "1",
+        "prefilter": "0",
+        "paranoia": "1",
+        "score": "0",
+        "outbound_score": "0",
+        "blocked": "0",
+        "status": "403",
+        "skip": "",
+        "chain_active": "0",
+        "chain_matched": "0",
+        "matched_ids": "",
+        "messages": "",
+        "enabled_ruleset": "",
+        "tx.crs_setup_version": "428",
+        "tx.inbound_anomaly_score_threshold": "5",
+        "tx.outbound_anomaly_score_threshold": "4",
+        "tx.reporting_level": "4",
+        "tx.early_blocking": "0",
+        "tx.blocking_paranoia_level": "1",
+        "tx.detection_paranoia_level": "1",
+        "tx.sampling_percentage": "100",
+        "tx.critical_anomaly_score": "5",
+        "tx.error_anomaly_score": "4",
+        "tx.warning_anomaly_score": "3",
+        "tx.notice_anomaly_score": "2",
+        "tx.allowed_methods": "GET HEAD POST OPTIONS",
+        "tx.allowed_request_content_type": "|application/x-www-form-urlencoded| |multipart/form-data| |text/xml| |application/xml| |application/soap+xml| |application/json|",
+        "tx.allowed_request_content_type_charset": "|utf-8| |iso-8859-1| |iso-8859-15| |windows-1252|",
+        "tx.allowed_http_versions": "HTTP/1.0 HTTP/1.1 HTTP/2 HTTP/2.0 HTTP/3 HTTP/3.0",
+        "tx.restricted_extensions": ".asa .asax .ascx .bak .bat .cfg .cmd .config .conf .db .dll .ini .key .log .pem .sh .sql .sqlite .swp .tmp",
+        "tx.restricted_headers_basic": "content-encoding proxy lock-token content-range if x-http-method-override x-http-method x-method-override x-middleware-subrequest expect",
+        "tx.restricted_headers_extended": "accept-charset",
+        "tx.allow_method_override_parameter": "0",
+        "tx.enforce_bodyproc_urlencoded": "0",
+        "tx.crs_validate_utf8_encoding": "1",
+        "tx.crs_skip_response_analysis": "0",
+        "tx.enable_default_collections": "0",
+        "tx.inbound_anomaly_score": "0",
+        "tx.outbound_anomaly_score": "0"
+    }
 }
 
 pub fn set_phase(state: map<string>, phase: int) -> map<string> {
@@ -84,7 +84,7 @@ pub fn component_signature(state: map<string>, signature: string) -> map<string>
 }
 
 // Match fields: id, score, disruptive, status, skip-after, message.
-fn record(state: map<string>, matched: [string]) -> map<string> {
+pub fn record_rule_match(state: map<string>, matched: [string]) -> map<string> {
     let mut s = state;
     let phase = engine_text::number(engine_context::ctx_get(&s, "phase"), 1);
     if engine_text::number((&matched)[0], -1) >= 0 {
@@ -143,7 +143,7 @@ pub fn apply_rule(state: map<string>, id: int, chain_index: int, has_chain: bool
         s["chain_matched"] = if ok => { "1" } else => { "0" };
         if !has_chain {
             if engine_context::ctx_get(&s, "chain_active") == "1" && ok {
-                s = record(s, [
+                s = record_rule_match(s, [
                     engine_context::ctx_get(&s, "chain_id"),
                     engine_context::ctx_get(&s, "chain_score"),
                     engine_context::ctx_get(&s, "chain_disruptive"),
@@ -156,7 +156,7 @@ pub fn apply_rule(state: map<string>, id: int, chain_index: int, has_chain: bool
             s["chain_matched"] = "0";
         }
     } else if matched {
-        s = record(s, [id + "", score + "", if disruptive => { "1" } else => { "0" }, status + "", (&text)[1], (&text)[2]]);
+        s = record_rule_match(s, [id + "", score + "", if disruptive => { "1" } else => { "0" }, status + "", (&text)[1], (&text)[2]]);
     }
     }
     s
@@ -211,7 +211,7 @@ pub fn apply_rule_619(state: map<string>, id: int, chain_index: int, has_chain: 
         s["chain_matched"] = if ok => { "1" } else => { "0" };
         if !has_chain {
             if engine_context::ctx_get(&s, "chain_active") == "1" && ok {
-                s = record(s, [
+                s = record_rule_match(s, [
                     engine_context::ctx_get(&s, "chain_id"),
                     engine_context::ctx_get(&s, "chain_score"),
                     engine_context::ctx_get(&s, "chain_disruptive"),
@@ -224,7 +224,7 @@ pub fn apply_rule_619(state: map<string>, id: int, chain_index: int, has_chain: 
             s["chain_matched"] = "0";
         }
     } else if matched {
-        s = record(s, [id + "", score + "", if disruptive => { "1" } else => { "0" }, status + "", (&text)[1], (&text)[2]]);
+        s = record_rule_match(s, [id + "", score + "", if disruptive => { "1" } else => { "0" }, status + "", (&text)[1], (&text)[2]]);
     }
     }
     s
@@ -273,7 +273,7 @@ pub fn apply_rule_decode_comments(state: map<string>, id: int, chain_index: int,
         s["chain_matched"] = if ok => { "1" } else => { "0" };
         if !has_chain {
             if engine_context::ctx_get(&s, "chain_active") == "1" && ok {
-                s = record(s, [
+                s = record_rule_match(s, [
                     engine_context::ctx_get(&s, "chain_id"),
                     engine_context::ctx_get(&s, "chain_score"),
                     engine_context::ctx_get(&s, "chain_disruptive"),
@@ -286,7 +286,7 @@ pub fn apply_rule_decode_comments(state: map<string>, id: int, chain_index: int,
             s["chain_matched"] = "0";
         }
     } else if matched {
-        s = record(s, [id + "", score + "", if disruptive => { "1" } else => { "0" }, status + "", (&text)[1], (&text)[2]]);
+        s = record_rule_match(s, [id + "", score + "", if disruptive => { "1" } else => { "0" }, status + "", (&text)[1], (&text)[2]]);
     }
     }
     s

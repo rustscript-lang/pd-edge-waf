@@ -39,7 +39,6 @@ jobs:
           WAF_PERF_BATCH_SIZE: "10"
           WAF_PERF_JIT_STABLE_REQUESTS: "12"
           WAF_PERF_JIT_MAX_WARMUP_REQUESTS: "128"
-          WAF_PERF_ENFORCE_TARGETS: "0"
         run: cargo test --release --test perf -- --ignored --nocapture --test-threads=1
       - name: Clippy
         run: cargo clippy --all-targets -- -D warnings

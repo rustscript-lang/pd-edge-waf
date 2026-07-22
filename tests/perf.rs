@@ -705,6 +705,25 @@ fn incremental_average(measured: &PerfStats, baseline: &PerfStats) -> Duration {
         .saturating_sub(baseline.average_request)
 }
 
+fn median_paired_ratio(numerators: &[Duration], denominators: &[Duration]) -> f64 {
+    assert_eq!(numerators.len(), denominators.len());
+    assert!(!numerators.is_empty());
+    let mut ratios = numerators
+        .iter()
+        .zip(denominators)
+        .map(|(numerator, denominator)| {
+            numerator.as_secs_f64() / denominator.as_secs_f64().max(f64::EPSILON)
+        })
+        .collect::<Vec<_>>();
+    ratios.sort_by(f64::total_cmp);
+    let midpoint = ratios.len() / 2;
+    if ratios.len() % 2 == 0 {
+        (ratios[midpoint - 1] + ratios[midpoint]) / 2.0
+    } else {
+        ratios[midpoint]
+    }
+}
+
 fn run_active_rule_workload_perf(label: &str, program: vm::Program, config: &PerfConfig) {
     let expected = Value::string("matched");
     println!(
@@ -760,45 +779,51 @@ fn run_active_rule_workload_perf(label: &str, program: vm::Program, config: &Per
         config.fixed_warmup_requests(),
     );
 
-    let mut jit_elapsed = Duration::ZERO;
-    let mut aot_elapsed = Duration::ZERO;
-    for batch in 0..config.measured_batches {
-        if batch % 2 == 0 {
-            jit_elapsed += run_batch(
+    let requests = config.measured_batches.saturating_mul(config.batch_size);
+    let mut jit_samples = Vec::with_capacity(requests);
+    let mut aot_samples = Vec::with_capacity(requests);
+    // Interleave every request and alternate ordering so runner load and thermal
+    // drift affect both modes symmetrically before taking the paired median.
+    for sample in 0..requests {
+        if sample % 2 == 0 {
+            jit_samples.push(run_batch(
                 &mut jit,
                 &expected,
                 &format!("active_{label}_jit"),
-                config.batch_size,
-            );
-            aot_elapsed += run_batch(
+                1,
+            ));
+            aot_samples.push(run_batch(
                 &mut aot,
                 &expected,
                 &format!("active_{label}_aot"),
-                config.batch_size,
-            );
+                1,
+            ));
         } else {
-            aot_elapsed += run_batch(
+            aot_samples.push(run_batch(
                 &mut aot,
                 &expected,
                 &format!("active_{label}_aot"),
-                config.batch_size,
-            );
-            jit_elapsed += run_batch(
+                1,
+            ));
+            jit_samples.push(run_batch(
                 &mut jit,
                 &expected,
                 &format!("active_{label}_jit"),
-                config.batch_size,
-            );
+                1,
+            ));
         }
     }
 
-    let requests = config.measured_batches.saturating_mul(config.batch_size);
+    let jit_elapsed = jit_samples.iter().copied().sum::<Duration>();
+    let aot_elapsed = aot_samples.iter().copied().sum::<Duration>();
     let jit_average = jit_elapsed.div_f64(requests as f64);
     let aot_average = aot_elapsed.div_f64(requests as f64);
     let aot_to_jit = aot_average.as_secs_f64() / jit_average.as_secs_f64().max(f64::EPSILON);
-    let targets_met = aot_to_jit <= 1.05 && jit_average <= Duration::from_millis(1);
+    let paired_median_ratio = median_paired_ratio(&aot_samples, &jit_samples);
+    let aot_regression = paired_median_ratio > 1.05;
+    let targets_met = !aot_regression && jit_average <= Duration::from_millis(1);
     println!(
-        "active_waf_comparison workload={label} requests={requests} interpreter_average_us={:.3} jit_average_us={:.3} aot_average_us={:.3} aot_to_jit_ratio={aot_to_jit:.3} aot_compile_ms={:.3} jit_under_1ms={} aot_under_1ms={} targets_met={targets_met}",
+        "active_waf_comparison workload={label} requests={requests} interpreter_average_us={:.3} jit_average_us={:.3} aot_average_us={:.3} aot_to_jit_ratio={aot_to_jit:.3} paired_median_aot_to_jit_ratio={paired_median_ratio:.3} aot_regression={aot_regression} aot_compile_ms={:.3} jit_under_1ms={} aot_under_1ms={} targets_met={targets_met}",
         interpreter.average_request.as_secs_f64() * 1_000_000.0,
         jit_average.as_secs_f64() * 1_000_000.0,
         aot_average.as_secs_f64() * 1_000_000.0,
@@ -811,8 +836,8 @@ fn run_active_rule_workload_perf(label: &str, program: vm::Program, config: &Per
         .unwrap_or(true);
     if enforce_targets {
         assert!(
-            aot_to_jit <= 1.05,
-            "active {label} AOT latency exceeds JIT tolerance: ratio={aot_to_jit:.3}"
+            !aot_regression,
+            "active {label} AOT latency exceeds JIT tolerance: paired_median_ratio={paired_median_ratio:.3}, aggregate_ratio={aot_to_jit:.3}"
         );
     }
 }
@@ -1027,6 +1052,23 @@ fn run_default_ruleset_perf() {
             "paired AOT latency must not exceed JIT by more than measurement tolerance: ratio={paired_ratio:.3}"
         );
     }
+}
+
+#[test]
+fn paired_ratio_uses_median_to_reject_outliers() {
+    let jit = [
+        Duration::from_millis(100),
+        Duration::from_millis(100),
+        Duration::from_millis(100),
+        Duration::from_millis(100),
+    ];
+    let aot = [
+        Duration::from_millis(90),
+        Duration::from_millis(100),
+        Duration::from_millis(110),
+        Duration::from_secs(10),
+    ];
+    assert!((median_paired_ratio(&aot, &jit) - 1.05).abs() < 1e-12);
 }
 
 #[test]

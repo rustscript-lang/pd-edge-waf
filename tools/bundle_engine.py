@@ -52,7 +52,12 @@ engine_bundle = re.sub(r"(?<!::)\breplace\(", "string_replace_literal(", engine_
 ruleset = (rules / "ruleset.rss").read_text(encoding="utf-8")
 ruleset_lines = [line for line in ruleset.splitlines() if not line.startswith("use ")]
 ruleset_body = "\n".join(ruleset_lines).replace("engine_bundle::", "")
-for helper in ("set_phase", "apply_action", "component_signature"):
+for helper in (
+    "set_phase",
+    "apply_action",
+    "component_signature",
+    "apply_rule_blob",
+):
     if re.search(rf"\b{helper}\(", ruleset_body) is None:
         engine_bundle = remove_function(engine_bundle, helper)
 (rules / "engine_bundle.rss").write_text(engine_bundle, encoding="utf-8")

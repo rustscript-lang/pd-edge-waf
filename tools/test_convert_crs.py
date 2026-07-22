@@ -183,10 +183,10 @@ class TransformPlanTests(unittest.TestCase):
         )
         self.assertNotIn("fn evaluate_request_999_common_exceptions_after", rendered)
         self.assertIn(
-            r"\t942290\t0\t0\t81986\t0\t0\t0\t403\tattack",
+            'apply_rule(next, 942290, 0, false, ["attack", "", "", '
+            '"REQUEST_COOKIES", "", "REQUEST_COOKIES", "_ga"], 81986,',
             rendered,
         )
-        self.assertIn(r"\tREQUEST_COOKIES\t\tREQUEST_COOKIES\t_ga", rendered)
         self.assertNotIn("update_target(next,", rendered)
         self.assertNotIn("941100", rendered)
 
@@ -278,10 +278,10 @@ class TransformPlanTests(unittest.TestCase):
         rendered = convert_crs.render_entry(
             [phase_one, phase_two], "4.28.0", {}, {"request_test"}
         )
-        phase_one = rendered.index(r"\t101\t")
-        phase_two = rendered.index(r"\t202\t")
+        phase_one = rendered.index("apply_rule(next, 101, 0, false")
+        phase_two = rendered.index("apply_rule(next, 202, 0, false")
         self.assertLess(phase_one, phase_two)
-        self.assertEqual(rendered.count("apply_rule_blob(next,"), 2)
+        self.assertNotIn("apply_rule_blob", rendered)
         self.assertIn("ctx_set_phase(next, 1)", rendered)
         self.assertIn("ctx_set_phase(next, 2)", rendered)
 
@@ -297,10 +297,44 @@ class TransformPlanTests(unittest.TestCase):
         rendered = convert_crs.render_entry(
             directives, "4.28.0", {}, {"request_test"}
         )
-        self.assertEqual(rendered.count("apply_rule_blob(next,"), 1)
-        self.assertIn(r"\t101\t", rendered)
-        self.assertIn(r"\t102\t", rendered)
-        self.assertNotIn("engine_bundle::apply_rule(next,", rendered)
+        self.assertNotIn(
+            'if engine_bundle::ctx_get(&next, "blocked") != "1"', rendered
+        )
+        self.assertIn("apply_rule(next, 101, 0, false", rendered)
+        self.assertIn("apply_rule(next, 102, 0, false", rendered)
+
+    def test_entry_collapses_skip_after_tail_behind_one_guard(self) -> None:
+        skip = convert_crs.Directive(
+            kind="SecRule", source="REQUEST-TEST.conf", source_line=1,
+            rule_id=101, phase=1, chain_index=0,
+            targets="TX:DETECTION_PARANOIA_LEVEL", operator="@lt", pattern="2",
+            actions="id:101,phase:1,skipAfter:END-TEST",
+        )
+        tail = convert_crs.Directive(
+            kind="SecRule", source="REQUEST-TEST.conf", source_line=2,
+            rule_id=102, phase=1, chain_index=0,
+            targets="ARGS", operator="@rx", pattern="attack",
+        )
+        marker = convert_crs.Directive(
+            kind="SecMarker", source="REQUEST-TEST.conf", source_line=3,
+            rule_id=-1, phase=0, chain_index=0, marker="END-TEST",
+        )
+        rendered = convert_crs.render_entry(
+            [skip, tail, marker], "4.28.0", {}, {"request_test"}
+        )
+        guard = 'if engine_bundle::ctx_get(&next, "skip") == "" {'
+        self.assertEqual(rendered.count(guard), 1)
+        self.assertLess(
+            rendered.index("apply_detection_paranoia_skip(next, 101"),
+            rendered.index(guard),
+        )
+        self.assertLess(
+            rendered.index(guard), rendered.index("apply_rule(next, 102")
+        )
+        self.assertLess(
+            rendered.index("apply_rule(next, 102"),
+            rendered.index('apply_marker(next, "END-TEST")'),
+        )
 
     def test_active_categories_use_generated_rule_evaluators_without_synthetic_matches(self) -> None:
         method_control = convert_crs.Directive(
@@ -329,9 +363,12 @@ class TransformPlanTests(unittest.TestCase):
                 "request_942_application_attack_sqli",
             },
         )
-        self.assertIn(r"\t911011\t", rendered)
-        self.assertIn(r"\t911100\t", rendered)
-        self.assertIn(r"\t942100\t", rendered)
+        self.assertIn(
+            "apply_detection_paranoia_skip(next, 911011, 1", rendered
+        )
+        self.assertIn("apply_rule(next, 911100, 0, false", rendered)
+        self.assertIn("apply_rule(next, 942100, 0, false", rendered)
+        self.assertNotIn("apply_rule_blob", rendered)
         self.assertNotIn("sqli_category_prefilter", rendered)
         self.assertNotIn("sqli_query_rule_match", rendered)
         self.assertNotIn(
@@ -359,8 +396,8 @@ class TransformPlanTests(unittest.TestCase):
         rendered = convert_crs.render_entry(
             [directive], "4.28.0", {}, {"modsecurity_recommended"}
         )
-        self.assertIn(r"R\tmodsecurity_recommended\t200007\t", rendered)
-        self.assertIn("apply_rule_blob(next,", rendered)
+        self.assertIn("apply_rule(next, 200007, 0, false", rendered)
+        self.assertNotIn("apply_rule_blob", rendered)
 
 
 if __name__ == "__main__":

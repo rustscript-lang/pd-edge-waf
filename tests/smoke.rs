@@ -201,10 +201,11 @@ fn default_ruleset_uses_generated_rules_without_synthetic_attack_probes() {
         .expect("ruleset source should be readable");
     let engine = std::fs::read_to_string(root.join("rules/engine_bundle.rss"))
         .expect("engine bundle should be readable");
-    assert!(ruleset.contains("apply_rule_blob"));
-    assert!(ruleset.contains("\\t911100\\t"));
-    assert!(ruleset.contains("\\t942100\\t"));
-    assert!(ruleset.contains("\\t949110\\t"));
+    assert!(!ruleset.contains("apply_rule_blob"));
+    assert!(!engine.contains("apply_rule_blob"));
+    assert!(ruleset.contains("apply_rule(next, 911100, 0, false"));
+    assert!(ruleset.contains("apply_rule(next, 942100, 0, false"));
+    assert!(ruleset.contains("apply_rule(next, 949110, 0, false"));
     assert!(!ruleset.contains("sqli_category_prefilter"));
     assert!(!ruleset.contains("sqli_query_rule_match"));
     assert!(!engine.contains("sqli_category_prefilter"));
@@ -248,8 +249,8 @@ fn enabled_ruleset_folds_common_exception_updates_into_rule_payloads() {
     assert!(!source.contains("fn evaluate_request_999_common_exceptions_after"));
     assert!(!source.contains("engine_bundle::update_target(next,"));
     assert!(!source.contains("update_target(next, 941100"));
-    assert!(source.contains("\\t942290\\t"));
-    assert!(source.contains("\\t409674\\t619\\t"));
-    assert!(source.contains("\\tREQUEST_COOKIES\\t__gads"));
-    assert!(!source.contains("\\t!REQUEST_COOKIES\\t"));
+    assert!(source.contains("apply_rule(next, 942290, 0, false"));
+    assert!(source.contains("], 409674, 619, 5, false, 403);"));
+    assert!(source.contains("\"REQUEST_COOKIES\", \"__gads\""));
+    assert!(!source.contains("\"!REQUEST_COOKIES\""));
 }

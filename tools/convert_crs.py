@@ -481,11 +481,19 @@ def render_directive_call(
     return f"next = engine_bundle::component_signature(next, {rss_string(directive.value)});"
 
 
-def guard_rule_call(call: str) -> str:
+def is_detection_paranoia_skip(directive: Directive) -> bool:
     return (
-        'if engine_bundle::ctx_get(&next, "blocked") != "1" '
-        '&& engine_bundle::ctx_get(&next, "skip") == "" { '
-        f"{call} }}"
+        directive.kind == "SecRule"
+        and directive.chain_index == 0
+        and directive.targets.upper() == "TX:DETECTION_PARANOIA_LEVEL"
+        and directive.operator == "@lt"
+        and directive.pattern in {"1", "2", "3", "4"}
+        and not action_values(directive.actions, "t")
+        and anomaly_score(directive.actions) == 0
+        and not has_action(directive.actions, "chain")
+        and not has_action(directive.actions, "deny")
+        and directive.message == ""
+        and action_value(directive.actions, "skipAfter") != ""
     )
 
 
@@ -494,8 +502,49 @@ def render_entry_directive_call(
     data_contents: dict[str, str],
     target_updates: dict[int, list[str]],
 ) -> str:
-    call = render_directive_call(directive, data_contents, target_updates)
-    return guard_rule_call(call) if directive.kind == "SecRule" else call
+    if is_detection_paranoia_skip(directive):
+        return (
+            "next = engine_bundle::apply_detection_paranoia_skip("
+            f"next, {directive.rule_id}, {directive.pattern}, "
+            f"{rss_string(action_value(directive.actions, 'skipAfter'))});"
+        )
+    # apply_rule owns the blocked/skip checks. Repeating them around every
+    # generated call only adds map lookups and branches to the hot path.
+    return render_directive_call(directive, data_contents, target_updates)
+
+
+def render_entry_phase_calls(
+    directives: list[tuple[Directive, int]],
+    markers: list[Directive],
+    data_contents: dict[str, str],
+    target_updates: dict[int, list[str]],
+) -> list[str]:
+    """Render a phase while collapsing skipAfter no-op call tails."""
+    lines: list[str] = []
+    open_skip_guards = 0
+    for directive, _ in directives:
+        lines.append(
+            "    " * open_skip_guards
+            + render_entry_directive_call(
+                directive, data_contents, target_updates
+            )
+        )
+        if directive.kind == "SecRule" and action_value(
+            directive.actions, "skipAfter"
+        ):
+            lines.append(
+                "    " * open_skip_guards
+                + 'if engine_bundle::ctx_get(&next, "skip") == "" {'
+            )
+            open_skip_guards += 1
+    while open_skip_guards > 0:
+        open_skip_guards -= 1
+        lines.append("    " * open_skip_guards + "}")
+    lines.extend(
+        render_directive_call(marker, data_contents, target_updates)
+        for marker in markers
+    )
+    return lines
 
 
 def render_module(
@@ -578,10 +627,10 @@ def render_entry(
         if module_name(directive.source) in enabled_categories:
             grouped.setdefault(directive.source, []).append(directive)
 
-    phase_records: dict[int, list[str]] = {}
+    phase_sections: dict[int, list[tuple[str, list[str]]]] = {}
     lines = [
         f"// Executable OWASP CRS {version} ruleset.",
-        "// Default ModSecurity and CRS rules execute from phase rule blobs.",
+        "// Default ModSecurity and CRS rules execute as generated phase-specific calls.",
         "use engine_bundle;",
         "",
     ]
@@ -611,79 +660,31 @@ def render_entry(
                 phased_directives.setdefault(effective_phase, []).append(
                     (directive, effective_paranoia)
                 )
-        def encoded_rule_records(
-            body_directives: list[tuple[Directive, int]], body_markers: list[Directive]
-        ) -> list[str]:
-            field_separator = "\t"
-            record_separator = "\r"
-            rows: list[str] = []
-            for directive, _ in body_directives:
-                if directive.kind == "SecRule":
-                    arguments = rule_arguments(
-                        directive, data_contents, target_updates
-                    )
-                    text = json.loads(arguments[3])
-                    fields = [
-                        "R",
-                        category,
-                        arguments[0],
-                        arguments[1],
-                        "1" if arguments[2] == "true" else "0",
-                        arguments[4],
-                        arguments[5],
-                        arguments[6],
-                        "1" if arguments[7] == "true" else "0",
-                        arguments[8],
-                        *text,
-                    ]
-                    if any(
-                        field_separator in field or record_separator in field
-                        for field in fields
-                    ):
-                        raise ValueError(
-                            f"rule {directive.rule_id} contains reserved blob separator"
-                        )
-                    rows.append(field_separator.join(fields))
-            for marker in body_markers:
-                fields = ("M", category, marker.marker)
-                if any(
-                    field_separator in field or record_separator in field
-                    for field in fields
-                ):
-                    raise ValueError(
-                        f"marker {marker.marker} contains reserved blob separator"
-                    )
-                rows.append(field_separator.join(fields))
-            return rows
 
         for phase, phase_directives in phased_directives.items():
-            phase_records.setdefault(phase, []).extend(
-                encoded_rule_records(phase_directives, markers)
+            calls = render_entry_phase_calls(
+                phase_directives, markers, data_contents, target_updates
             )
+            phase_sections.setdefault(phase, []).append((category, calls))
 
-    def phase_blob(phase: int) -> str:
-        return "\r".join(phase_records.get(phase, []))
+    def append_phase(phase: int) -> None:
+        lines.append(f"    next = engine_bundle::ctx_set_phase(next, {phase});")
+        for category, calls in phase_sections.get(phase, []):
+            lines.append(
+                "    if engine_bundle::category_enabled("
+                f'&next, "{category}") {{'
+            )
+            lines.extend(f"        {call}" for call in calls)
+            lines.append("    }")
 
     lines.append("pub fn inspect_request(next: map<string>) -> map<string> {")
     for phase in (1, 2):
-        lines.append(f"    next = engine_bundle::ctx_set_phase(next, {phase});")
-        blob = phase_blob(phase)
-        if blob:
-            lines.append(
-                "    next = engine_bundle::apply_rule_blob("
-                f"next, {rss_string(blob)});"
-            )
+        append_phase(phase)
     lines.extend(["    next", "}", ""])
 
     lines.append("pub fn inspect_response(next: map<string>) -> map<string> {")
     for phase in (3, 4, 5):
-        lines.append(f"    next = engine_bundle::ctx_set_phase(next, {phase});")
-        blob = phase_blob(phase)
-        if blob:
-            lines.append(
-                "    next = engine_bundle::apply_rule_blob("
-                f"next, {rss_string(blob)});"
-            )
+        append_phase(phase)
     lines.extend(
         [
             "    next",

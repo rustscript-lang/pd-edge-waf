@@ -113,14 +113,14 @@ pub fn one(state: map<string>, base: string, name: string, text: [string], targe
 }
 
 pub fn sqli_category_prefilter(state: map<string>) -> bool {
- let text: string = string_lower_ascii(
-  ctx_get(&state, "query") + "\n" +
-  ctx_get(&state, "request_body") + "\n" +
-  ctx_get(&state, "args") + "\n" +
-  ctx_get(&state, "cookies") + "\n" +
-  ctx_get(&state, "request_headers")
- );
- re::match("(?i)(['\"`%\\[\\]{}|!^~*<>#]|\\b(?:select|union|insert|update|delete|drop|alter|create|truncate|replace|merge|from|where|having|group|order|limit|offset|join|into|values|set|call|exec|execute|declare|cast|convert|coalesce|case|when|then|else|end|sleep|benchmark|waitfor|delay|load_file|outfile|dumpfile|information_schema|mysql|sqlite|xor|regexp|rlike)\\b|0x[0-9a-f]|--|/\\*)", &text)
+ re::match(
+  "(?i)(['\"`%\\[\\]{}|!^~*<>#]|\\b(?:select|union|insert|update|delete|drop|alter|create|truncate|replace|merge|from|where|having|group|order|limit|offset|join|into|values|set|call|exec|execute|declare|cast|convert|coalesce|case|when|then|else|end|sleep|benchmark|waitfor|delay|load_file|outfile|dumpfile|information_schema|mysql|sqlite|xor|regexp|rlike)\\b|0x[0-9a-f]|--|/\\*)",
+  &(ctx_get(&state, "query") + "\n" +
+   ctx_get(&state, "request_body") + "\n" +
+   ctx_get(&state, "args") + "\n" +
+   ctx_get(&state, "cookies") + "\n" +
+   ctx_get(&state, "request_headers"))
+ )
 }
 
 pub fn ctx_targets(state: map<string>, text: [string], target_count: int, id: int) -> [string] {
@@ -598,6 +598,7 @@ fn evaluate_request_942_application_attack_sqli_phase_2(next: map<string>) -> ma
 }
 
 pub fn inspect_request(next: map<string>) -> map<string> {
+    if !(category_enabled(&next, "request_911_method_enforcement") && ctx_get(&next, "tx.allowed_methods") != "" && !string_contains(" " + ctx_get(&next, "tx.allowed_methods") + " ", " " + ctx_get(&next, "method") + " ") || category_enabled(&next, "request_942_application_attack_sqli") && sqli_category_prefilter(&next)) => { ctx_set_phase(next, 2) } else => {
     next = ctx_set_phase(next, 1);
     if category_enabled(&next, "request_911_method_enforcement") && ctx_get(&next, "tx.allowed_methods") != "" && !string_contains(" " + ctx_get(&next, "tx.allowed_methods") + " ", " " + ctx_get(&next, "method") + " ") { next = evaluate_request_911_method_enforcement_phase_1(next); }
     if category_enabled(&next, "request_942_application_attack_sqli") && sqli_category_prefilter(&next) { next = evaluate_request_942_application_attack_sqli_phase_1(next); }
@@ -605,6 +606,7 @@ pub fn inspect_request(next: map<string>) -> map<string> {
     if category_enabled(&next, "request_911_method_enforcement") && ctx_get(&next, "tx.allowed_methods") != "" && !string_contains(" " + ctx_get(&next, "tx.allowed_methods") + " ", " " + ctx_get(&next, "method") + " ") { next = evaluate_request_911_method_enforcement_phase_2(next); }
     if category_enabled(&next, "request_942_application_attack_sqli") && sqli_category_prefilter(&next) { next = evaluate_request_942_application_attack_sqli_phase_2(next); }
     next
+    }
 }
 
 pub fn inspect_response(next: map<string>) -> map<string> {

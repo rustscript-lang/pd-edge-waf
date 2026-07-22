@@ -214,6 +214,35 @@ assert(sqli_category_prefilter(&attack));
 }
 
 #[test]
+fn benign_request_fast_path_preserves_final_request_state() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let ruleset = std::fs::read_to_string(root.join("rules/ruleset_bundle.rss"))
+        .expect("ruleset bundle should be readable");
+    let source = format!(
+        r#"{ruleset}
+assert((&inspect_request(new_state(
+    "GET",
+    "/products",
+    "category=books&page=2",
+    "HTTP/1.1",
+    "192.0.2.10",
+    {{ "host": "shop.example.test" }},
+    {{ "category": "books", "page": "2" }},
+    ""
+)))["phase"] == "2");
+"ok";
+"#
+    );
+    let compiled = vm::compile_source(&source).expect("benign fast-path fixture should compile");
+    let mut vm = vm::Vm::new(compiled.program);
+    assert_eq!(
+        vm.run().expect("benign fast-path fixture should run"),
+        vm::VmStatus::Halted
+    );
+    assert_eq!(vm.stack().last(), Some(&vm::Value::string("ok")));
+}
+
+#[test]
 fn enabled_ruleset_folds_common_exception_updates_into_rule_payloads() {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
     let source = std::fs::read_to_string(root.join("rules/ruleset.rss"))

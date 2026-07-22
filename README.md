@@ -103,8 +103,8 @@ Defaults:
 - 5 measured batches;
 - 2 requests per batch;
 - 10 measured requests in total.
-- 2 consecutive unchanged JIT warmup requests;
-- at most 32 JIT warmup requests.
+- 12 consecutive unchanged JIT warmup requests;
+- at most 128 JIT warmup requests.
 
 The output reports each mode's average latency, minimum/maximum batch averages, JIT compilation state, incremental WAF latency, and the JIT-to-interpreter ratio. Counts can be overridden without editing the test:
 
@@ -118,6 +118,8 @@ cargo test --release --test perf -- --ignored --nocapture
 ```
 
 Compilation latency is excluded. Both cases rebuild the simulated request context inside RSS for every measured request.
+
+Set `WAF_PERF_AOT_DIAG=1` to report AOT compile latency, assert that the oversized ruleset selects `interpreter-boundary` lowering, and run interleaved AOT/JIT batches. The paired check fails when AOT exceeds JIT latency by more than 5%.
 
 ## Tests
 

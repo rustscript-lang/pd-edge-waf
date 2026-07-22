@@ -605,6 +605,12 @@ fn run_default_ruleset_perf() {
             println!("waf_call {line}");
         }
     }
+    println!(
+        "waf_program_shape local_count={} code_bytes={} constants={}",
+        default_ruleset_program.local_count,
+        default_ruleset_program.code.len(),
+        default_ruleset_program.constants.len(),
+    );
     let expected = Value::string("allow");
 
     let baseline = measure_case(
@@ -670,9 +676,20 @@ fn run_default_ruleset_perf() {
                 ..JitConfig::default()
             },
         );
+        let aot_compile_started = Instant::now();
         aot_vm
             .compile_aot()
             .expect("WAF AOT diagnostic should compile");
+        let aot_compile_elapsed = aot_compile_started.elapsed();
+        let aot_info = aot_vm.dump_aot_info();
+        assert!(
+            aot_info.contains("lowering=interpreter-boundary"),
+            "oversized WAF AOT should select the boundary lowering: {aot_info}"
+        );
+        println!(
+            "waf_aot_compile elapsed_ms={:.3} lowering=interpreter-boundary",
+            aot_compile_elapsed.as_secs_f64() * 1_000.0,
+        );
         let aot = measure_case(
             "default_ruleset_aot_diag",
             aot_vm,

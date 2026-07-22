@@ -287,7 +287,11 @@ class TransformPlanTests(unittest.TestCase):
         self.assertNotIn("category_enabled", phase_two_body)
         self.assertEqual(
             rendered.count('category_enabled(&next, "request_test")'),
-            2,
+            3,
+        )
+        self.assertIn(
+            "engine_bundle::ctx_set_phase(next, 2) } else => {",
+            rendered,
         )
 
     def test_expensive_categories_are_guarded_by_safe_prefilters(self) -> None:
@@ -299,8 +303,12 @@ class TransformPlanTests(unittest.TestCase):
         method_rendered = convert_crs.render_entry(
             [method_rule], "4.28.0", {}, {"request_911_method_enforcement"}
         )
-        self.assertEqual(method_rendered.count('ctx_get(&next, "tx.allowed_methods")'), 2)
-        self.assertEqual(method_rendered.count('ctx_get(&next, "method")'), 1)
+        self.assertEqual(method_rendered.count('ctx_get(&next, "tx.allowed_methods")'), 4)
+        self.assertEqual(method_rendered.count('ctx_get(&next, "method")'), 2)
+        self.assertIn(
+            "engine_bundle::ctx_set_phase(next, 2) } else => {",
+            method_rendered,
+        )
 
         sqli_rule = convert_crs.Directive(
             kind="SecRule", source="REQUEST-942-APPLICATION-ATTACK-SQLI.conf", source_line=1,
@@ -310,7 +318,11 @@ class TransformPlanTests(unittest.TestCase):
         sqli_rendered = convert_crs.render_entry(
             [sqli_rule], "4.28.0", {}, {"request_942_application_attack_sqli"}
         )
-        self.assertEqual(sqli_rendered.count("sqli_category_prefilter(&next)"), 1)
+        self.assertEqual(sqli_rendered.count("sqli_category_prefilter(&next)"), 2)
+        self.assertIn(
+            "engine_bundle::ctx_set_phase(next, 2) } else => {",
+            sqli_rendered,
+        )
 
     def test_contiguous_plan_619_regex_rules_share_sound_prefilter(self) -> None:
         directives = [

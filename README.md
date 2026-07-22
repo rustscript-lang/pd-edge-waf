@@ -85,16 +85,21 @@ Allowed traffic is forwarded and carries `x-waf-blocked: 0` plus its current sco
 
 ## Performance test
 
-The pd-vm performance test compiles all programs outside the timed region and evaluates the same fixed benign request context in three stages:
+The primary pd-vm performance test compiles all programs outside the timed region and measures two requests that prove an enabled CRS rule path executed:
 
-1. framework baseline, without loading WAF rules or calling `inspect_request`;
-2. default enabled ruleset in interpreter mode;
-3. default enabled ruleset with trace JIT.
+1. `TRACE /` must record rule `911100` from method enforcement;
+2. `GET /search?id=1%27%20OR%201%3D1--` must record rule `942100` from SQL injection detection.
 
-The JIT case warms up for at least `hot_loop_threshold` requests and then requires the JIT compilation state to remain unchanged for consecutive requests. The test captures compile attempts, recorded traces, and native traces before and after the measured batches and fails if any count changes inside the timed region.
+Each workload is measured in interpreter mode, warmed trace-JIT mode, and interleaved JIT/AOT mode. The AOT compile latency is reported separately. The matched-rule assertions run as a regular non-ignored test, so a fixture cannot silently become a short-circuit-only benchmark.
 
 ```bash
-cargo test --release --test perf -- --ignored --nocapture
+cargo test --release --test perf active_rule_interpreter_jit_aot_latency -- --ignored --nocapture
+```
+
+The benign fast-path benchmark remains available as a secondary diagnostic:
+
+```bash
+WAF_PERF_AOT_DIAG=1 cargo test --release --test perf baseline_interpreter_and_jit_batch_latency -- --ignored --nocapture
 ```
 
 Defaults:
@@ -114,12 +119,12 @@ WAF_PERF_BATCHES=10 \
 WAF_PERF_BATCH_SIZE=4 \
 WAF_PERF_JIT_STABLE_REQUESTS=3 \
 WAF_PERF_JIT_MAX_WARMUP_REQUESTS=48 \
-cargo test --release --test perf -- --ignored --nocapture
+cargo test --release --test perf active_rule_interpreter_jit_aot_latency -- --ignored --nocapture
 ```
 
-Compilation latency is excluded. Both cases rebuild the simulated request context inside RSS for every measured request.
+Compilation latency is excluded. Both active workloads rebuild the simulated request context inside RSS for every measured request.
 
-Set `WAF_PERF_AOT_DIAG=1` to report AOT compile latency, assert that the oversized ruleset selects `interpreter-boundary` lowering, and run interleaved AOT/JIT batches. The paired check fails when AOT exceeds JIT latency by more than 5%.
+The active benchmark always reports AOT compile latency, asserts `interpreter-boundary` lowering, and runs interleaved AOT/JIT batches. The paired check fails when AOT exceeds JIT latency by more than 5%. `WAF_PERF_AOT_DIAG=1` enables the same AOT diagnostics for the benign secondary benchmark.
 
 ## Tests
 

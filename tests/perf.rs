@@ -278,6 +278,63 @@ assert((&inspect_request(new_state(
     compiled.program
 }
 
+fn active_request_program(request_source: &str, label: &str) -> vm::Program {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let ruleset = std::fs::read_to_string(root.join("rules/ruleset_bundle.rss"))
+        .expect("active ruleset bundle should read");
+    let source = format!("{ruleset}\n{request_source}\n\"matched\";\n");
+    let compiled = vm::compile_source(&source)
+        .unwrap_or_else(|error| panic!("{label} active ruleset program should compile: {error}"));
+    assert!(
+        compiled.program.local_count <= 256,
+        "{label} active ruleset program must fit the standard VM local-slot format"
+    );
+    assert!(compiled.program.imports.is_empty());
+    compiled.program
+}
+
+fn active_method_request_program() -> vm::Program {
+    active_request_program(
+        r#"
+assert(string_contains(
+    "," + (&inspect_request(new_state(
+        "TRACE",
+        "/",
+        "",
+        "HTTP/1.1",
+        "192.0.2.10",
+        { "host": "shop.example.test", "user-agent": "pd-edge-waf-perf/1.0" },
+        {},
+        ""
+    )))["matched_ids"] + ",",
+    ",911100,"
+));
+"#,
+        "method_911",
+    )
+}
+
+fn active_sqli_request_program() -> vm::Program {
+    active_request_program(
+        r#"
+assert(string_contains(
+    "," + (&inspect_request(new_state(
+        "GET",
+        "/search",
+        "id=1%27%20OR%201%3D1--",
+        "HTTP/1.1",
+        "192.0.2.10",
+        { "host": "shop.example.test", "user-agent": "pd-edge-waf-perf/1.0" },
+        { "id": "1' OR 1=1--" },
+        ""
+    )))["matched_ids"] + ",",
+    ",942100,"
+));
+"#,
+        "sqli_942",
+    )
+}
+
 fn execute_and_verify(vm: &mut Vm, expected: &Value, label: &str) -> VmStatus {
     let status = vm.run().unwrap_or_else(|error| {
         let line = vm
@@ -584,6 +641,118 @@ fn incremental_average(measured: &PerfStats, baseline: &PerfStats) -> Duration {
     measured
         .average_request
         .saturating_sub(baseline.average_request)
+}
+
+fn run_active_rule_workload_perf(label: &str, program: vm::Program, config: &PerfConfig) {
+    let expected = Value::string("matched");
+    println!(
+        "active_waf_program workload={label} local_count={} code_bytes={} constants={}",
+        program.local_count,
+        program.code.len(),
+        program.constants.len(),
+    );
+
+    let interpreter = measure_case(
+        &format!("active_{label}_interpreter"),
+        Vm::new_with_jit_config(
+            program.clone(),
+            JitConfig {
+                enabled: false,
+                ..JitConfig::default()
+            },
+        ),
+        WarmupPolicy::Fixed,
+        config,
+        &expected,
+    );
+
+    let mut jit = Vm::new_with_jit_config(
+        program.clone(),
+        JitConfig {
+            max_trace_len: 256,
+            ..JitConfig::default()
+        },
+    );
+    run_jit_warmup_until_stable(&mut jit, &expected, &format!("active_{label}_jit"), config);
+
+    let mut aot = Vm::new_with_jit_config(
+        program,
+        JitConfig {
+            enabled: false,
+            ..JitConfig::default()
+        },
+    );
+    let aot_compile_started = Instant::now();
+    aot.compile_aot()
+        .unwrap_or_else(|error| panic!("active {label} AOT should compile: {error}"));
+    let aot_compile_elapsed = aot_compile_started.elapsed();
+    let aot_info = aot.dump_aot_info();
+    assert!(
+        aot_info.contains("lowering=interpreter-boundary"),
+        "active {label} AOT should select boundary lowering: {aot_info}"
+    );
+    run_fixed_warmup(
+        &mut aot,
+        &expected,
+        &format!("active_{label}_aot"),
+        config.fixed_warmup_requests(),
+    );
+
+    let mut jit_elapsed = Duration::ZERO;
+    let mut aot_elapsed = Duration::ZERO;
+    for batch in 0..config.measured_batches {
+        if batch % 2 == 0 {
+            jit_elapsed += run_batch(
+                &mut jit,
+                &expected,
+                &format!("active_{label}_jit"),
+                config.batch_size,
+            );
+            aot_elapsed += run_batch(
+                &mut aot,
+                &expected,
+                &format!("active_{label}_aot"),
+                config.batch_size,
+            );
+        } else {
+            aot_elapsed += run_batch(
+                &mut aot,
+                &expected,
+                &format!("active_{label}_aot"),
+                config.batch_size,
+            );
+            jit_elapsed += run_batch(
+                &mut jit,
+                &expected,
+                &format!("active_{label}_jit"),
+                config.batch_size,
+            );
+        }
+    }
+
+    let requests = config.measured_batches.saturating_mul(config.batch_size);
+    let jit_average = jit_elapsed.div_f64(requests as f64);
+    let aot_average = aot_elapsed.div_f64(requests as f64);
+    let aot_to_jit = aot_average.as_secs_f64() / jit_average.as_secs_f64().max(f64::EPSILON);
+    println!(
+        "active_waf_comparison workload={label} requests={requests} interpreter_average_us={:.3} jit_average_us={:.3} aot_average_us={:.3} aot_to_jit_ratio={aot_to_jit:.3} aot_compile_ms={:.3} jit_under_1ms={} aot_under_1ms={}",
+        interpreter.average_request.as_secs_f64() * 1_000_000.0,
+        jit_average.as_secs_f64() * 1_000_000.0,
+        aot_average.as_secs_f64() * 1_000_000.0,
+        aot_compile_elapsed.as_secs_f64() * 1_000.0,
+        jit_average <= Duration::from_millis(1),
+        aot_average <= Duration::from_millis(1),
+    );
+    assert!(
+        aot_to_jit <= 1.05,
+        "active {label} AOT latency exceeds JIT tolerance: ratio={aot_to_jit:.3}"
+    );
+}
+
+fn run_active_rule_perf() {
+    let config = PerfConfig::from_env();
+    run_active_rule_workload_perf("method_911", active_method_request_program(), &config);
+    run_active_rule_workload_perf("sqli_942", active_sqli_request_program(), &config);
 }
 
 fn run_default_ruleset_perf() {
@@ -900,6 +1069,24 @@ assert(total == 28);
             .map(|trace| trace.executions)
             .sum::<u64>()
     );
+}
+
+#[test]
+fn active_rule_workloads_prove_matched_rule_ids() {
+    let expected = Value::string("matched");
+    for (label, program) in [
+        ("method_911", active_method_request_program()),
+        ("sqli_942", active_sqli_request_program()),
+    ] {
+        let mut vm = Vm::new(program);
+        execute_and_verify(&mut vm, &expected, label);
+    }
+}
+
+#[test]
+#[ignore = "performance test; run explicitly with --ignored --nocapture"]
+fn active_rule_interpreter_jit_aot_latency() {
+    run_active_rule_perf();
 }
 
 #[test]

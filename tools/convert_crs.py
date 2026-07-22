@@ -494,31 +494,7 @@ def render_entry_directive_call(
     data_contents: dict[str, str],
     target_updates: dict[int, list[str]],
 ) -> str:
-    if (
-        directive.kind == "SecRule"
-        and directive.rule_id in {911011, 911012, 911013, 911014, 911015, 911016, 911017, 911018}
-        and module_name(directive.source) == "request_911_method_enforcement"
-    ):
-        threshold = (directive.rule_id - 911009) // 2
-        call = (
-            "if engine_bundle::number(engine_bundle::ctx_get(&next, "
-            f'"tx.detection_paranoia_level"), 1) < {threshold} {{ '
-            "next = engine_bundle::record_rule_match(next, "
-            f'["{directive.rule_id}", "0", "0", "403", '
-            '"END-REQUEST-911-METHOD-ENFORCEMENT", ""]); }'
-        )
-    elif (
-        directive.kind == "SecRule"
-        and directive.rule_id == 911100
-        and module_name(directive.source) == "request_911_method_enforcement"
-    ):
-        call = (
-            "next = engine_bundle::record_rule_match(next, "
-            '["911100", "5", "0", "403", "", '
-            '"Method is not allowed by policy"]);'
-        )
-    else:
-        call = render_directive_call(directive, data_contents, target_updates)
+    call = render_directive_call(directive, data_contents, target_updates)
     return guard_rule_call(call) if directive.kind == "SecRule" else call
 
 
@@ -602,10 +578,10 @@ def render_entry(
         if module_name(directive.source) in enabled_categories:
             grouped.setdefault(directive.source, []).append(directive)
 
-    evaluators: dict[tuple[str, int], str] = {}
+    phase_records: dict[int, list[str]] = {}
     lines = [
         f"// Executable OWASP CRS {version} ruleset.",
-        "// Each enabled category executes generated RSS expressions directly.",
+        "// Default ModSecurity and CRS rules execute from phase rule blobs.",
         "use engine_bundle;",
         "",
     ]
@@ -635,179 +611,79 @@ def render_entry(
                 phased_directives.setdefault(effective_phase, []).append(
                     (directive, effective_paranoia)
                 )
-        if category == "request_942_application_attack_sqli":
-            phased_directives.setdefault(2, [])
+        def encoded_rule_records(
+            body_directives: list[tuple[Directive, int]], body_markers: list[Directive]
+        ) -> list[str]:
+            field_separator = "\t"
+            record_separator = "\r"
+            rows: list[str] = []
+            for directive, _ in body_directives:
+                if directive.kind == "SecRule":
+                    arguments = rule_arguments(
+                        directive, data_contents, target_updates
+                    )
+                    text = json.loads(arguments[3])
+                    fields = [
+                        "R",
+                        category,
+                        arguments[0],
+                        arguments[1],
+                        "1" if arguments[2] == "true" else "0",
+                        arguments[4],
+                        arguments[5],
+                        arguments[6],
+                        "1" if arguments[7] == "true" else "0",
+                        arguments[8],
+                        *text,
+                    ]
+                    if any(
+                        field_separator in field or record_separator in field
+                        for field in fields
+                    ):
+                        raise ValueError(
+                            f"rule {directive.rule_id} contains reserved blob separator"
+                        )
+                    rows.append(field_separator.join(fields))
+            for marker in body_markers:
+                fields = ("M", category, marker.marker)
+                if any(
+                    field_separator in field or record_separator in field
+                    for field in fields
+                ):
+                    raise ValueError(
+                        f"marker {marker.marker} contains reserved blob separator"
+                    )
+                rows.append(field_separator.join(fields))
+            return rows
+
         for phase, phase_directives in phased_directives.items():
-            evaluator = f"evaluate_{category}_phase_{phase}"
-            evaluators[(source, phase)] = evaluator
-            lines.append(f"fn {evaluator}(next: map<string>) -> map<string> {{")
-            if category == "request_942_application_attack_sqli" and phase == 2:
-                lines.append(
-                    "    "
-                    + guard_rule_call(
-                        "if engine_bundle::sqli_query_rule_match(&next) { "
-                        "next = engine_bundle::record_rule_match(next, "
-                        '["942100", "5", "0", "403", "", '
-                        '"SQL Injection Attack Detected"]); }'
-                    )
-                )
-            directive_index = 0
-            while directive_index < len(phase_directives):
-                directive = phase_directives[directive_index][0]
-                prefilter_key = plan_619_prefilter_key(
-                    directive, data_contents, target_updates
-                )
-                run_end = directive_index + 1
-                if prefilter_key is not None:
-                    while run_end < len(phase_directives):
-                        candidate = phase_directives[run_end][0]
-                        if (
-                            plan_619_prefilter_key(
-                                candidate, data_contents, target_updates
-                            )
-                            != prefilter_key
-                        ):
-                            break
-                        run_end += 1
-                if run_end - directive_index >= 2:
-                    run = [item[0] for item in phase_directives[directive_index:run_end]]
-                    lines.append(
-                        "    "
-                        + guard_rule_call(
-                            render_plan_619_prefilter(
-                                run, data_contents, target_updates
-                            )
-                        )
-                    )
-                    lines.append('    if (&next)["prefilter"] == "1" {')
-                    for grouped_directive in run:
-                        call = render_entry_directive_call(
-                            grouped_directive,
-                            data_contents,
-                            target_updates,
-                        )
-                        lines.append(f"        {call}")
-                    lines.append("    }")
-                    lines.append('    next["prefilter"] = "0";')
-                else:
-                    call = render_entry_directive_call(
-                        directive,
-                        data_contents,
-                        target_updates,
-                    )
-                    lines.append(f"    {call}")
-                directive_index = run_end
-            for marker in markers:
-                call = render_directive_call(marker, data_contents, target_updates)
-                lines.append(f"    {call}")
-            lines.extend(["    next", "}", ""])
-
-    def category_condition(source: str, phase: int | None = None) -> str:
-        category = module_name(source)
-        condition = f'engine_bundle::category_enabled(&next, "{category}")'
-        if category == "request_911_method_enforcement":
-            condition += (
-                ' && engine_bundle::ctx_get(&next, "tx.allowed_methods") != ""'
-                ' && !string_contains('
-                '" " + engine_bundle::ctx_get(&next, "tx.allowed_methods") + " ", '
-                '" " + engine_bundle::ctx_get(&next, "method") + " ")'
+            phase_records.setdefault(phase, []).extend(
+                encoded_rule_records(phase_directives, markers)
             )
-        elif category == "request_942_application_attack_sqli":
-            phase_one = "true" if phase == 1 else "false"
-            condition += (
-                f" && engine_bundle::sqli_category_prefilter(&next, {phase_one})"
-            )
-        return condition
 
-    def append_enabled_call(source: str, phase: int) -> None:
-        evaluator = evaluators.get((source, phase))
-        if evaluator is None:
-            return
-        condition = category_condition(source, phase)
-        lines.append(f"    if {condition} {{ next = {evaluator}(next); }}")
+    def phase_blob(phase: int) -> str:
+        return "\r".join(phase_records.get(phase, []))
 
-    lines.extend(
-        [
-            "pub fn inspect_request(next: map<string>) -> map<string> {",
-        ]
-    )
-
-
-    request_sources = [
-        source
-        for source in grouped
-        if source.startswith("REQUEST-")
-        and any((source, phase) in evaluators for phase in (1, 2))
-    ]
-    method_source = next(
-        (
-            source
-            for source in request_sources
-            if module_name(source) == "request_911_method_enforcement"
-        ),
-        None,
-    )
-    sqli_source = next(
-        (
-            source
-            for source in request_sources
-            if module_name(source) == "request_942_application_attack_sqli"
-        ),
-        None,
-    )
-
-    if method_source is not None and sqli_source is not None:
-        lines.append(f"    if {category_condition(method_source)} => {{")
-        for phase in (1, 2):
-            lines.append(f"    next = engine_bundle::ctx_set_phase(next, {phase});")
-            for source in request_sources:
-                append_enabled_call(source, phase)
-        lines.extend(["    next", f"    }} else if {category_condition(sqli_source)} => {{"])
-        lines.append("    next = engine_bundle::ctx_set_phase(next, 1);")
-        sqli_phase_one = evaluators.get((sqli_source, 1))
-        if sqli_phase_one is not None:
+    lines.append("pub fn inspect_request(next: map<string>) -> map<string> {")
+    for phase in (1, 2):
+        lines.append(f"    next = engine_bundle::ctx_set_phase(next, {phase});")
+        blob = phase_blob(phase)
+        if blob:
             lines.append(
-                "    if engine_bundle::sqli_category_prefilter(&next, true) "
-                f"{{ next = {sqli_phase_one}(next); }}"
+                "    next = engine_bundle::apply_rule_blob("
+                f"next, {rss_string(blob)});"
             )
-        lines.append("    next = engine_bundle::ctx_set_phase(next, 2);")
-        sqli_phase_two = evaluators.get((sqli_source, 2))
-        if sqli_phase_two is not None:
-            lines.append(f"    next = {sqli_phase_two}(next);")
-        lines.extend(
-            [
-                "    next",
-                "    } else => { engine_bundle::ctx_set_phase(next, 2) }",
-            ]
-        )
-    else:
-        request_conditions = [category_condition(source) for source in request_sources]
-        if request_conditions:
-            lines.append(
-                "    if !(" + " || ".join(request_conditions)
-                + ") => { engine_bundle::ctx_set_phase(next, 2) } else => {"
-            )
+    lines.extend(["    next", "}", ""])
 
-        for phase in (1, 2):
-            lines.append(f"    next = engine_bundle::ctx_set_phase(next, {phase});")
-            for source in request_sources:
-                append_enabled_call(source, phase)
-        lines.append("    next")
-        if request_conditions:
-            lines.append("    }")
-    lines.extend(["}", ""])
-
-    lines.extend(
-        [
-            "pub fn inspect_response(next: map<string>) -> map<string> {",
-        ]
-    )
-
+    lines.append("pub fn inspect_response(next: map<string>) -> map<string> {")
     for phase in (3, 4, 5):
         lines.append(f"    next = engine_bundle::ctx_set_phase(next, {phase});")
-        for source in grouped:
-            if source.startswith("RESPONSE-"):
-                append_enabled_call(source, phase)
+        blob = phase_blob(phase)
+        if blob:
+            lines.append(
+                "    next = engine_bundle::apply_rule_blob("
+                f"next, {rss_string(blob)});"
+            )
     lines.extend(
         [
             "    next",
@@ -828,16 +704,20 @@ def main() -> None:
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--version", default="4.28.0")
     parser.add_argument(
+        "--modsecurity-config",
+        type=Path,
+        default=Path(__file__).resolve().parents[1]
+        / "config"
+        / "MODSECURITY-RECOMMENDED.conf",
+        help="ModSecurity recommended SecRule source to compile before CRS",
+    )
+    parser.add_argument(
         "--enable",
         action="append",
         dest="enabled_categories",
         help="Enable a generated category module in ruleset.rss; may be repeated",
     )
     args = parser.parse_args()
-    enabled_categories = set(
-        args.enabled_categories
-        or ["request_911_method_enforcement", "request_942_application_attack_sqli"]
-    )
 
     source_dir = args.source_dir.resolve()
     output_dir = args.output_dir.resolve()
@@ -873,7 +753,10 @@ def main() -> None:
     modules: list[tuple[str, int]] = []
     all_directives: list[Directive] = []
     parsed_modules: list[tuple[Path, str, list[Directive]]] = []
-    for conf in sorted(source_dir.glob("*.conf")):
+    modsecurity_config = args.modsecurity_config.resolve()
+    if not modsecurity_config.is_file():
+        raise ValueError(f"missing ModSecurity configuration: {modsecurity_config}")
+    for conf in [modsecurity_config, *sorted(source_dir.glob("*.conf"))]:
         directives = parse_conf(conf)
         name = module_name(conf.name)
         parsed_modules.append((conf, name, directives))
@@ -894,6 +777,10 @@ def main() -> None:
                 ),
             }
         )
+
+    enabled_categories = set(
+        args.enabled_categories or (name for _, name, _ in parsed_modules)
+    )
 
     target_updates = collect_target_updates(all_directives)
     for conf, name, directives in parsed_modules:

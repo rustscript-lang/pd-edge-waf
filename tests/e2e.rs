@@ -130,7 +130,7 @@ async fn pd_edge_entrypoint_forwards_benign_and_blocks_attacks() {
     let invalid_method = send_with_timeout(request(
         Method::TRACE,
         "/",
-        "request_911_method_enforcement",
+        "request_911_method_enforcement request_949_blocking_evaluation",
     ))
     .await;
     assert_eq!(invalid_method.status(), StatusCode::FORBIDDEN);
@@ -145,7 +145,7 @@ async fn pd_edge_entrypoint_forwards_benign_and_blocks_attacks() {
     let sqli = send_with_timeout(request(
         Method::GET,
         "/search?id=1%27%20OR%201%3D1--",
-        "request_942_application_attack_sqli",
+        "request_942_application_attack_sqli request_949_blocking_evaluation",
     ))
     .await;
     let sqli_status = sqli.status();

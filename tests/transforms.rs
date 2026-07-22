@@ -94,7 +94,14 @@ let blocked: map<string> = apply_rule_619(
     ["<", "", "decoded", "ARGS", ""],
     65, 619, 5, false, 403
 );
-assert((&blocked)["blocked"] == "1");
+assert((&blocked)["blocked"] == "0");
+assert((&blocked)["score"] == "5");
+let blocked_after_evaluation: map<string> = apply_rule(
+    blocked, 949110, 0, false,
+    ["tx.inbound_anomaly_score_threshold", "", "", "TX", "BLOCKING_INBOUND_ANOMALY_SCORE"],
+    4865, 11, 0, true, 403
+);
+assert((&blocked_after_evaluation)["blocked"] == "1");
 let plain: map<string> = new_state(
     "GET", "/", "q=plain", "HTTP/1.1", "192.0.2.10",
     {{}}, {{ "q": "plain" }}, ""

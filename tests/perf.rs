@@ -296,42 +296,104 @@ fn active_request_program(request_source: &str, label: &str) -> vm::Program {
 fn active_method_request_program() -> vm::Program {
     active_request_program(
         r#"
+let method_result = inspect_request(new_state(
+    "TRACE",
+    "/",
+    "",
+    "HTTP/1.1",
+    "192.0.2.10",
+    { "host": "shop.example.test", "user-agent": "pd-edge-waf-perf/1.0" },
+    {},
+    ""
+));
 assert(string_contains(
-    "," + (&inspect_request(new_state(
-        "TRACE",
-        "/",
-        "",
-        "HTTP/1.1",
-        "192.0.2.10",
-        { "host": "shop.example.test", "user-agent": "pd-edge-waf-perf/1.0" },
-        {},
-        ""
-    )))["matched_ids"] + ",",
+    "," + (&method_result)["matched_ids"] + ",",
     ",911100,"
 ));
+assert(string_contains("," + (&method_result)["matched_ids"] + ",", ",949110,"));
+assert((&method_result)["blocked"] == "1");
 "#,
         "method_911",
+    )
+}
+
+fn active_modsecurity_request_program() -> vm::Program {
+    active_request_program(
+        r#"
+let modsecurity_result = inspect_request(new_state(
+    "POST",
+    "/api",
+    "",
+    "HTTP/1.1",
+    "192.0.2.10",
+    {
+        "host": "shop.example.test",
+        "content-type": "application/json",
+        "user-agent": "pd-edge-waf-perf/1.0"
+    },
+    {},
+    "{}"
+));
+assert(string_contains(
+    "," + (&modsecurity_result)["matched_ids"] + ",",
+    ",200001,"
+));
+assert((&modsecurity_result)["blocked"] == "0");
+assert((&modsecurity_result)["reqbody_processor"] == "JSON");
+"#,
+        "modsecurity_200001",
     )
 }
 
 fn active_sqli_request_program() -> vm::Program {
     active_request_program(
         r#"
+let sqli_result = inspect_request(new_state(
+    "GET",
+    "/search",
+    "id=1%27%20OR%201%3D1--",
+    "HTTP/1.1",
+    "192.0.2.10",
+    { "host": "shop.example.test", "user-agent": "pd-edge-waf-perf/1.0" },
+    { "id": "1' OR 1=1--" },
+    ""
+));
 assert(string_contains(
-    "," + (&inspect_request(new_state(
-        "GET",
-        "/search",
-        "id=1%27%20OR%201%3D1--",
-        "HTTP/1.1",
-        "192.0.2.10",
-        { "host": "shop.example.test", "user-agent": "pd-edge-waf-perf/1.0" },
-        { "id": "1' OR 1=1--" },
-        ""
-    )))["matched_ids"] + ",",
+    "," + (&sqli_result)["matched_ids"] + ",",
     ",942100,"
 ));
+assert(string_contains("," + (&sqli_result)["matched_ids"] + ",", ",949110,"));
+assert((&sqli_result)["blocked"] == "1");
 "#,
         "sqli_942",
+    )
+}
+
+fn active_response_sqli_leak_program() -> vm::Program {
+    active_request_program(
+        r#"
+let mut response_state = new_state(
+    "GET",
+    "/database-error",
+    "",
+    "HTTP/1.1",
+    "192.0.2.10",
+    { "host": "shop.example.test" },
+    {},
+    ""
+);
+response_state["response_status"] = "500";
+response_state["response_headers"] = "content-type=text/html\n";
+response_state["response_body"] = "You have an error in your SQL syntax;";
+let response_result = inspect_response(response_state);
+assert(string_contains(
+    "," + (&response_result)["matched_ids"] + ",",
+    ",951230,"
+));
+assert(string_contains("," + (&response_result)["matched_ids"] + ",", ",959100,"));
+assert((&response_result)["blocked"] == "1");
+"#,
+        "response_sqli_951",
     )
 }
 
@@ -734,8 +796,9 @@ fn run_active_rule_workload_perf(label: &str, program: vm::Program, config: &Per
     let jit_average = jit_elapsed.div_f64(requests as f64);
     let aot_average = aot_elapsed.div_f64(requests as f64);
     let aot_to_jit = aot_average.as_secs_f64() / jit_average.as_secs_f64().max(f64::EPSILON);
+    let targets_met = aot_to_jit <= 1.05 && jit_average <= Duration::from_millis(1);
     println!(
-        "active_waf_comparison workload={label} requests={requests} interpreter_average_us={:.3} jit_average_us={:.3} aot_average_us={:.3} aot_to_jit_ratio={aot_to_jit:.3} aot_compile_ms={:.3} jit_under_1ms={} aot_under_1ms={}",
+        "active_waf_comparison workload={label} requests={requests} interpreter_average_us={:.3} jit_average_us={:.3} aot_average_us={:.3} aot_to_jit_ratio={aot_to_jit:.3} aot_compile_ms={:.3} jit_under_1ms={} aot_under_1ms={} targets_met={targets_met}",
         interpreter.average_request.as_secs_f64() * 1_000_000.0,
         jit_average.as_secs_f64() * 1_000_000.0,
         aot_average.as_secs_f64() * 1_000_000.0,
@@ -743,16 +806,31 @@ fn run_active_rule_workload_perf(label: &str, program: vm::Program, config: &Per
         jit_average <= Duration::from_millis(1),
         aot_average <= Duration::from_millis(1),
     );
-    assert!(
-        aot_to_jit <= 1.05,
-        "active {label} AOT latency exceeds JIT tolerance: ratio={aot_to_jit:.3}"
-    );
+    let enforce_targets = std::env::var("WAF_PERF_ENFORCE_TARGETS")
+        .map(|value| value != "0")
+        .unwrap_or(true);
+    if enforce_targets {
+        assert!(
+            aot_to_jit <= 1.05,
+            "active {label} AOT latency exceeds JIT tolerance: ratio={aot_to_jit:.3}"
+        );
+    }
 }
 
 fn run_active_rule_perf() {
     let config = PerfConfig::from_env();
+    run_active_rule_workload_perf(
+        "modsecurity_200001",
+        active_modsecurity_request_program(),
+        &config,
+    );
     run_active_rule_workload_perf("method_911", active_method_request_program(), &config);
     run_active_rule_workload_perf("sqli_942", active_sqli_request_program(), &config);
+    run_active_rule_workload_perf(
+        "response_sqli_951",
+        active_response_sqli_leak_program(),
+        &config,
+    );
 }
 
 fn run_default_ruleset_perf() {
@@ -1075,8 +1153,10 @@ assert(total == 28);
 fn active_rule_workloads_prove_matched_rule_ids() {
     let expected = Value::string("matched");
     for (label, program) in [
+        ("modsecurity_200001", active_modsecurity_request_program()),
         ("method_911", active_method_request_program()),
         ("sqli_942", active_sqli_request_program()),
+        ("response_sqli_951", active_response_sqli_leak_program()),
     ] {
         let mut vm = Vm::new(program);
         execute_and_verify(&mut vm, &expected, label);

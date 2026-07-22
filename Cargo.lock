@@ -1187,7 +1187,6 @@ name = "pd-edge-waf"
 version = "0.1.0"
 dependencies = [
  "axum",
- "libc",
  "pd-edge",
  "pd-vm",
  "reqwest",

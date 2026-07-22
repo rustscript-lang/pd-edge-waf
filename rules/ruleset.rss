@@ -147,11 +147,11 @@ fn evaluate_request_942_application_attack_sqli_phase_2(next: map<string>) -> ma
 
 pub fn inspect_request(next: map<string>) -> map<string> {
     next = engine_bundle::ctx_set_phase(next, 1);
-    if engine_bundle::category_enabled(&next, "request_911_method_enforcement") { next = evaluate_request_911_method_enforcement_phase_1(next); }
-    if engine_bundle::category_enabled(&next, "request_942_application_attack_sqli") { next = evaluate_request_942_application_attack_sqli_phase_1(next); }
+    if engine_bundle::category_enabled(&next, "request_911_method_enforcement") && engine_bundle::ctx_get(&next, "tx.allowed_methods") != "" && !string_contains(" " + engine_bundle::ctx_get(&next, "tx.allowed_methods") + " ", " " + engine_bundle::ctx_get(&next, "method") + " ") { next = evaluate_request_911_method_enforcement_phase_1(next); }
+    if engine_bundle::category_enabled(&next, "request_942_application_attack_sqli") && engine_bundle::sqli_category_prefilter(&next) { next = evaluate_request_942_application_attack_sqli_phase_1(next); }
     next = engine_bundle::ctx_set_phase(next, 2);
-    if engine_bundle::category_enabled(&next, "request_911_method_enforcement") { next = evaluate_request_911_method_enforcement_phase_2(next); }
-    if engine_bundle::category_enabled(&next, "request_942_application_attack_sqli") { next = evaluate_request_942_application_attack_sqli_phase_2(next); }
+    if engine_bundle::category_enabled(&next, "request_911_method_enforcement") && engine_bundle::ctx_get(&next, "tx.allowed_methods") != "" && !string_contains(" " + engine_bundle::ctx_get(&next, "tx.allowed_methods") + " ", " " + engine_bundle::ctx_get(&next, "method") + " ") { next = evaluate_request_911_method_enforcement_phase_2(next); }
+    if engine_bundle::category_enabled(&next, "request_942_application_attack_sqli") && engine_bundle::sqli_category_prefilter(&next) { next = evaluate_request_942_application_attack_sqli_phase_2(next); }
     next
 }
 

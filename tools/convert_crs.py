@@ -655,9 +655,17 @@ def render_entry(
         evaluator = evaluators.get((source, phase))
         if evaluator is None:
             return
-        lines.append(
-            f'    if engine_bundle::category_enabled(&next, "{category}") {{ next = {evaluator}(next); }}'
-        )
+        condition = f'engine_bundle::category_enabled(&next, "{category}")'
+        if category == "request_911_method_enforcement":
+            condition += (
+                ' && engine_bundle::ctx_get(&next, "tx.allowed_methods") != ""'
+                ' && !string_contains('
+                '" " + engine_bundle::ctx_get(&next, "tx.allowed_methods") + " ", '
+                '" " + engine_bundle::ctx_get(&next, "method") + " ")'
+            )
+        elif category == "request_942_application_attack_sqli":
+            condition += " && engine_bundle::sqli_category_prefilter(&next)"
+        lines.append(f"    if {condition} {{ next = {evaluator}(next); }}")
 
     lines.extend(
         [

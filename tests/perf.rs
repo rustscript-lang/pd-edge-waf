@@ -385,7 +385,9 @@ fn measure_case(
     config: &PerfConfig,
     expected: &Value,
 ) -> PerfStats {
-    let execution_mode = if vm.jit_config().enabled {
+    let execution_mode = if vm.has_aot_program() {
+        "aot"
+    } else if vm.jit_config().enabled {
         "trace_jit"
     } else {
         "interpreter"
@@ -632,7 +634,9 @@ fn run_default_ruleset_perf() {
             ..JitConfig::default()
         },
     );
-    jit_vm.set_jit_native_bridge_stats_enabled(true);
+    if std::env::var_os("WAF_PERF_BRIDGE_STATS").is_some() {
+        jit_vm.set_jit_native_bridge_stats_enabled(true);
+    }
     let jit = measure_case(
         "default_ruleset_jit_perf",
         jit_vm,
@@ -681,6 +685,82 @@ fn run_default_ruleset_perf() {
             aot.average_request.as_secs_f64() * 1_000_000.0,
             aot.average_request.as_secs_f64()
                 / interpreter.average_request.as_secs_f64().max(f64::EPSILON),
+        );
+
+        let mut paired_jit = Vm::new_with_jit_config(
+            default_request_program(),
+            JitConfig {
+                max_trace_len: 256,
+                ..JitConfig::default()
+            },
+        );
+        run_jit_warmup_until_stable(
+            &mut paired_jit,
+            &expected,
+            "default_ruleset_jit_paired",
+            &config,
+        );
+        let mut paired_aot = Vm::new_with_jit_config(
+            default_request_program(),
+            JitConfig {
+                enabled: false,
+                ..JitConfig::default()
+            },
+        );
+        paired_aot
+            .compile_aot()
+            .expect("paired WAF AOT diagnostic should compile");
+        run_fixed_warmup(
+            &mut paired_aot,
+            &expected,
+            "default_ruleset_aot_paired",
+            config.fixed_warmup_requests(),
+        );
+
+        let mut paired_jit_elapsed = Duration::ZERO;
+        let mut paired_aot_elapsed = Duration::ZERO;
+        for batch in 0..config.measured_batches {
+            if batch % 2 == 0 {
+                paired_jit_elapsed += run_batch(
+                    &mut paired_jit,
+                    &expected,
+                    "default_ruleset_jit_paired",
+                    config.batch_size,
+                );
+                paired_aot_elapsed += run_batch(
+                    &mut paired_aot,
+                    &expected,
+                    "default_ruleset_aot_paired",
+                    config.batch_size,
+                );
+            } else {
+                paired_aot_elapsed += run_batch(
+                    &mut paired_aot,
+                    &expected,
+                    "default_ruleset_aot_paired",
+                    config.batch_size,
+                );
+                paired_jit_elapsed += run_batch(
+                    &mut paired_jit,
+                    &expected,
+                    "default_ruleset_jit_paired",
+                    config.batch_size,
+                );
+            }
+        }
+        let paired_requests = config.measured_batches.saturating_mul(config.batch_size);
+        let paired_jit_average = paired_jit_elapsed.div_f64(paired_requests as f64);
+        let paired_aot_average = paired_aot_elapsed.div_f64(paired_requests as f64);
+        let paired_ratio =
+            paired_aot_average.as_secs_f64() / paired_jit_average.as_secs_f64().max(f64::EPSILON);
+        println!(
+            "waf_aot_jit_paired jit_average_us={:.3} aot_average_us={:.3} aot_to_jit_ratio={paired_ratio:.3}",
+            paired_jit_average.as_secs_f64() * 1_000_000.0,
+            paired_aot_average.as_secs_f64() * 1_000_000.0,
+        );
+        assert!(
+            paired_ratio <= 1.05,
+            "paired AOT latency must not exceed JIT by more than measurement tolerance: ratio={paired_ratio:.3}"
         );
     }
 }

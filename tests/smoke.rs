@@ -169,6 +169,51 @@ fn enabled_ruleset_fits_the_standard_vm() {
 }
 
 #[test]
+fn sqli_category_prefilter_skips_benign_request_and_admits_obvious_attack() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let engine = std::fs::read_to_string(root.join("rules/engine_bundle.rss"))
+        .expect("engine bundle should be readable");
+    let source = format!(
+        r#"{engine}
+let benign: map<string> = new_state(
+    "GET",
+    "/products",
+    "category=books&page=2",
+    "HTTP/1.1",
+    "192.0.2.10",
+    {{
+        "host": "shop.example.test",
+        "accept": "text/html,application/xhtml+xml",
+        "user-agent": "pd-edge-waf-perf/1.0"
+    }},
+    {{ "category": "books", "page": "2" }},
+    ""
+);
+let attack: map<string> = new_state(
+    "GET",
+    "/products",
+    "q=1%20union%20select%20password",
+    "HTTP/1.1",
+    "192.0.2.10",
+    {{ "host": "shop.example.test" }},
+    {{ "q": "1 union select password" }},
+    ""
+);
+assert(!sqli_category_prefilter(&benign));
+assert(sqli_category_prefilter(&attack));
+"ok";
+"#
+    );
+    let compiled = vm::compile_source(&source).expect("prefilter fixture should compile");
+    let mut vm = vm::Vm::new(compiled.program);
+    assert_eq!(
+        vm.run().expect("prefilter fixture should run"),
+        vm::VmStatus::Halted
+    );
+    assert_eq!(vm.stack().last(), Some(&vm::Value::string("ok")));
+}
+
+#[test]
 fn enabled_ruleset_folds_common_exception_updates_into_rule_payloads() {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
     let source = std::fs::read_to_string(root.join("rules/ruleset.rss"))

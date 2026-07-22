@@ -290,6 +290,28 @@ class TransformPlanTests(unittest.TestCase):
             2,
         )
 
+    def test_expensive_categories_are_guarded_by_safe_prefilters(self) -> None:
+        method_rule = convert_crs.Directive(
+            kind="SecRule", source="REQUEST-911-METHOD-ENFORCEMENT.conf", source_line=1,
+            rule_id=911100, phase=1, chain_index=0, targets="REQUEST_METHOD",
+            operator="@within", pattern="GET HEAD POST OPTIONS",
+        )
+        method_rendered = convert_crs.render_entry(
+            [method_rule], "4.28.0", {}, {"request_911_method_enforcement"}
+        )
+        self.assertEqual(method_rendered.count('ctx_get(&next, "tx.allowed_methods")'), 2)
+        self.assertEqual(method_rendered.count('ctx_get(&next, "method")'), 1)
+
+        sqli_rule = convert_crs.Directive(
+            kind="SecRule", source="REQUEST-942-APPLICATION-ATTACK-SQLI.conf", source_line=1,
+            rule_id=942100, phase=2, chain_index=0, targets="ARGS",
+            operator="@rx", pattern="select",
+        )
+        sqli_rendered = convert_crs.render_entry(
+            [sqli_rule], "4.28.0", {}, {"request_942_application_attack_sqli"}
+        )
+        self.assertEqual(sqli_rendered.count("sqli_category_prefilter(&next)"), 1)
+
     def test_contiguous_plan_619_regex_rules_share_sound_prefilter(self) -> None:
         directives = [
             convert_crs.Directive(

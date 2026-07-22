@@ -112,6 +112,17 @@ pub fn one(state: map<string>, base: string, name: string, text: [string], targe
  out
 }
 
+pub fn sqli_category_prefilter(state: map<string>) -> bool {
+ let text: string = string_lower_ascii(
+  ctx_get(&state, "query") + "\n" +
+  ctx_get(&state, "request_body") + "\n" +
+  ctx_get(&state, "args") + "\n" +
+  ctx_get(&state, "cookies") + "\n" +
+  ctx_get(&state, "request_headers")
+ );
+ re::match("(?i)(['\"`%\\[\\]{}|!^~*<>#]|\\b(?:select|union|insert|update|delete|drop|alter|create|truncate|replace|merge|from|where|having|group|order|limit|offset|join|into|values|set|call|exec|execute|declare|cast|convert|coalesce|case|when|then|else|end|sleep|benchmark|waitfor|delay|load_file|outfile|dumpfile|information_schema|mysql|sqlite|xor|regexp|rlike)\\b|0x[0-9a-f]|--|/\\*)", &text)
+}
+
 pub fn ctx_targets(state: map<string>, text: [string], target_count: int, id: int) -> [string] {
  let mut out: [string] = []; let has_dynamic: bool = (&state).has(&("exclude_base." + id)); let encoded_bases: string = if has_dynamic => { (&state)["exclude_base." + id] } else => { "" }; let encoded_selectors: string = if has_dynamic => { ctx_get(&state, "exclude_selector." + id) } else => { "" }; let dynamic_bases: [string] = if has_dynamic => { string_split_literal(encoded_bases, "\n") } else => { [] }; let dynamic_selectors: [string] = if has_dynamic => { string_split_literal(encoded_selectors, "\n") } else => { [] }; let mut i: int = 0;
  while i < (if target_count % 32768 < 16384 => { target_count % 64 } else => { (target_count / 65536) % 64 }) { let position: int = 3 + i * 2; let raw_base: string = (&text)[position]; let name: string = (&text)[position + 1]; if (target_count % 32768 < 16384 || !descriptor_excludes(&text, target_count, &raw_base, &name)) && (!has_dynamic || !dynamic_descriptor_excludes(&dynamic_bases, &dynamic_selectors, &raw_base, &name)) { let values: [string] = one(&state, raw_base, name, &text, target_count, &dynamic_bases, &dynamic_selectors); if (target_count / 32768) % 2 == 0 || i < (target_count / 4194304) % 64 { for j in 0..values.length { out[out.length] = (&values)[j]; } } else { out[out.length] = values.length + ""; } } i = i + 1; }

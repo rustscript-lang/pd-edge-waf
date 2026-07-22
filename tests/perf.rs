@@ -192,11 +192,12 @@ impl TraceShapeStats {
 }
 
 fn terminal_rank(terminal: &JitTraceTerminal) -> u8 {
-    match terminal {
-        JitTraceTerminal::LoopBack => 0,
-        JitTraceTerminal::BranchExit => 1,
-        JitTraceTerminal::Halt => 2,
-        JitTraceTerminal::CallValue => 3,
+    match format!("{terminal:?}").as_str() {
+        "LoopBack" => 0,
+        "BranchExit" | "SideExit" => 1,
+        "Halt" | "Materialization" => 2,
+        "CallValue" => 3,
+        _ => 4,
     }
 }
 

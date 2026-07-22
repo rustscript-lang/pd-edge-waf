@@ -32,7 +32,7 @@ pub fn evaluate_request_901_initialization(next: map<string>) -> map<string> {
     next = engine_bundle::apply_rule(next, 901320, 1, true, ["1", "", "", "TX", "ENABLE_DEFAULT_COLLECTIONS"], 641, 0, 0, false, 403);
     next = engine_bundle::apply_rule(next, 901320, 2, false, ["", "", "", "TX", "ua_hash"], 1089, 6731, 0, false, 403);
     next = engine_bundle::apply_rule(next, 901340, 0, false, ["(?:URLENCODED|MULTIPART|XML|JSON)", "", "Enabling body inspection", "REQBODY_PROCESSOR", ""], 2113, 0, 0, false, 403);
-    next = engine_bundle::apply_rule_619(next, 901350, 0, true, ["1", "", "Enabling forced body inspection for ASCII content", "TX", "enforce_bodyproc_urlencoded"], 641, 619, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 901350, 0, true, ["1", "", "Enabling forced body inspection for ASCII content", "TX", "enforce_bodyproc_urlencoded"], 641, 619, 0, false, 403);
     next = engine_bundle::apply_rule(next, 901350, 1, false, ["(?:URLENCODED|MULTIPART|XML|JSON)", "", "", "REQBODY_PROCESSOR", ""], 2113, 0, 0, false, 403);
     next = engine_bundle::apply_rule(next, 901400, 0, false, ["100", "END-SAMPLING", "", "TX", "sampling_percentage"], 641, 0, 0, false, 403);
     next = engine_bundle::apply_rule(next, 901410, 0, false, ["^[a-f]*([0-9])[a-f]*([0-9])", "", "", "UNIQUE_ID", ""], 65, 210, 0, false, 403);

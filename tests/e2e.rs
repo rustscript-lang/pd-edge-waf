@@ -80,7 +80,13 @@ async fn pd_edge_entrypoint_forwards_benign_and_blocks_attacks() {
         .send()
         .await
         .expect("program upload should complete");
-    assert_eq!(upload.status(), StatusCode::NO_CONTENT);
+    let upload_status = upload.status();
+    let upload_body = upload.text().await.expect("upload body should read");
+    assert_eq!(
+        upload_status,
+        StatusCode::NO_CONTENT,
+        "program upload failed: {upload_body}"
+    );
 
     let request = |method: Method, path: &str, enabled_ruleset: &str| {
         client

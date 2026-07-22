@@ -6,7 +6,7 @@ pub fn evaluate_request_920_protocol_enforcement(next: map<string>) -> map<strin
     next = engine_bundle::apply_rule(next, 920011, 0, false, ["1", "END-REQUEST-920-PROTOCOL-ENFORCEMENT", "", "TX", "DETECTION_PARANOIA_LEVEL"], 705, 0, 0, false, 403);
     next = engine_bundle::apply_rule(next, 920012, 0, false, ["1", "END-REQUEST-920-PROTOCOL-ENFORCEMENT", "", "TX", "DETECTION_PARANOIA_LEVEL"], 705, 0, 0, false, 403);
     next = engine_bundle::apply_rule(next, 920100, 0, false, ["(?i)^(?:connect (?:(?:[0-9]{1,3}\\.){3}[0-9]{1,3}\\.?(?::[0-9]+)?|[\\--9A-Z_a-z]+:[0-9]+)|options \\*|[a-z]{3,10}[\\s\\x0b]+(?:[0-9A-Z_a-z]{3,7}?://[\\--9A-Z_a-z]*(?::[0-9]+)?)?/[^#\\?]*(?:\\?[^\\s\\x0b#]*)?(?:#[^\\s\\x0b]*)?)[\\s\\x0b]+[\\.-9A-Z_a-z]+$", "", "Invalid HTTP Request Line", "REQUEST_LINE", ""], 2113, 11, 3, false, 403);
-    next = engine_bundle::apply_rule_619(next, 920120, 0, false, ["(?i)^(?:&(?:(?:[acegilnorsuz]acut|[aeiou]grav|[aino]tild)e|[c-elnr-tz]caron|(?:[cgklnr-t]cedi|[aeiouy]um)l|[aceg-josuwy]circ|[au]ring|a(?:mp|pos)|nbsp|oslash);|[^\\\"';=\\x5c])*$", "", "Attempted multipart/form-data bypass", "FILES", "", "FILES_NAMES", ""], 2114, 619, 5, false, 403);
+    next = engine_bundle::apply_rule(next, 920120, 0, false, ["(?i)^(?:&(?:(?:[acegilnorsuz]acut|[aeiou]grav|[aino]tild)e|[c-elnr-tz]caron|(?:[cgklnr-t]cedi|[aeiouy]um)l|[aceg-josuwy]circ|[au]ring|a(?:mp|pos)|nbsp|oslash);|[^\\\"';=\\x5c])*$", "", "Attempted multipart/form-data bypass", "FILES", "", "FILES_NAMES", ""], 2114, 619, 5, false, 403);
     next = engine_bundle::apply_rule(next, 920160, 0, false, ["^\\d+$", "", "Content-Length HTTP header is not numeric", "REQUEST_HEADERS", "Content-Length"], 2113, 11, 5, false, 403);
     next = engine_bundle::apply_rule(next, 920170, 0, true, ["^(?:GET|HEAD)$", "", "GET or HEAD Request with Body Content", "REQUEST_METHOD", ""], 65, 11, 5, false, 403);
     next = engine_bundle::apply_rule(next, 920170, 1, false, ["^0?$", "", "", "REQUEST_HEADERS", "Content-Length"], 2113, 11, 0, false, 403);
@@ -25,7 +25,7 @@ pub fn evaluate_request_920_protocol_enforcement(next: map<string>) -> map<strin
     next = engine_bundle::apply_rule(next, 920250, 0, true, ["1", "", "UTF8 Encoding Abuse Attack Attempt", "TX", "CRS_VALIDATE_UTF8_ENCODING"], 641, 11, 3, false, 403);
     next = engine_bundle::apply_rule(next, 920250, 1, false, ["", "", "", "REQUEST_FILENAME", "", "ARGS", "", "ARGS_NAMES", ""], 963, 0, 0, false, 403);
     next = engine_bundle::apply_rule(next, 920260, 0, false, ["(?i)%uff[0-9a-f]{2}", "", "Unicode Full/Half Width Abuse Attack Attempt", "REQUEST_URI", "", "REQUEST_BODY", ""], 66, 11, 3, false, 403);
-    next = engine_bundle::apply_rule_619(next, 920270, 0, false, ["1-255", "", "Invalid character in request (null character)", "REQUEST_URI_RAW", "", "REQUEST_HEADERS", "", "ARGS", "", "ARGS_NAMES", ""], 1028, 619, 5, false, 403);
+    next = engine_bundle::apply_rule(next, 920270, 0, false, ["1-255", "", "Invalid character in request (null character)", "REQUEST_URI_RAW", "", "REQUEST_HEADERS", "", "ARGS", "", "ARGS_NAMES", ""], 1028, 619, 5, false, 403);
     next = engine_bundle::apply_rule(next, 920280, 0, false, ["0", "END-HOST-CHECK", "Request Missing a Host Header", "REQUEST_HEADERS", "Host"], 33409, 11, 5, false, 403);
     next = engine_bundle::apply_rule(next, 920290, 0, false, ["^$", "", "Empty Host Header", "REQUEST_HEADERS", "Host"], 65, 11, 5, false, 403);
     next = engine_bundle::apply_marker(next, "END-HOST-CHECK");
@@ -61,9 +61,9 @@ pub fn evaluate_request_920_protocol_enforcement(next: map<string>) -> map<strin
     next = engine_bundle::apply_rule(next, 920640, 0, true, ["0", "", "Content-Type header missing from request with body", "REQUEST_BODY_LENGTH", ""], 833, 11, 5, false, 403);
     next = engine_bundle::apply_rule(next, 920640, 1, false, ["0", "", "", "REQUEST_HEADERS", "Content-Type"], 33409, 11, 0, false, 403);
     next = engine_bundle::apply_rule(next, 920430, 0, false, ["tx.allowed_http_versions", "", "HTTP protocol version is not allowed by policy", "REQUEST_PROTOCOL", ""], 6721, 11, 5, false, 403);
-    next = engine_bundle::apply_rule_619(next, 920440, 0, true, ["\\.([^.]+)$", "", "URL file extension is restricted by policy", "REQUEST_BASENAME", ""], 65, 619, 5, false, 403);
+    next = engine_bundle::apply_rule(next, 920440, 0, true, ["\\.([^.]+)$", "", "URL file extension is restricted by policy", "REQUEST_BASENAME", ""], 65, 619, 5, false, 403);
     next = engine_bundle::apply_rule(next, 920440, 1, false, ["tx.restricted_extensions", "", "", "TX", "EXTENSION"], 4673, 331, 0, false, 403);
-    next = engine_bundle::apply_rule_619(next, 920500, 0, false, ["\\.[^.~]+~(?:/.*|)$", "", "Attempt to access a backup or working file", "REQUEST_FILENAME", ""], 65, 619, 5, false, 403);
+    next = engine_bundle::apply_rule(next, 920500, 0, false, ["\\.[^.~]+~(?:/.*|)$", "", "Attempt to access a backup or working file", "REQUEST_FILENAME", ""], 65, 619, 5, false, 403);
     next = engine_bundle::apply_rule(next, 920450, 0, true, ["^.*$", "", "HTTP header is restricted by policy (%{MATCHED_VAR})", "REQUEST_HEADERS_NAMES", ""], 65, 331, 5, false, 403);
     next = engine_bundle::apply_rule(next, 920450, 1, false, ["tx.restricted_headers_basic", "", "", "TX", "/^header_name_920450_/"], 4673, 0, 0, false, 403);
     next = engine_bundle::apply_rule(next, 920520, 0, false, ["100", "", "Accept-Encoding header exceeded sensible length", "REQUEST_HEADERS", "Accept-Encoding"], 833, 9547, 5, false, 403);
@@ -76,12 +76,12 @@ pub fn evaluate_request_920_protocol_enforcement(next: map<string>) -> map<strin
     next = engine_bundle::apply_rule(next, 920014, 0, false, ["2", "END-REQUEST-920-PROTOCOL-ENFORCEMENT", "", "TX", "DETECTION_PARANOIA_LEVEL"], 705, 0, 0, false, 403);
     next = engine_bundle::apply_rule(next, 920200, 0, true, ["^bytes=(?:(?:\\d+)?-(?:\\d+)?\\s*,?\\s*){6}", "", "Range: Too many fields (6 or more)", "REQUEST_HEADERS", "Range"], 65, 11, 3, false, 403);
     next = engine_bundle::apply_rule(next, 920200, 1, false, [".pdf", "", "", "REQUEST_BASENAME", ""], 2497, 0, 0, false, 403);
-    next = engine_bundle::apply_rule_619(next, 920201, 0, true, [".pdf", "", "Range: Too many fields for pdf request (63 or more)", "REQUEST_BASENAME", ""], 449, 619, 3, false, 403);
+    next = engine_bundle::apply_rule(next, 920201, 0, true, [".pdf", "", "Range: Too many fields for pdf request (63 or more)", "REQUEST_BASENAME", ""], 449, 619, 3, false, 403);
     next = engine_bundle::apply_rule(next, 920201, 1, false, ["^bytes=(?:(?:\\d+)?-(?:\\d+)?\\s*,?\\s*){63}", "", "", "REQUEST_HEADERS", "Range"], 65, 0, 0, false, 403);
     next = engine_bundle::apply_rule(next, 920230, 0, false, ["%[0-9a-fA-F]{2}", "", "Multiple URL Encoding Detected", "ARGS", ""], 65, 11, 3, false, 403);
-    next = engine_bundle::apply_rule_619(next, 920271, 0, false, ["9,10,13,32-126,128-255", "", "Invalid character in request (non printable characters)", "REQUEST_URI_RAW", "", "REQUEST_HEADERS", "", "ARGS", "", "ARGS_NAMES", ""], 1028, 619, 5, false, 403);
+    next = engine_bundle::apply_rule(next, 920271, 0, false, ["9,10,13,32-126,128-255", "", "Invalid character in request (non printable characters)", "REQUEST_URI_RAW", "", "REQUEST_HEADERS", "", "ARGS", "", "ARGS_NAMES", ""], 1028, 619, 5, false, 403);
     next = engine_bundle::apply_rule(next, 920320, 0, false, ["0", "", "Missing User Agent Header", "REQUEST_HEADERS", "User-Agent"], 33409, 11, 2, false, 403);
-    next = engine_bundle::apply_rule_619(next, 920121, 0, false, ["['\\\";=\\x5c]", "", "Attempted multipart/form-data bypass", "FILES_NAMES", "", "FILES", ""], 66, 619, 5, false, 403);
+    next = engine_bundle::apply_rule(next, 920121, 0, false, ["['\\\";=\\x5c]", "", "Attempted multipart/form-data bypass", "FILES_NAMES", "", "FILES", ""], 66, 619, 5, false, 403);
     next = engine_bundle::apply_rule(next, 920451, 0, true, ["^.*$", "", "HTTP header is restricted by policy (%{MATCHED_VAR})", "REQUEST_HEADERS_NAMES", ""], 65, 331, 5, false, 403);
     next = engine_bundle::apply_rule(next, 920451, 1, false, ["tx.restricted_headers_extended", "", "", "TX", "/^header_name_920451_/"], 4673, 0, 0, false, 403);
     next = engine_bundle::apply_rule(next, 920240, 0, true, ["URLENCODED", "", "URL Encoding Abuse Attack Attempt", "REQBODY_PROCESSOR", ""], 513, 11, 3, false, 403);
@@ -92,7 +92,7 @@ pub fn evaluate_request_920_protocol_enforcement(next: map<string>) -> map<strin
     next = engine_bundle::apply_rule(next, 920650, 2, false, ["^[a-z]{3,10}$", "", "", "ARGS", "_method"], 65, 10859, 0, false, 403);
     next = engine_bundle::apply_rule(next, 920015, 0, false, ["3", "END-REQUEST-920-PROTOCOL-ENFORCEMENT", "", "TX", "DETECTION_PARANOIA_LEVEL"], 705, 0, 0, false, 403);
     next = engine_bundle::apply_rule(next, 920016, 0, false, ["3", "END-REQUEST-920-PROTOCOL-ENFORCEMENT", "", "TX", "DETECTION_PARANOIA_LEVEL"], 705, 0, 0, false, 403);
-    next = engine_bundle::apply_rule_619(next, 920272, 0, false, ["32-36,38-126", "", "Invalid character in request (outside of printable chars below ascii 127)", "REQUEST_URI_RAW", "", "REQUEST_HEADERS", "", "ARGS", "", "ARGS_NAMES", "", "REQUEST_BODY", ""], 1029, 619, 5, false, 403);
+    next = engine_bundle::apply_rule(next, 920272, 0, false, ["32-36,38-126", "", "Invalid character in request (outside of printable chars below ascii 127)", "REQUEST_URI_RAW", "", "REQUEST_HEADERS", "", "ARGS", "", "ARGS_NAMES", "", "REQUEST_BODY", ""], 1029, 619, 5, false, 403);
     next = engine_bundle::apply_rule(next, 920300, 0, true, ["0", "", "Request Missing an Accept Header", "REQUEST_HEADERS", "Accept"], 33409, 11, 2, false, 403);
     next = engine_bundle::apply_rule(next, 920300, 1, true, ["^(?:OPTIONS|CONNECT)$", "", "", "REQUEST_METHOD", ""], 2113, 0, 0, false, 403);
     next = engine_bundle::apply_rule(next, 920300, 2, false, ["AppleWebKit Android", "", "", "REQUEST_HEADERS", "User-Agent"], 2177, 11, 0, false, 403);
@@ -103,11 +103,11 @@ pub fn evaluate_request_920_protocol_enforcement(next: map<string>) -> map<strin
     next = engine_bundle::apply_rule(next, 920521, 0, false, ["br|compress|deflate|(?:pack200-)?gzip|identity|\\*|^$|aes128gcm|exi|zstd|x-(?:compress|gzip)", "", "Illegal Accept-Encoding header", "REQUEST_HEADERS", "Accept-Encoding"], 2113, 331, 5, false, 403);
     next = engine_bundle::apply_rule(next, 920017, 0, false, ["4", "END-REQUEST-920-PROTOCOL-ENFORCEMENT", "", "TX", "DETECTION_PARANOIA_LEVEL"], 705, 0, 0, false, 403);
     next = engine_bundle::apply_rule(next, 920018, 0, false, ["4", "END-REQUEST-920-PROTOCOL-ENFORCEMENT", "", "TX", "DETECTION_PARANOIA_LEVEL"], 705, 0, 0, false, 403);
-    next = engine_bundle::apply_rule_619(next, 920202, 0, true, [".pdf", "", "Range: Too many fields for pdf request (6 or more)", "REQUEST_BASENAME", ""], 449, 619, 3, false, 403);
+    next = engine_bundle::apply_rule(next, 920202, 0, true, [".pdf", "", "Range: Too many fields for pdf request (6 or more)", "REQUEST_BASENAME", ""], 449, 619, 3, false, 403);
     next = engine_bundle::apply_rule(next, 920202, 1, false, ["^bytes=(?:(?:\\d+)?-(?:\\d+)?\\s*,?\\s*){6}", "", "", "REQUEST_HEADERS", "Range"], 65, 0, 0, false, 403);
-    next = engine_bundle::apply_rule_619(next, 920273, 0, false, ["38,44-46,48-58,61,65-90,95,97-122", "", "Invalid character in request (outside of very strict set)", "ARGS", "", "ARGS_NAMES", "", "REQUEST_BODY", ""], 1027, 619, 5, false, 403);
-    next = engine_bundle::apply_rule_619(next, 920274, 0, false, ["32,34,38,42-59,61,65-90,95,97-122", "", "Invalid character in request headers (outside of very strict set)", "REQUEST_HEADERS", "", "REQUEST_HEADERS", "User-Agent", "REQUEST_HEADERS", "Referer", "REQUEST_HEADERS", "Cookie", "REQUEST_HEADERS", "Sec-Fetch-User", "REQUEST_HEADERS", "Sec-CH-UA", "REQUEST_HEADERS", "Sec-CH-UA-Mobile"], 82951, 619, 5, false, 403);
-    next = engine_bundle::apply_rule_619(next, 920275, 0, false, ["^(?:\\?[01])?$", "", "Invalid character in request headers (outside of very strict set)", "REQUEST_HEADERS", "Sec-Fetch-User", "REQUEST_HEADERS", "Sec-CH-UA-Mobile"], 2114, 619, 5, false, 403);
+    next = engine_bundle::apply_rule(next, 920273, 0, false, ["38,44-46,48-58,61,65-90,95,97-122", "", "Invalid character in request (outside of very strict set)", "ARGS", "", "ARGS_NAMES", "", "REQUEST_BODY", ""], 1027, 619, 5, false, 403);
+    next = engine_bundle::apply_rule(next, 920274, 0, false, ["32,34,38,42-59,61,65-90,95,97-122", "", "Invalid character in request headers (outside of very strict set)", "REQUEST_HEADERS", "", "REQUEST_HEADERS", "User-Agent", "REQUEST_HEADERS", "Referer", "REQUEST_HEADERS", "Cookie", "REQUEST_HEADERS", "Sec-Fetch-User", "REQUEST_HEADERS", "Sec-CH-UA", "REQUEST_HEADERS", "Sec-CH-UA-Mobile"], 82951, 619, 5, false, 403);
+    next = engine_bundle::apply_rule(next, 920275, 0, false, ["^(?:\\?[01])?$", "", "Invalid character in request headers (outside of very strict set)", "REQUEST_HEADERS", "Sec-Fetch-User", "REQUEST_HEADERS", "Sec-CH-UA-Mobile"], 2114, 619, 5, false, 403);
     next = engine_bundle::apply_rule(next, 920460, 0, false, ["(?:^|[^\\x5c])\\x5c[cdeghijklmpqwxyz123456789]", "", "Abnormal character escapes in request", "REQUEST_URI", "", "REQUEST_HEADERS", "", "ARGS", "", "ARGS_NAMES", ""], 68, 10475, 5, false, 403);
     next = engine_bundle::apply_marker(next, "END-REQUEST-920-PROTOCOL-ENFORCEMENT");
     next

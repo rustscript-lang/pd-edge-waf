@@ -245,7 +245,7 @@ class TransformPlanTests(unittest.TestCase):
             convert_crs.render_directive_call(prefixed, {}),
         )
 
-    def test_plan_619_uses_specialized_rule_evaluator(self) -> None:
+    def test_plan_619_uses_generic_rule_evaluator(self) -> None:
         directive = convert_crs.Directive(
             kind="SecRule",
             source="REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
@@ -259,7 +259,8 @@ class TransformPlanTests(unittest.TestCase):
             actions="id:942140,phase:2,t:none,t:urlDecodeUni,severity:'CRITICAL'",
         )
         rendered = convert_crs.render_directive_call(directive, {})
-        self.assertTrue(rendered.startswith("next = engine_bundle::apply_rule_619("))
+        self.assertTrue(rendered.startswith("next = engine_bundle::apply_rule("))
+        self.assertNotIn("apply_rule_619", rendered)
         self.assertIn(", 65, 619, 5, false, 403);", rendered)
 
     def test_entry_guards_rule_calls_by_phase(self) -> None:
@@ -311,11 +312,12 @@ class TransformPlanTests(unittest.TestCase):
             {},
             {"request_942_application_attack_sqli"},
         )
-        self.assertEqual(rendered.count("apply_rule_619(next, -1"), 1)
+        self.assertEqual(rendered.count("apply_rule(next, -1"), 1)
         self.assertIn("(?:first)|(?:second)", rendered)
+        self.assertNotIn("apply_rule_619", rendered)
 
-        first = rendered.index("apply_rule_619(next, 942001")
-        second = rendered.index("apply_rule_619(next, 942002")
+        first = rendered.index("apply_rule(next, 942001")
+        second = rendered.index("apply_rule(next, 942002")
         self.assertLess(first, second)
 
     def test_enabled_sqli_probe_uses_plan_abi(self) -> None:

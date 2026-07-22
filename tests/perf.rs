@@ -627,7 +627,7 @@ fn run_default_ruleset_perf() {
     let mut jit_vm = Vm::new_with_jit_config(
         default_ruleset_program.clone(),
         JitConfig {
-            max_trace_len: 64,
+            max_trace_len: 256,
             ..JitConfig::default()
         },
     );

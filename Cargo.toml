@@ -17,3 +17,4 @@ axum = "0.8"
 edge = { package = "pd-edge", path = "../pd-edge" }
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
 tokio = { version = "1", features = ["full"] }
+libc = "0.2"

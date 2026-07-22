@@ -481,6 +481,47 @@ def render_directive_call(
     return f"next = engine_bundle::component_signature(next, {rss_string(directive.value)});"
 
 
+def guard_rule_call(call: str) -> str:
+    return (
+        'if engine_bundle::ctx_get(&next, "blocked") != "1" '
+        '&& engine_bundle::ctx_get(&next, "skip") == "" { '
+        f"{call} }}"
+    )
+
+
+def render_entry_directive_call(
+    directive: Directive,
+    data_contents: dict[str, str],
+    target_updates: dict[int, list[str]],
+) -> str:
+    if (
+        directive.kind == "SecRule"
+        and directive.rule_id in {911011, 911012, 911013, 911014, 911015, 911016, 911017, 911018}
+        and module_name(directive.source) == "request_911_method_enforcement"
+    ):
+        threshold = (directive.rule_id - 911009) // 2
+        call = (
+            "if engine_bundle::number(engine_bundle::ctx_get(&next, "
+            f'"tx.detection_paranoia_level"), 1) < {threshold} {{ '
+            "next = engine_bundle::record_rule_match(next, "
+            f'["{directive.rule_id}", "0", "0", "403", '
+            '"END-REQUEST-911-METHOD-ENFORCEMENT", ""]); }'
+        )
+    elif (
+        directive.kind == "SecRule"
+        and directive.rule_id == 911100
+        and module_name(directive.source) == "request_911_method_enforcement"
+    ):
+        call = (
+            "next = engine_bundle::record_rule_match(next, "
+            '["911100", "5", "0", "403", "", '
+            '"Method is not allowed by policy"]);'
+        )
+    else:
+        call = render_directive_call(directive, data_contents, target_updates)
+    return guard_rule_call(call) if directive.kind == "SecRule" else call
+
+
 def render_module(
     filename: str,
     module: str,
@@ -602,7 +643,13 @@ def render_entry(
             lines.append(f"fn {evaluator}(next: map<string>) -> map<string> {{")
             if category == "request_942_application_attack_sqli" and phase == 2:
                 lines.append(
-                    '    next = engine_bundle::apply_rule(next, 942100, 0, false, ["", "", "SQL Injection Attack Detected", "QUERY_STRING", "", "ARGS", "", "REQUEST_BODY", ""], 195, 15979, 5, false, 403);'
+                    "    "
+                    + guard_rule_call(
+                        "if engine_bundle::sqli_query_rule_match(&next) { "
+                        "next = engine_bundle::record_rule_match(next, "
+                        '["942100", "5", "0", "403", "", '
+                        '"SQL Injection Attack Detected"]); }'
+                    )
                 )
             directive_index = 0
             while directive_index < len(phase_directives):
@@ -625,11 +672,16 @@ def render_entry(
                 if run_end - directive_index >= 2:
                     run = [item[0] for item in phase_directives[directive_index:run_end]]
                     lines.append(
-                        f"    {render_plan_619_prefilter(run, data_contents, target_updates)}"
+                        "    "
+                        + guard_rule_call(
+                            render_plan_619_prefilter(
+                                run, data_contents, target_updates
+                            )
+                        )
                     )
                     lines.append('    if (&next)["prefilter"] == "1" {')
                     for grouped_directive in run:
-                        call = render_directive_call(
+                        call = render_entry_directive_call(
                             grouped_directive,
                             data_contents,
                             target_updates,
@@ -638,7 +690,7 @@ def render_entry(
                     lines.append("    }")
                     lines.append('    next["prefilter"] = "0";')
                 else:
-                    call = render_directive_call(
+                    call = render_entry_directive_call(
                         directive,
                         data_contents,
                         target_updates,
@@ -650,7 +702,7 @@ def render_entry(
                 lines.append(f"    {call}")
             lines.extend(["    next", "}", ""])
 
-    def category_condition(source: str) -> str:
+    def category_condition(source: str, phase: int | None = None) -> str:
         category = module_name(source)
         condition = f'engine_bundle::category_enabled(&next, "{category}")'
         if category == "request_911_method_enforcement":
@@ -661,14 +713,17 @@ def render_entry(
                 '" " + engine_bundle::ctx_get(&next, "method") + " ")'
             )
         elif category == "request_942_application_attack_sqli":
-            condition += " && engine_bundle::sqli_category_prefilter(&next)"
+            phase_one = "true" if phase == 1 else "false"
+            condition += (
+                f" && engine_bundle::sqli_category_prefilter(&next, {phase_one})"
+            )
         return condition
 
     def append_enabled_call(source: str, phase: int) -> None:
         evaluator = evaluators.get((source, phase))
         if evaluator is None:
             return
-        condition = category_condition(source)
+        condition = category_condition(source, phase)
         lines.append(f"    if {condition} {{ next = {evaluator}(next); }}")
 
     lines.extend(
@@ -677,26 +732,69 @@ def render_entry(
         ]
     )
 
-    request_conditions = [
-        category_condition(source)
+
+    request_sources = [
+        source
         for source in grouped
         if source.startswith("REQUEST-")
         and any((source, phase) in evaluators for phase in (1, 2))
     ]
-    if request_conditions:
-        lines.append(
-            "    if !(" + " || ".join(request_conditions)
-            + ") => { engine_bundle::ctx_set_phase(next, 2) } else => {"
-        )
+    method_source = next(
+        (
+            source
+            for source in request_sources
+            if module_name(source) == "request_911_method_enforcement"
+        ),
+        None,
+    )
+    sqli_source = next(
+        (
+            source
+            for source in request_sources
+            if module_name(source) == "request_942_application_attack_sqli"
+        ),
+        None,
+    )
 
-    for phase in (1, 2):
-        lines.append(f"    next = engine_bundle::ctx_set_phase(next, {phase});")
-        for source in grouped:
-            if source.startswith("REQUEST-"):
+    if method_source is not None and sqli_source is not None:
+        lines.append(f"    if {category_condition(method_source)} => {{")
+        for phase in (1, 2):
+            lines.append(f"    next = engine_bundle::ctx_set_phase(next, {phase});")
+            for source in request_sources:
                 append_enabled_call(source, phase)
-    lines.append("    next")
-    if request_conditions:
-        lines.append("    }")
+        lines.extend(["    next", f"    }} else if {category_condition(sqli_source)} => {{"])
+        lines.append("    next = engine_bundle::ctx_set_phase(next, 1);")
+        sqli_phase_one = evaluators.get((sqli_source, 1))
+        if sqli_phase_one is not None:
+            lines.append(
+                "    if engine_bundle::sqli_category_prefilter(&next, true) "
+                f"{{ next = {sqli_phase_one}(next); }}"
+            )
+        lines.append("    next = engine_bundle::ctx_set_phase(next, 2);")
+        sqli_phase_two = evaluators.get((sqli_source, 2))
+        if sqli_phase_two is not None:
+            lines.append(f"    next = {sqli_phase_two}(next);")
+        lines.extend(
+            [
+                "    next",
+                "    } else => { engine_bundle::ctx_set_phase(next, 2) }",
+            ]
+        )
+    else:
+        request_conditions = [category_condition(source) for source in request_sources]
+        if request_conditions:
+            lines.append(
+                "    if !(" + " || ".join(request_conditions)
+                + ") => { engine_bundle::ctx_set_phase(next, 2) } else => {"
+            )
+
+        for phase in (1, 2):
+            lines.append(f"    next = engine_bundle::ctx_set_phase(next, {phase});")
+            for source in request_sources:
+                append_enabled_call(source, phase)
+        lines.append("    next")
+        if request_conditions:
+            lines.append("    }")
     lines.extend(["}", ""])
 
     lines.extend(

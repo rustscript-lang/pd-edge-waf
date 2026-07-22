@@ -57,14 +57,20 @@ pub fn one(state: map<string>, base: string, name: string, text: [string], targe
  out
 }
 
-pub fn sqli_category_prefilter(state: map<string>) -> bool {
+pub fn sqli_category_prefilter(state: map<string>, phase_one: bool) -> bool {
  re::match(
   "(?i)(['\"`%\\[\\]{}|!^~*<>#]|\\b(?:select|union|insert|update|delete|drop|alter|create|truncate|replace|merge|from|where|having|group|order|limit|offset|join|into|values|set|call|exec|execute|declare|cast|convert|coalesce|case|when|then|else|end|sleep|benchmark|waitfor|delay|load_file|outfile|dumpfile|information_schema|mysql|sqlite|xor|regexp|rlike)\\b|0x[0-9a-f]|--|/\\*)",
-  &(ctx_get(&state, "query") + "\n" +
-   ctx_get(&state, "request_body") + "\n" +
-   ctx_get(&state, "args") + "\n" +
-   ctx_get(&state, "cookies") + "\n" +
-   ctx_get(&state, "request_headers"))
+  &(ctx_get(&state, "path") + "\n" +
+   (if phase_one => {
+    ctx_get(&state, "cookies") + "\n" +
+    ctx_get(&state, "request_headers")
+   } else => {
+    ctx_get(&state, "query") + "\n" +
+    ctx_get(&state, "request_body") + "\n" +
+    ctx_get(&state, "args") + "\n" +
+    ctx_get(&state, "cookies") + "\n" +
+    ctx_get(&state, "request_headers")
+   }))
  )
 }
 

@@ -294,31 +294,108 @@ class TransformPlanTests(unittest.TestCase):
             rendered,
         )
 
+    def test_entry_guards_rule_argument_materialization_after_block(self) -> None:
+        directives = [
+            convert_crs.Directive(
+                kind="SecRule", source="REQUEST-TEST.conf", source_line=index,
+                rule_id=100 + index, phase=1, chain_index=0, targets="ARGS",
+                operator="@rx", pattern=f"pattern-{index}",
+            )
+            for index in (1, 2)
+        ]
+        rendered = convert_crs.render_entry(
+            directives, "4.28.0", {}, {"request_test"}
+        )
+        evaluator = rendered.split("fn evaluate_request_test_phase_1", 1)[1].split("pub fn ", 1)[0]
+        self.assertNotIn("\n    next = engine_bundle::apply_rule", evaluator)
+        self.assertEqual(
+            evaluator.count(
+                'if engine_bundle::ctx_get(&next, "blocked") != "1" '
+                '&& engine_bundle::ctx_get(&next, "skip") == "" {'
+            ),
+            2,
+        )
+        self.assertIn("apply_rule(next, 101, 0, false", evaluator)
+        self.assertIn("apply_rule(next, 102, 0, false", evaluator)
+
     def test_expensive_categories_are_guarded_by_safe_prefilters(self) -> None:
-        method_rule = convert_crs.Directive(
+        method_control = convert_crs.Directive(
             kind="SecRule", source="REQUEST-911-METHOD-ENFORCEMENT.conf", source_line=1,
+            rule_id=911011, phase=1, chain_index=0,
+            targets="TX:DETECTION_PARANOIA_LEVEL", operator="@lt", pattern="1",
+            actions="id:911011,phase:1,skipAfter:END-REQUEST-911-METHOD-ENFORCEMENT",
+        )
+        method_rule = convert_crs.Directive(
+            kind="SecRule", source="REQUEST-911-METHOD-ENFORCEMENT.conf", source_line=2,
             rule_id=911100, phase=1, chain_index=0, targets="REQUEST_METHOD",
             operator="@within", pattern="GET HEAD POST OPTIONS",
         )
         method_rendered = convert_crs.render_entry(
-            [method_rule], "4.28.0", {}, {"request_911_method_enforcement"}
+            [method_control, method_rule],
+            "4.28.0",
+            {},
+            {"request_911_method_enforcement"},
         )
         self.assertEqual(method_rendered.count('ctx_get(&next, "tx.allowed_methods")'), 4)
         self.assertEqual(method_rendered.count('ctx_get(&next, "method")'), 2)
+        self.assertIn(
+            "next = engine_bundle::record_rule_match(next,",
+            method_rendered,
+        )
+        self.assertNotIn("apply_rule(next, 911100", method_rendered)
+        self.assertNotIn("apply_rule(next, 911011", method_rendered)
+        self.assertIn(
+            'engine_bundle::number(engine_bundle::ctx_get(&next, '
+            '"tx.detection_paranoia_level"), 1) < 1',
+            method_rendered,
+        )
         self.assertIn(
             "engine_bundle::ctx_set_phase(next, 2) } else => {",
             method_rendered,
         )
 
-        sqli_rule = convert_crs.Directive(
+        sqli_phase_one_rule = convert_crs.Directive(
             kind="SecRule", source="REQUEST-942-APPLICATION-ATTACK-SQLI.conf", source_line=1,
+            rule_id=942101, phase=1, chain_index=0, targets="REQUEST_FILENAME",
+            operator="@rx", pattern="select",
+        )
+        sqli_rule = convert_crs.Directive(
+            kind="SecRule", source="REQUEST-942-APPLICATION-ATTACK-SQLI.conf", source_line=2,
             rule_id=942100, phase=2, chain_index=0, targets="ARGS",
             operator="@rx", pattern="select",
         )
         sqli_rendered = convert_crs.render_entry(
-            [sqli_rule], "4.28.0", {}, {"request_942_application_attack_sqli"}
+            [sqli_phase_one_rule, sqli_rule],
+            "4.28.0",
+            {},
+            {"request_942_application_attack_sqli"},
         )
-        self.assertEqual(sqli_rendered.count("sqli_category_prefilter(&next)"), 2)
+        self.assertEqual(
+            sqli_rendered.count("sqli_category_prefilter(&next, false)"), 2
+        )
+        self.assertEqual(
+            sqli_rendered.count("sqli_category_prefilter(&next, true)"), 1
+        )
+        self.assertEqual(
+            sqli_rendered.count("sqli_query_rule_match(&next)"), 1
+        )
+
+        combined_rendered = convert_crs.render_entry(
+            [method_control, method_rule, sqli_phase_one_rule, sqli_rule],
+            "4.28.0",
+            {},
+            {
+                "request_911_method_enforcement",
+                "request_942_application_attack_sqli",
+            },
+        )
+        self.assertIn(
+            '} else if engine_bundle::category_enabled(&next, '
+            '"request_942_application_attack_sqli") '
+            '&& engine_bundle::sqli_category_prefilter(&next, false) => {',
+            combined_rendered,
+        )
+
         self.assertIn(
             "engine_bundle::ctx_set_phase(next, 2) } else => {",
             sqli_rendered,
@@ -354,7 +431,7 @@ class TransformPlanTests(unittest.TestCase):
         second = rendered.index("apply_rule(next, 942002")
         self.assertLess(first, second)
 
-    def test_enabled_sqli_probe_uses_plan_abi(self) -> None:
+    def test_enabled_sqli_probe_uses_exact_specialized_matcher(self) -> None:
         directive = convert_crs.Directive(
             kind="SecMarker",
             source="REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
@@ -371,10 +448,16 @@ class TransformPlanTests(unittest.TestCase):
             {"request_942_application_attack_sqli"},
         )
         self.assertIn(
-            'apply_rule(next, 942100, 0, false, '
-            '["", "", "SQL Injection Attack Detected", '
-            '"QUERY_STRING", "", "ARGS", "", "REQUEST_BODY", ""], '
-            '195, 15979, 5, false, 403);',
+            "sqli_query_rule_match(&next)",
+            rendered,
+        )
+        self.assertIn(
+            'record_rule_match(next, ["942100", "5", "0", "403", "", '
+            '"SQL Injection Attack Detected"]);',
+            rendered,
+        )
+        self.assertNotIn(
+            "apply_rule(next, 942100, 0, false",
             rendered,
         )
         self.assertNotIn("none,urlDecodeUni,removeNulls", rendered)

@@ -155,6 +155,16 @@ pub fn record_rule_match(state: map<string>, matched: [string]) -> map<string> {
     s
 }
 
+pub fn apply_detection_paranoia_skip(state: map<string>, id: int, threshold: int, marker: string) -> map<string> {
+    let mut s = state;
+    if engine_context::ctx_get(&s, "blocked") != "1"
+        && engine_context::ctx_get(&s, "skip") == ""
+        && engine_text::number(engine_context::ctx_get(&s, "tx.detection_paranoia_level"), 1) < threshold {
+        s = record_rule_match(s, [id + "", "0", "0", "403", marker, ""]);
+    }
+    s
+}
+
 pub fn apply_rule(state: map<string>, id: int, chain_index: int, has_chain: bool, text: [string], target_count: int, transform_plan: int, score: int, disruptive: bool, status: int) -> map<string> {
     let mut s = state;
     let operator: int = (target_count % 16384) / 64;

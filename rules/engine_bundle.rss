@@ -229,41 +229,14 @@ pub fn new_state(method: string, path: string, query: string, protocol: string, 
     }
 }
 
+pub fn apply_action(state: map<string>, phase: int) -> map<string> {
+    state
+}
+
 pub fn apply_marker(state: map<string>, marker: string) -> map<string> {
     let mut s = state;
     if ctx_get(&s, "skip") == marker {
         s["skip"] = "";
-    }
-    s
-}
-
-pub fn apply_rule_blob(state: map<string>, blob: string) -> map<string> {
-    let mut s = state;
-    if blob != "" {
-    let rows: [string] = string_split_literal(blob, "\r");
-    for row_index in 0..rows.length {
-        let fields: [string] = string_split_literal((&rows)[row_index], "\t");
-        if fields.length >= 13 && (&fields)[0] == "R" && category_enabled(&s, (&fields)[1]) {
-            let mut text: [string] = [(&fields)[10], (&fields)[11], (&fields)[12]];
-            for field_index in 13..fields.length {
-                text[text.length] = (&fields)[field_index];
-            }
-            s = apply_rule(
-                s,
-                number((&fields)[2], -1),
-                number((&fields)[3], 0),
-                (&fields)[4] == "1",
-                text,
-                number((&fields)[5], 0),
-                number((&fields)[6], 0),
-                number((&fields)[7], 0),
-                (&fields)[8] == "1",
-                number((&fields)[9], 403)
-            );
-        } else if fields.length >= 3 && (&fields)[0] == "M" && category_enabled(&s, (&fields)[1]) {
-            s = apply_marker(s, (&fields)[2]);
-        }
-    }
     }
     s
 }
@@ -301,6 +274,16 @@ pub fn record_rule_match(state: map<string>, matched: [string]) -> map<string> {
     }
     if (&matched)[4] != "" {
         s["skip"] = (&matched)[4];
+    }
+    s
+}
+
+pub fn apply_detection_paranoia_skip(state: map<string>, id: int, threshold: int, marker: string) -> map<string> {
+    let mut s = state;
+    if ctx_get(&s, "blocked") != "1"
+        && ctx_get(&s, "skip") == ""
+        && number(ctx_get(&s, "tx.detection_paranoia_level"), 1) < threshold {
+        s = record_rule_match(s, [id + "", "0", "0", "403", marker, ""]);
     }
     s
 }

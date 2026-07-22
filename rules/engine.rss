@@ -12,6 +12,10 @@ pub fn new_state(method: string, path: string, query: string, protocol: string, 
         "request_headers": engine_text::encode_map(headers),
         "args": engine_text::encode_map(args),
         "request_body": body,
+        "reqbody_processor": "",
+        "reqbody_error": "0",
+        "multipart_strict_error": "0",
+        "multipart_unmatched_boundary": "0",
         "response_status": "0",
         "response_headers": "",
         "response_body": "",
@@ -53,7 +57,11 @@ pub fn new_state(method: string, path: string, query: string, protocol: string, 
         "tx.crs_skip_response_analysis": "0",
         "tx.enable_default_collections": "0",
         "tx.inbound_anomaly_score": "0",
-        "tx.outbound_anomaly_score": "0"
+        "tx.outbound_anomaly_score": "0",
+        "tx.blocking_inbound_anomaly_score": "0",
+        "tx.detection_inbound_anomaly_score": "0",
+        "tx.blocking_outbound_anomaly_score": "0",
+        "tx.detection_outbound_anomaly_score": "0"
     }
 }
 
@@ -69,6 +77,37 @@ pub fn apply_marker(state: map<string>, marker: string) -> map<string> {
     let mut s = state;
     if engine_context::ctx_get(&s, "skip") == marker {
         s["skip"] = "";
+    }
+    s
+}
+
+pub fn apply_rule_blob(state: map<string>, blob: string) -> map<string> {
+    let mut s = state;
+    if blob != "" {
+    let rows: [string] = string_split_literal(blob, "\r");
+    for row_index in 0..rows.length {
+        let fields: [string] = string_split_literal((&rows)[row_index], "\t");
+        if fields.length >= 13 && (&fields)[0] == "R" && category_enabled(&s, (&fields)[1]) {
+            let mut text: [string] = [(&fields)[10], (&fields)[11], (&fields)[12]];
+            for field_index in 13..fields.length {
+                text[text.length] = (&fields)[field_index];
+            }
+            s = apply_rule(
+                s,
+                engine_text::number((&fields)[2], -1),
+                engine_text::number((&fields)[3], 0),
+                (&fields)[4] == "1",
+                text,
+                engine_text::number((&fields)[5], 0),
+                engine_text::number((&fields)[6], 0),
+                engine_text::number((&fields)[7], 0),
+                (&fields)[8] == "1",
+                engine_text::number((&fields)[9], 403)
+            );
+        } else if fields.length >= 3 && (&fields)[0] == "M" && category_enabled(&s, (&fields)[1]) {
+            s = apply_marker(s, (&fields)[2]);
+        }
+    }
     }
     s
 }
@@ -99,10 +138,14 @@ pub fn record_rule_match(state: map<string>, matched: [string]) -> map<string> {
     s[key] = total + "";
     if phase <= 2 {
         s["tx.inbound_anomaly_score"] = total + "";
+        s["tx.blocking_inbound_anomaly_score"] = total + "";
+        s["tx.detection_inbound_anomaly_score"] = total + "";
     } else {
         s["tx.outbound_anomaly_score"] = total + "";
+        s["tx.blocking_outbound_anomaly_score"] = total + "";
+        s["tx.detection_outbound_anomaly_score"] = total + "";
     }
-    if (&matched)[2] == "1" || (phase <= 2 && total >= 5) || (phase > 2 && total >= 4) {
+    if (&matched)[2] == "1" {
         s["blocked"] = "1";
         s["status"] = (&matched)[3];
     }
@@ -156,6 +199,11 @@ pub fn apply_rule(state: map<string>, id: int, chain_index: int, has_chain: bool
             s["chain_matched"] = "0";
         }
     } else if matched {
+        if id == 200000 {
+            s["reqbody_processor"] = "XML";
+        } else if id == 200001 {
+            s["reqbody_processor"] = "JSON";
+        }
         s = record_rule_match(s, [id + "", score + "", if disruptive => { "1" } else => { "0" }, status + "", (&text)[1], (&text)[2]]);
     }
     }

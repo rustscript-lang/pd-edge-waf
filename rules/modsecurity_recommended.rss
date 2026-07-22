@@ -1,0 +1,14 @@
+// Generated from OWASP CRS 4.28.0: MODSECURITY-RECOMMENDED.conf
+// Executable RustScript; do not edit by hand.
+use engine_bundle;
+
+pub fn evaluate_modsecurity_recommended(next: map<string>) -> map<string> {
+    next = engine_bundle::apply_rule(next, 200000, 0, false, ["^(?:application(?:/soap\\+|/)|text/)xml", "", "", "REQUEST_HEADERS", "Content-Type"], 65, 331, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 200001, 0, false, ["^application/json", "", "", "REQUEST_HEADERS", "Content-Type"], 65, 331, 0, false, 403);
+    next = engine_bundle::apply_rule(next, 200007, 0, false, ["1000", "", "Failed to fully parse request body due to large argument count", "ARGS", ""], 33537, 11, 0, true, 400);
+    next = engine_bundle::apply_rule(next, 200002, 0, false, ["0", "", "Failed to parse request body.", "REQBODY_ERROR", ""], 2689, 11, 0, true, 400);
+    next = engine_bundle::apply_rule(next, 200003, 0, false, ["0", "", "Multipart request body failed strict validation", "MULTIPART_STRICT_ERROR", ""], 2689, 11, 0, true, 400);
+    next = engine_bundle::apply_rule(next, 200004, 0, false, ["1", "", "Multipart parser detected a possible unmatched boundary.", "MULTIPART_UNMATCHED_BOUNDARY", ""], 641, 11, 0, true, 403);
+    next = engine_bundle::apply_rule(next, 200005, 0, false, ["0", "", "ModSecurity internal error flagged", "TX", "/^MSC_/"], 2561, 11, 0, true, 403);
+    next
+}

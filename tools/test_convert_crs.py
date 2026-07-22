@@ -183,9 +183,10 @@ class TransformPlanTests(unittest.TestCase):
         )
         self.assertNotIn("fn evaluate_request_999_common_exceptions_after", rendered)
         self.assertIn(
-            '"REQUEST_COOKIES", "", "REQUEST_COOKIES", "_ga"], 81986,',
+            r"\t942290\t0\t0\t81986\t0\t0\t0\t403\tattack",
             rendered,
         )
+        self.assertIn(r"\tREQUEST_COOKIES\t\tREQUEST_COOKIES\t_ga", rendered)
         self.assertNotIn("update_target(next,", rendered)
         self.assertNotIn("941100", rendered)
 
@@ -277,22 +278,12 @@ class TransformPlanTests(unittest.TestCase):
         rendered = convert_crs.render_entry(
             [phase_one, phase_two], "4.28.0", {}, {"request_test"}
         )
-        phase_one_body = rendered.split("fn evaluate_request_test_phase_1", 1)[1].split("fn ", 1)[0]
-        phase_two_body = rendered.split("fn evaluate_request_test_phase_2", 1)[1].split("pub fn ", 1)[0]
-        self.assertIn("apply_rule(next, 101, 0, false", phase_one_body)
-        self.assertNotIn("apply_rule(next, 202, 0, false", phase_one_body)
-        self.assertIn("apply_rule(next, 202, 0, false", phase_two_body)
-        self.assertNotIn("apply_rule(next, 101, 0, false", phase_two_body)
-        self.assertNotIn("category_enabled", phase_one_body)
-        self.assertNotIn("category_enabled", phase_two_body)
-        self.assertEqual(
-            rendered.count('category_enabled(&next, "request_test")'),
-            3,
-        )
-        self.assertIn(
-            "engine_bundle::ctx_set_phase(next, 2) } else => {",
-            rendered,
-        )
+        phase_one = rendered.index(r"\t101\t")
+        phase_two = rendered.index(r"\t202\t")
+        self.assertLess(phase_one, phase_two)
+        self.assertEqual(rendered.count("apply_rule_blob(next,"), 2)
+        self.assertIn("ctx_set_phase(next, 1)", rendered)
+        self.assertIn("ctx_set_phase(next, 2)", rendered)
 
     def test_entry_guards_rule_argument_materialization_after_block(self) -> None:
         directives = [
@@ -306,19 +297,12 @@ class TransformPlanTests(unittest.TestCase):
         rendered = convert_crs.render_entry(
             directives, "4.28.0", {}, {"request_test"}
         )
-        evaluator = rendered.split("fn evaluate_request_test_phase_1", 1)[1].split("pub fn ", 1)[0]
-        self.assertNotIn("\n    next = engine_bundle::apply_rule", evaluator)
-        self.assertEqual(
-            evaluator.count(
-                'if engine_bundle::ctx_get(&next, "blocked") != "1" '
-                '&& engine_bundle::ctx_get(&next, "skip") == "" {'
-            ),
-            2,
-        )
-        self.assertIn("apply_rule(next, 101, 0, false", evaluator)
-        self.assertIn("apply_rule(next, 102, 0, false", evaluator)
+        self.assertEqual(rendered.count("apply_rule_blob(next,"), 1)
+        self.assertIn(r"\t101\t", rendered)
+        self.assertIn(r"\t102\t", rendered)
+        self.assertNotIn("engine_bundle::apply_rule(next,", rendered)
 
-    def test_expensive_categories_are_guarded_by_safe_prefilters(self) -> None:
+    def test_active_categories_use_generated_rule_evaluators_without_synthetic_matches(self) -> None:
         method_control = convert_crs.Directive(
             kind="SecRule", source="REQUEST-911-METHOD-ENFORCEMENT.conf", source_line=1,
             rule_id=911011, phase=1, chain_index=0,
@@ -328,60 +312,16 @@ class TransformPlanTests(unittest.TestCase):
         method_rule = convert_crs.Directive(
             kind="SecRule", source="REQUEST-911-METHOD-ENFORCEMENT.conf", source_line=2,
             rule_id=911100, phase=1, chain_index=0, targets="REQUEST_METHOD",
-            operator="@within", pattern="GET HEAD POST OPTIONS",
-        )
-        method_rendered = convert_crs.render_entry(
-            [method_control, method_rule],
-            "4.28.0",
-            {},
-            {"request_911_method_enforcement"},
-        )
-        self.assertEqual(method_rendered.count('ctx_get(&next, "tx.allowed_methods")'), 4)
-        self.assertEqual(method_rendered.count('ctx_get(&next, "method")'), 2)
-        self.assertIn(
-            "next = engine_bundle::record_rule_match(next,",
-            method_rendered,
-        )
-        self.assertNotIn("apply_rule(next, 911100", method_rendered)
-        self.assertNotIn("apply_rule(next, 911011", method_rendered)
-        self.assertIn(
-            'engine_bundle::number(engine_bundle::ctx_get(&next, '
-            '"tx.detection_paranoia_level"), 1) < 1',
-            method_rendered,
-        )
-        self.assertIn(
-            "engine_bundle::ctx_set_phase(next, 2) } else => {",
-            method_rendered,
-        )
-
-        sqli_phase_one_rule = convert_crs.Directive(
-            kind="SecRule", source="REQUEST-942-APPLICATION-ATTACK-SQLI.conf", source_line=1,
-            rule_id=942101, phase=1, chain_index=0, targets="REQUEST_FILENAME",
-            operator="@rx", pattern="select",
+            operator="!@within", pattern="%{TX.allowed_methods}",
         )
         sqli_rule = convert_crs.Directive(
-            kind="SecRule", source="REQUEST-942-APPLICATION-ATTACK-SQLI.conf", source_line=2,
+            kind="SecRule", source="REQUEST-942-APPLICATION-ATTACK-SQLI.conf", source_line=3,
             rule_id=942100, phase=2, chain_index=0, targets="ARGS",
-            operator="@rx", pattern="select",
+            operator="@detectSQLi", pattern="",
+            actions="id:942100,phase:2,t:none,t:urlDecodeUni,t:removeNulls,severity:'CRITICAL'",
         )
-        sqli_rendered = convert_crs.render_entry(
-            [sqli_phase_one_rule, sqli_rule],
-            "4.28.0",
-            {},
-            {"request_942_application_attack_sqli"},
-        )
-        self.assertEqual(
-            sqli_rendered.count("sqli_category_prefilter(&next, false)"), 2
-        )
-        self.assertEqual(
-            sqli_rendered.count("sqli_category_prefilter(&next, true)"), 1
-        )
-        self.assertEqual(
-            sqli_rendered.count("sqli_query_rule_match(&next)"), 1
-        )
-
-        combined_rendered = convert_crs.render_entry(
-            [method_control, method_rule, sqli_phase_one_rule, sqli_rule],
+        rendered = convert_crs.render_entry(
+            [method_control, method_rule, sqli_rule],
             "4.28.0",
             {},
             {
@@ -389,78 +329,38 @@ class TransformPlanTests(unittest.TestCase):
                 "request_942_application_attack_sqli",
             },
         )
-        self.assertIn(
-            '} else if engine_bundle::category_enabled(&next, '
-            '"request_942_application_attack_sqli") '
-            '&& engine_bundle::sqli_category_prefilter(&next, false) => {',
-            combined_rendered,
-        )
-
-        self.assertIn(
-            "engine_bundle::ctx_set_phase(next, 2) } else => {",
-            sqli_rendered,
-        )
-
-    def test_contiguous_plan_619_regex_rules_share_sound_prefilter(self) -> None:
-        directives = [
-            convert_crs.Directive(
-                kind="SecRule",
-                source="REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
-                source_line=index,
-                rule_id=942000 + index,
-                phase=2,
-                chain_index=0,
-                targets="ARGS|ARGS_NAMES",
-                operator="@rx",
-                pattern=pattern,
-                actions="phase:2,t:none,t:urlDecodeUni",
-            )
-            for index, pattern in enumerate(("first", "second"), 1)
-        ]
-        rendered = convert_crs.render_entry(
-            directives,
-            "4.28.0",
-            {},
-            {"request_942_application_attack_sqli"},
-        )
-        self.assertEqual(rendered.count("apply_rule(next, -1"), 1)
-        self.assertIn("(?:first)|(?:second)", rendered)
-        self.assertNotIn("apply_rule_619", rendered)
-
-        first = rendered.index("apply_rule(next, 942001")
-        second = rendered.index("apply_rule(next, 942002")
-        self.assertLess(first, second)
-
-    def test_enabled_sqli_probe_uses_exact_specialized_matcher(self) -> None:
-        directive = convert_crs.Directive(
-            kind="SecMarker",
-            source="REQUEST-942-APPLICATION-ATTACK-SQLI.conf",
-            source_line=1,
-            rule_id=-1,
-            phase=0,
-            chain_index=0,
-            marker="END",
-        )
-        rendered = convert_crs.render_entry(
-            [directive],
-            "4.28.0",
-            {},
-            {"request_942_application_attack_sqli"},
-        )
-        self.assertIn(
-            "sqli_query_rule_match(&next)",
-            rendered,
-        )
-        self.assertIn(
-            'record_rule_match(next, ["942100", "5", "0", "403", "", '
-            '"SQL Injection Attack Detected"]);',
+        self.assertIn(r"\t911011\t", rendered)
+        self.assertIn(r"\t911100\t", rendered)
+        self.assertIn(r"\t942100\t", rendered)
+        self.assertNotIn("sqli_category_prefilter", rendered)
+        self.assertNotIn("sqli_query_rule_match", rendered)
+        self.assertNotIn(
+            'record_rule_match(next, ["911100", "5"',
             rendered,
         )
         self.assertNotIn(
-            "apply_rule(next, 942100, 0, false",
+            'record_rule_match(next, ["942100", "5"',
             rendered,
         )
-        self.assertNotIn("none,urlDecodeUni,removeNulls", rendered)
+
+    def test_modsecurity_source_runs_in_request_phases(self) -> None:
+        directive = convert_crs.Directive(
+            kind="SecRule",
+            source="MODSECURITY-RECOMMENDED.conf",
+            source_line=1,
+            rule_id=200007,
+            phase=2,
+            chain_index=0,
+            targets="&ARGS",
+            operator="@ge",
+            pattern="1000",
+            actions="id:200007,phase:2,t:none,deny,status:400",
+        )
+        rendered = convert_crs.render_entry(
+            [directive], "4.28.0", {}, {"modsecurity_recommended"}
+        )
+        self.assertIn(r"R\tmodsecurity_recommended\t200007\t", rendered)
+        self.assertIn("apply_rule_blob(next,", rendered)
 
 
 if __name__ == "__main__":

@@ -7,23 +7,49 @@ fn generated_crs_structure_is_complete() {
     assert_eq!(
         expected.enabled_categories,
         [
+            "modsecurity_recommended",
+            "request_901_initialization",
+            "request_905_common_exceptions",
             "request_911_method_enforcement",
+            "request_913_scanner_detection",
+            "request_920_protocol_enforcement",
+            "request_921_protocol_attack",
+            "request_922_multipart_attack",
+            "request_930_application_attack_lfi",
+            "request_931_application_attack_rfi",
+            "request_932_application_attack_rce",
+            "request_933_application_attack_php",
+            "request_934_application_attack_generic",
+            "request_941_application_attack_xss",
             "request_942_application_attack_sqli",
+            "request_943_application_attack_session_fixation",
+            "request_944_application_attack_java",
+            "request_949_blocking_evaluation",
+            "request_999_common_exceptions_after",
+            "response_950_data_leakages",
+            "response_951_data_leakages_sql",
+            "response_952_data_leakages_java",
+            "response_953_data_leakages_php",
+            "response_954_data_leakages_iis",
+            "response_955_web_shells",
+            "response_956_data_leakages_ruby",
+            "response_959_blocking_evaluation",
+            "response_980_correlation",
         ]
     );
-    assert_eq!(expected.category_count, 27);
-    assert_eq!(expected.sec_rule_count, 695);
+    assert_eq!(expected.category_count, 28);
+    assert_eq!(expected.sec_rule_count, 702);
     assert_eq!(expected.sec_action_count, 7);
     assert_eq!(expected.sec_marker_count, 30);
     assert_eq!(expected.sec_rule_update_target_by_id_count, 55);
     assert_eq!(expected.sec_component_signature_count, 1);
-    assert_eq!(expected.directive_count, 788);
-    assert_eq!(expected.unique_rule_id_count, 629);
+    assert_eq!(expected.directive_count, 795);
+    assert_eq!(expected.unique_rule_id_count, 636);
     assert_eq!(expected.chain_group_count, 55);
     assert_eq!(expected.chain_child_count, 73);
     assert_eq!(expected.skip_after_count, 206);
     assert_eq!(expected.tag_count, 3088);
-    assert_eq!(expected.transformation_count, 839);
+    assert_eq!(expected.transformation_count, 848);
     assert_eq!(expected.operator_variant_count, 28);
     assert_eq!(expected.xml_attribute_target_rule_count, 175);
     assert_eq!(expected.pm_from_file_reference_count, 21);
@@ -46,9 +72,9 @@ fn generated_rules_preserve_all_crs_regex_operators() {
         .iter()
         .filter(|directive| directive["kind"] == "SecRule" && directive["operator"] == "!@rx")
         .count();
-    assert_eq!(positive, 297);
+    assert_eq!(positive, 299);
     assert_eq!(negative, 21);
-    assert_eq!(positive + negative, 318);
+    assert_eq!(positive + negative, 320);
 
     let categories = directives
         .iter()
@@ -82,7 +108,7 @@ fn generated_rules_preserve_all_crs_regex_operators() {
             }
         }
     }
-    assert_eq!(generated_positive, 297);
+    assert_eq!(generated_positive, 299);
     assert_eq!(generated_negative, 21);
 }
 
@@ -169,68 +195,24 @@ fn enabled_ruleset_fits_the_standard_vm() {
 }
 
 #[test]
-fn sqli_category_prefilter_skips_benign_request_and_admits_obvious_attack() {
+fn default_ruleset_uses_generated_rules_without_synthetic_attack_probes() {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let ruleset = std::fs::read_to_string(root.join("rules/ruleset.rss"))
+        .expect("ruleset source should be readable");
     let engine = std::fs::read_to_string(root.join("rules/engine_bundle.rss"))
         .expect("engine bundle should be readable");
-    let source = format!(
-        r#"{engine}
-let benign: map<string> = new_state(
-    "GET",
-    "/products",
-    "category=books&page=2",
-    "HTTP/1.1",
-    "192.0.2.10",
-    {{
-        "host": "shop.example.test",
-        "accept": "text/html,application/xhtml+xml",
-        "user-agent": "pd-edge-waf-perf/1.0"
-    }},
-    {{ "category": "books", "page": "2" }},
-    ""
-);
-let attack: map<string> = new_state(
-    "GET",
-    "/products",
-    "q=1%20union%20select%20password",
-    "HTTP/1.1",
-    "192.0.2.10",
-    {{ "host": "shop.example.test" }},
-    {{ "q": "1 union select password" }},
-    ""
-);
-let path_attack: map<string> = new_state(
-    "GET",
-    "/admin/select-password",
-    "",
-    "HTTP/1.1",
-    "192.0.2.10",
-    {{ "host": "shop.example.test" }},
-    {{}},
-    ""
-);
-assert(!sqli_category_prefilter(&benign, false));
-assert(sqli_category_prefilter(&attack, false));
-assert(!sqli_query_rule_match(&benign));
-assert(sqli_query_rule_match(&attack));
-assert(!sqli_category_prefilter(&attack, true));
-assert(sqli_category_prefilter(&path_attack, false));
-assert(sqli_category_prefilter(&path_attack, true));
-"ok";
-"#
-    );
-    let compiled = vm::compile_source(&source).expect("prefilter fixture should compile");
-    let mut vm = vm::Vm::new(compiled.program);
-
-    assert_eq!(
-        vm.run().expect("prefilter fixture should run"),
-        vm::VmStatus::Halted
-    );
-    assert_eq!(vm.stack().last(), Some(&vm::Value::string("ok")));
+    assert!(ruleset.contains("apply_rule_blob"));
+    assert!(ruleset.contains("\\t911100\\t"));
+    assert!(ruleset.contains("\\t942100\\t"));
+    assert!(ruleset.contains("\\t949110\\t"));
+    assert!(!ruleset.contains("sqli_category_prefilter"));
+    assert!(!ruleset.contains("sqli_query_rule_match"));
+    assert!(!engine.contains("sqli_category_prefilter"));
+    assert!(!engine.contains("sqli_query_rule_match"));
 }
 
 #[test]
-fn benign_request_fast_path_preserves_final_request_state() {
+fn benign_default_request_preserves_final_request_state() {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
     let ruleset = std::fs::read_to_string(root.join("rules/ruleset_bundle.rss"))
         .expect("ruleset bundle should be readable");
@@ -266,11 +248,8 @@ fn enabled_ruleset_folds_common_exception_updates_into_rule_payloads() {
     assert!(!source.contains("fn evaluate_request_999_common_exceptions_after"));
     assert!(!source.contains("engine_bundle::update_target(next,"));
     assert!(!source.contains("update_target(next, 941100"));
-    let rule = source
-        .lines()
-        .find(|line| line.contains("apply_rule(next, 942290,"))
-        .expect("enabled rule 942290 should exist");
-    assert!(rule.contains("\"REQUEST_COOKIES\", \"__gads\""));
-    assert!(rule.contains("], 409674, 619,"));
-    assert!(!rule.contains("\"!REQUEST_COOKIES\""));
+    assert!(source.contains("\\t942290\\t"));
+    assert!(source.contains("\\t409674\\t619\\t"));
+    assert!(source.contains("\\tREQUEST_COOKIES\\t__gads"));
+    assert!(!source.contains("\\t!REQUEST_COOKIES\\t"));
 }

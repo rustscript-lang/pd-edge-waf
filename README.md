@@ -99,6 +99,28 @@ No synthetic attack probe or category admission regex is used. Every request tra
 cargo test --release --test perf active_rule_interpreter_jit_aot_latency -- --ignored --nocapture
 ```
 
+### Reference results
+
+The following results are from the latest verified 100-request run on commit `7c76b88`, with 2 warmup batches, 10 measured batches, 10 requests per batch, 12 unchanged JIT warmup requests, and a 128-request JIT warmup limit. Latencies are milliseconds per request; compilation is excluded.
+
+| Full-default workload | Interpreter (ms) | JIT (ms) | AOT (ms) | Aggregate AOT/JIT | Paired-median AOT/JIT |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| ModSecurity `200001` | 158.565 | 141.693 | 137.027 | 0.967 | 0.997 |
+| CRS `911100 -> 949110` | 154.174 | 165.293 | 162.599 | 0.984 | 0.999 |
+| CRS `942100 -> 949110` | 193.642 | 187.935 | 185.878 | 0.989 | 1.001 |
+| CRS `951230 -> 959100` | 29.395 | 36.462 | 36.217 | 0.993 | 1.000 |
+
+All four workloads completed with no paired-median AOT regression above the 1.05 tolerance. The warmed JIT reported `recorded_traces=0` and `native_traces=0` for each workload.
+
+Benchmark host:
+
+- CPU: AMD Ryzen 9 7940HS with Radeon 780M Graphics, 8 cores / 16 threads visible to the guest;
+- virtualization: Microsoft full-virtualization hypervisor;
+- memory: 3.8 GiB assigned to the guest;
+- OS: Ubuntu 24.04.4 LTS, Linux `6.8.0-136-generic` x86_64;
+- Rust: `rustc 1.94.1`, `cargo 1.94.1`;
+- dependencies: RustScript `964d8ec`, pd-edge `96b65ed`.
+
 The benign full-default benchmark remains available as a secondary diagnostic:
 
 ```bash
@@ -126,7 +148,7 @@ WAF_PERF_JIT_MAX_WARMUP_REQUESTS=48 \
 cargo test --release --test perf active_rule_interpreter_jit_aot_latency -- --ignored --nocapture
 ```
 
-Compilation latency is excluded. Every active workload rebuilds its simulated transaction state inside RSS for each measured request. By default, an AOT/JIT ratio above 1.05 fails the benchmark; `WAF_PERF_ENFORCE_TARGETS=0` keeps the run diagnostic and reports unmet targets without stopping later workloads.
+Compilation latency is excluded. Every active workload rebuilds its simulated transaction state inside RSS for each measured request. By default, a paired-median AOT/JIT ratio above 1.05 fails the benchmark; `WAF_PERF_ENFORCE_TARGETS=0` keeps the run diagnostic and reports unmet targets without stopping later workloads.
 
 ## Tests
 

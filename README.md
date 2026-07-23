@@ -121,6 +121,16 @@ Benchmark host:
 - Rust: `rustc 1.94.1`, `cargo 1.94.1`;
 - dependencies: RustScript `964d8ec`, pd-edge `96b65ed`.
 
+### Historical targeted-path result
+
+Before the benchmark expanded to the full default phase tables, commit `60e3418` measured a specialized active method-enforcement bundle on the same host. The `TRACE /` fixture executed the original CRS rule `911100` and asserted its matched rule ID over 1,000 measured requests.
+
+| Targeted workload | JIT (ms) | AOT (ms) | AOT/JIT |
+| --- | ---: | ---: | ---: |
+| CRS method enforcement, `TRACE /` -> `911100` | **0.887** | **0.890** | 1.003 |
+
+This is the verified sub-millisecond result. Its targeted bundle scope is intentionally reported separately and is not directly comparable to the full-default results above.
+
 The benign full-default benchmark remains available as a secondary diagnostic:
 
 ```bash

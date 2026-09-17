@@ -1117,7 +1117,7 @@ checksum = "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a"
 [[package]]
 name = "pd-edge"
 version = "0.1.0"
-source = "git+https://github.com/rustscript-lang/pd-edge.git?rev=6320847098530ab78b0d3cd438b714e699caa8db#6320847098530ab78b0d3cd438b714e699caa8db"
+source = "git+https://github.com/rustscript-lang/pd-edge.git?rev=5f4f889e349bdfbd5534deb42bd13b616a6114f5#5f4f889e349bdfbd5534deb42bd13b616a6114f5"
 dependencies = [
  "arc-swap",
  "axum",
@@ -1133,7 +1133,7 @@ dependencies = [
  "mimalloc",
  "owo-colors",
  "parking_lot",
- "pd-edge-abi 0.1.0",
+ "pd-edge-abi",
  "pd-edge-host-function",
  "pd-vm",
  "rand 0.8.7",
@@ -1159,26 +1159,16 @@ dependencies = [
 [[package]]
 name = "pd-edge-abi"
 version = "0.1.0"
-source = "git+https://github.com/rustscript-lang/pd-edge.git?rev=6320847098530ab78b0d3cd438b714e699caa8db#6320847098530ab78b0d3cd438b714e699caa8db"
+source = "git+https://github.com/rustscript-lang/pd-edge.git?rev=5f4f889e349bdfbd5534deb42bd13b616a6114f5#5f4f889e349bdfbd5534deb42bd13b616a6114f5"
 dependencies = [
- "pd-host-function 0.1.0",
- "syn",
-]
-
-[[package]]
-name = "pd-edge-abi"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e9676d58588b220f7af69d7aa86108042d2acaf21dd24c641a6d9ef3c4e193ba"
-dependencies = [
- "pd-host-function 0.22.6",
+ "pd-host-function",
  "syn",
 ]
 
 [[package]]
 name = "pd-edge-host-function"
 version = "0.1.0"
-source = "git+https://github.com/rustscript-lang/pd-edge.git?rev=6320847098530ab78b0d3cd438b714e699caa8db#6320847098530ab78b0d3cd438b714e699caa8db"
+source = "git+https://github.com/rustscript-lang/pd-edge.git?rev=5f4f889e349bdfbd5534deb42bd13b616a6114f5#5f4f889e349bdfbd5534deb42bd13b616a6114f5"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1210,17 +1200,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pd-host-function"
-version = "0.22.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "91892b3fd45bbd10122fb47f5f8066d3e5583adda28080f650c63d9cb5462e9b"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
 name = "pd-host-schema"
 version = "0.1.0"
 source = "git+https://github.com/rustscript-lang/rustscript.git?rev=b1d6cffede77f49410bf63525f30b9a46b02dc01#b1d6cffede77f49410bf63525f30b9a46b02dc01"
@@ -1243,8 +1222,7 @@ dependencies = [
  "futures-channel",
  "libc",
  "paste",
- "pd-edge-abi 0.1.1",
- "pd-host-function 0.1.0",
+ "pd-host-function",
  "pd-host-schema",
  "regex",
  "rt-format",

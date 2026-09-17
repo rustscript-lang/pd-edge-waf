@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 
 const FROZEN_CORE_REV: &str = "b1d6cffede77f49410bf63525f30b9a46b02dc01";
 const FROZEN_CORE_URL: &str = "https://github.com/rustscript-lang/rustscript.git";
-const FROZEN_EDGE_REV: &str = "6320847098530ab78b0d3cd438b714e699caa8db";
+const FROZEN_EDGE_REV: &str = "5f4f889e349bdfbd5534deb42bd13b616a6114f5";
 const FROZEN_EDGE_URL: &str = "https://github.com/rustscript-lang/pd-edge.git";
 
 fn manifest_dir() -> PathBuf {
@@ -93,6 +93,10 @@ fn pd_edge_is_pinned_to_the_migrated_revision() {
         FROZEN_EDGE_REV.len() == 40,
         "the migrated edge revision must be a full SHA"
     );
+    assert!(
+        line.contains("features = [\"mqtt\"]"),
+        "pd-edge must keep the mqtt catalog feature enabled: {line}"
+    );
 }
 
 #[test]
@@ -157,6 +161,55 @@ fn the_lockfile_proves_frozen_core_and_edge_sources() {
             "Cargo.lock must prove {package} at {expected_edge}; edge={proven_edge:?}"
         );
     }
+}
+
+fn lock_packages(lock: &str) -> Vec<(String, String, Option<String>)> {
+    let mut packages = Vec::new();
+    let mut lines = lock.lines().peekable();
+    while let Some(line) = lines.next() {
+        let Some(name) = line
+            .trim()
+            .strip_prefix("name = \"")
+            .and_then(|rest| rest.strip_suffix('"'))
+        else {
+            continue;
+        };
+        let version = lines.next().unwrap_or_default().trim().to_string();
+        if !version.starts_with("version = ") {
+            continue;
+        }
+        let source = lines
+            .peek()
+            .map(|next| next.trim().to_string())
+            .filter(|next| next.starts_with("source = "));
+        packages.push((name.to_string(), version, source));
+    }
+    packages
+}
+
+fn is_stale_pd_family(name: &str) -> bool {
+    name == "pd-vm"
+        || name.starts_with("pd-vm-")
+        || name.starts_with("pd-edge")
+        || name.starts_with("pd-host-")
+}
+
+#[test]
+fn lockfile_has_no_registry_pd_edge_host_or_vm_packages() {
+    let lock = read(&manifest_dir().join("Cargo.lock"));
+    let offenders = lock_packages(&lock)
+        .into_iter()
+        .filter(|(name, _, source)| {
+            is_stale_pd_family(name)
+                && source.as_deref().is_some_and(|source| {
+                    source.contains("registry+https://github.com/rust-lang/crates.io-index")
+                })
+        })
+        .collect::<Vec<_>>();
+    assert!(
+        offenders.is_empty(),
+        "Cargo.lock must not lock crates.io pd-edge*/pd-host-*/pd-vm* packages (ABI24 family): {offenders:?}"
+    );
 }
 
 #[test]

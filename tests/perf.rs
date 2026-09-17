@@ -4,7 +4,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use vm::{JitConfig, JitTraceTerminal, Value, Vm, VmStatus};
+use vm::{JitConfig, JitTraceTerminal, RegexCacheVmExt, Value, Vm, VmStatus};
 
 const DEFAULT_WARMUP_BATCHES: usize = 1;
 const DEFAULT_MEASURED_BATCHES: usize = 5;
@@ -415,7 +415,8 @@ fn execute_and_verify(vm: &mut Vm, expected: &Value, label: &str) -> VmStatus {
 
 fn execute_and_reset(vm: &mut Vm, expected: &Value, label: &str) {
     execute_and_verify(vm, expected, label);
-    vm.reset_for_reuse();
+    vm.reset_for_reuse()
+        .unwrap_or_else(|error| panic!("{label} reset failed: {error:?}"));
 }
 
 fn run_fixed_warmup(vm: &mut Vm, expected: &Value, label: &str, requests: usize) -> usize {
@@ -492,7 +493,8 @@ fn run_batch(vm: &mut Vm, expected: &Value, label: &str, batch_size: usize) -> D
         } else {
             black_box(vm.stack().last());
         }
-        vm.reset_for_reuse();
+        vm.reset_for_reuse()
+            .unwrap_or_else(|error| panic!("{label} reset failed: {error:?}"));
     }
     started.elapsed()
 }

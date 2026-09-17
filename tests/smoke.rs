@@ -1,3 +1,4 @@
+use edge::compile_edge_source_file;
 use pd_edge_waf::{CRS_VERSION, manifest};
 
 #[test]
@@ -188,7 +189,7 @@ fn runtime_rule_abi_consumes_typed_transform_plan() {
 #[test]
 fn enabled_ruleset_fits_the_standard_vm() {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
-    let compiled = vm::compile_source_file(root.join("rules/ruleset_bundle.rss"))
+    let compiled = compile_edge_source_file(root.join("rules/ruleset_bundle.rss"))
         .expect("enabled RSS ruleset should compile");
     assert!(compiled.program.local_count <= 256);
     assert!(compiled.program.imports.is_empty());
@@ -232,7 +233,8 @@ assert((&inspect_request(new_state(
 "ok";
 "#
     );
-    let compiled = vm::compile_source(&source).expect("benign fast-path fixture should compile");
+    let compiled = edge::compile_edge_source_with_flavor(&source, vm::SourceFlavor::RustScript)
+        .expect("benign fast-path fixture should compile");
     let mut vm = vm::Vm::new(compiled.program);
     assert_eq!(
         vm.run().expect("benign fast-path fixture should run"),

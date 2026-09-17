@@ -55,7 +55,6 @@ ruleset_body = "\n".join(ruleset_lines).replace("engine_bundle::", "")
 for helper in (
     "set_phase",
     "apply_action",
-    "component_signature",
     "apply_rule_blob",
 ):
     if re.search(rf"\b{helper}\(", ruleset_body) is None:

@@ -8,12 +8,12 @@ repository = "https://github.com/rustscript-lang/pd-edge-waf"
 publish = false
 
 [dependencies]
-pd-vm = { path = "../rustscript", default-features = false, features = ["runtime", "cranelift-jit"] }
+pd-vm = { git = "https://github.com/rustscript-lang/rustscript.git", rev = "b1d6cffede77f49410bf63525f30b9a46b02dc01", version = "0.1.0", default-features = false, features = ["runtime", "cranelift-jit"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
 [dev-dependencies]
 axum = "0.8"
-edge = { package = "pd-edge", path = "../pd-edge" }
+edge = { package = "pd-edge", git = "https://github.com/rustscript-lang/pd-edge.git", rev = "6320847098530ab78b0d3cd438b714e699caa8db", version = "0.1.0", features = ["mqtt"] }
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
 tokio = { version = "1", features = ["full"] }

@@ -1117,6 +1117,7 @@ checksum = "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a"
 [[package]]
 name = "pd-edge"
 version = "0.1.0"
+source = "git+https://github.com/rustscript-lang/pd-edge.git?rev=6320847098530ab78b0d3cd438b714e699caa8db#6320847098530ab78b0d3cd438b714e699caa8db"
 dependencies = [
  "arc-swap",
  "axum",
@@ -1158,6 +1159,7 @@ dependencies = [
 [[package]]
 name = "pd-edge-abi"
 version = "0.1.0"
+source = "git+https://github.com/rustscript-lang/pd-edge.git?rev=6320847098530ab78b0d3cd438b714e699caa8db#6320847098530ab78b0d3cd438b714e699caa8db"
 dependencies = [
  "pd-host-function 0.1.0",
  "syn",
@@ -1176,6 +1178,7 @@ dependencies = [
 [[package]]
 name = "pd-edge-host-function"
 version = "0.1.0"
+source = "git+https://github.com/rustscript-lang/pd-edge.git?rev=6320847098530ab78b0d3cd438b714e699caa8db#6320847098530ab78b0d3cd438b714e699caa8db"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1198,7 +1201,9 @@ dependencies = [
 [[package]]
 name = "pd-host-function"
 version = "0.1.0"
+source = "git+https://github.com/rustscript-lang/rustscript.git?rev=b1d6cffede77f49410bf63525f30b9a46b02dc01#b1d6cffede77f49410bf63525f30b9a46b02dc01"
 dependencies = [
+ "pd-host-schema",
  "proc-macro2",
  "quote",
  "syn",
@@ -1216,8 +1221,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "pd-host-schema"
+version = "0.1.0"
+source = "git+https://github.com/rustscript-lang/rustscript.git?rev=b1d6cffede77f49410bf63525f30b9a46b02dc01#b1d6cffede77f49410bf63525f30b9a46b02dc01"
+dependencies = [
+ "proc-macro2",
+ "syn",
+]
+
+[[package]]
 name = "pd-vm"
 version = "0.1.0"
+source = "git+https://github.com/rustscript-lang/rustscript.git?rev=b1d6cffede77f49410bf63525f30b9a46b02dc01#b1d6cffede77f49410bf63525f30b9a46b02dc01"
 dependencies = [
  "base64",
  "cranelift-codegen",
@@ -1230,6 +1245,7 @@ dependencies = [
  "paste",
  "pd-edge-abi 0.1.1",
  "pd-host-function 0.1.0",
+ "pd-host-schema",
  "regex",
  "rt-format",
  "self_cell",

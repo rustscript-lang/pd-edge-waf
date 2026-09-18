@@ -245,6 +245,12 @@ pub fn update_target(state: map<string>, id: int, base: string, selector: string
     ctx_update(state, id, base, selector)
 }
 
+pub fn component_signature(state: map<string>, signature: string) -> map<string> {
+    let mut s = state;
+    s["tx.component_signature"] = signature;
+    s
+}
+
 // Match fields: id, score, disruptive, status, skip-after, message.
 pub fn record_rule_match(state: map<string>, matched: [string]) -> map<string> {
     let mut s = state;

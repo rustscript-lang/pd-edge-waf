@@ -1,3 +1,4 @@
+use re;
 use engine_text;
 use engine_context;
 use engine_operators;

@@ -10,22 +10,8 @@ permissions:
 jobs:
   smoke:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: pd-edge-waf
     steps:
       - uses: actions/checkout@v4
-        with:
-          path: pd-edge-waf
-      - uses: actions/checkout@v4
-        with:
-          repository: rustscript-lang/rustscript
-          ref: 964d8ec7141e89c438ea1810aff36b0d131e0170
-          path: rustscript
-      - uses: actions/checkout@v4
-        with:
-          repository: rustscript-lang/pd-edge
-          path: pd-edge
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
@@ -41,4 +27,4 @@ jobs:
           WAF_PERF_JIT_MAX_WARMUP_REQUESTS: "128"
         run: cargo test --release --test perf -- --ignored --nocapture --test-threads=1
       - name: Clippy
-        run: cargo clippy --all-targets -- -D warnings
+        run: cargo clippy --all-targets --all-features -- -D warnings
